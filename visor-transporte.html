@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor Transporte Escolar — SLEP Petorca 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a202c; font-size: 14px; }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+    color: white; padding: 16px 24px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .logo {
+    width: 48px; height: 48px; background: white; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+  }
+  header h1 { font-size: 18px; font-weight: 700; line-height: 1.2; }
+  header p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+  .badge-fuente {
+    margin-left: auto; background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3); border-radius: 6px;
+    padding: 6px 12px; font-size: 11px; text-align: right; flex-shrink: 0;
+  }
+
+  /* KPI CARDS */
+  .kpi-bar {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;
+    padding: 16px 24px; background: white;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .kpi-card {
+    background: #f7fafc; border-radius: 8px; padding: 12px 14px;
+    border-left: 4px solid #3182ce;
+    text-align: center;
+  }
+  .kpi-card.verde { border-left-color: #38a169; }
+  .kpi-card.amarillo { border-left-color: #d69e2e; }
+  .kpi-card.rojo { border-left-color: #e53e3e; }
+  .kpi-card.gris { border-left-color: #718096; }
+  .kpi-card.azul { border-left-color: #3182ce; }
+  .kpi-card .valor { font-size: 22px; font-weight: 700; color: #1a202c; }
+  .kpi-card .label { font-size: 11px; color: #718096; margin-top: 2px; line-height: 1.3; }
+
+  /* TABS */
+  .tab-bar {
+    display: flex; gap: 0; background: white;
+    border-bottom: 2px solid #e2e8f0; padding: 0 24px;
+  }
+  .tab-btn {
+    padding: 12px 20px; cursor: pointer; border: none; background: none;
+    font-size: 13px; font-weight: 600; color: #718096;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: #2b6cb0; }
+  .tab-btn.active { color: #2b6cb0; border-bottom-color: #2b6cb0; }
+
+  /* TAB CONTENT */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* LAYOUT MAPA + TABLA */
+  .split-layout {
+    display: grid; grid-template-columns: 1fr 420px;
+    height: calc(100vh - 200px); min-height: 500px;
+  }
+  #mapa { width: 100%; height: 100%; }
+
+  /* PANEL LATERAL */
+  .side-panel {
+    background: white; overflow-y: auto;
+    border-left: 1px solid #e2e8f0; display: flex; flex-direction: column;
+  }
+  .side-panel .panel-header {
+    padding: 12px 16px; background: #edf2f7;
+    border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 13px;
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+
+  /* FILTROS */
+  .filtros { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; }
+  .filtros label { font-size: 11px; font-weight: 600; color: #718096; display: block; margin-bottom: 3px; }
+  .filtros select, .filtros input {
+    width: 100%; padding: 6px 8px; border: 1px solid #cbd5e0;
+    border-radius: 5px; font-size: 12px; margin-bottom: 8px; background: white;
+  }
+  .filtros select:focus, .filtros input:focus { outline: none; border-color: #3182ce; }
+
+  /* TABLA LATERAL */
+  .side-table { width: 100%; font-size: 12px; border-collapse: separate; border-spacing: 0; }
+  .side-table th {
+    position: sticky; top: 0; z-index: 3;
+    background-color: #edf2f7; padding: 7px 10px; text-align: left;
+    font-weight: 600; color: #4a5568;
+    border-bottom: 2px solid #cbd5e0; cursor: pointer; user-select: none; white-space: nowrap;
+    outline: 1px solid #cbd5e0;
+  }
+  .side-table th:hover { background-color: #e2e8f0; }
+  .side-table tbody tr { position: relative; z-index: 0; }
+  .side-table td { padding: 6px 10px; border-bottom: 1px solid #f0f4f8; }
+  .side-table tr:hover td { background: #ebf8ff; cursor: pointer; }
+  .side-table tr.selected td { background: #bee3f8; }
+
+  /* LEYENDA MAPA */
+  .leyenda-mapa {
+    position: absolute; bottom: 24px; left: 24px; z-index: 1000;
+    background: white; padding: 10px 14px; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15); font-size: 11px;
+  }
+  .leyenda-mapa .titulo { font-weight: 700; margin-bottom: 6px; color: #4a5568; }
+  .leyenda-item { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .leyenda-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+  /* CHIPS COBERTURA */
+  .chip {
+    display: inline-block; padding: 2px 7px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+  }
+  .chip-verde { background: #c6f6d5; color: #276749; }
+  .chip-amarillo { background: #fefcbf; color: #744210; }
+  .chip-rojo { background: #fed7d7; color: #742a2a; }
+  .chip-gris { background: #e2e8f0; color: #4a5568; }
+
+  /* TAB LÍNEAS */
+  .full-table-wrap {
+    padding: 12px 24px 16px;
+    overflow: auto;
+    max-height: calc(100vh - 255px);
+  }
+  .data-table {
+    width: 100%; font-size: 12px;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .data-table th {
+    position: sticky; top: 0; z-index: 3;
+    background-color: #1a365d; color: white; padding: 7px 10px; text-align: left;
+    font-weight: 600; white-space: nowrap;
+    cursor: pointer; user-select: none;
+    border-bottom: 2px solid #0d2444;
+    outline: 1px solid #0d2444;
+  }
+  .data-table th:hover { background-color: #2a4a7f; }
+  .data-table td {
+    padding: 6px 10px; border-bottom: 1px solid #e2e8f0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .data-table tbody tr { position: relative; z-index: 0; }
+  .data-table tr:nth-child(even) td { background-color: #f7fafc; }
+  .data-table tr:hover td { background-color: #ebf8ff; }
+
+  /* SORT INDICATORS */
+  .sort-icon { margin-left: 5px; font-size: 10px; opacity: 0.4; }
+  th.sort-asc .sort-icon::after { content: '▲'; opacity: 1; }
+  th.sort-desc .sort-icon::after { content: '▼'; opacity: 1; }
+  th:not(.sort-asc):not(.sort-desc) .sort-icon::after { content: '↕'; }
+  th.sort-asc .sort-icon, th.sort-desc .sort-icon { opacity: 1; }
+
+  /* BARRA OCUPACIÓN */
+  .barra-wrap { background: #e2e8f0; border-radius: 4px; height: 8px; width: 80px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .barra-fill { height: 100%; border-radius: 4px; }
+
+  /* FILTRO LÍNEAS */
+  .filtros-top { padding: 12px 24px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .filtros-top label { font-size: 11px; font-weight: 600; color: #718096; display: block; margin-bottom: 3px; }
+  .filtros-top select, .filtros-top input {
+    padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 5px;
+    font-size: 12px; min-width: 140px;
+  }
+
+  /* POPUP MAPA */
+  .leaflet-popup-content { font-size: 12px; line-height: 1.5; min-width: 200px; }
+  .popup-title { font-weight: 700; font-size: 13px; color: #1a365d; margin-bottom: 6px; }
+  .popup-row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-bottom: 1px solid #f0f4f8; }
+  .popup-row:last-child { border: none; }
+  .popup-label { color: #718096; }
+  .popup-val { font-weight: 600; }
+
+  /* FICHAS */
+  .fichas-layout { display: grid; grid-template-columns: 280px 1fr; height: calc(100vh - 185px); }
+  .fichas-selector {
+    background: white; border-right: 1px solid #e2e8f0;
+    overflow-y: auto; padding: 16px;
+  }
+  .fichas-selector h3 { font-size: 12px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .fichas-selector input, .fichas-selector select {
+    width: 100%; padding: 7px 10px; border: 1px solid #cbd5e0; border-radius: 6px;
+    font-size: 12px; margin-bottom: 10px; background: white;
+  }
+  .fichas-selector input:focus, .fichas-selector select:focus { outline: none; border-color: #3182ce; }
+  .ficha-list-item {
+    padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    border: 1px solid transparent; margin-bottom: 4px; transition: all 0.15s;
+  }
+  .ficha-list-item:hover { background: #ebf8ff; border-color: #bee3f8; }
+  .ficha-list-item.active { background: #ebf8ff; border-color: #3182ce; }
+  .ficha-list-item .item-rbd { font-weight: 700; color: #2b6cb0; font-size: 11px; }
+  .ficha-list-item .item-nombre { color: #1a202c; font-size: 12px; line-height: 1.3; margin-top: 1px; }
+  .ficha-list-item .item-sub { color: #718096; font-size: 10px; margin-top: 2px; }
+
+  .fichas-preview {
+    overflow-y: auto; padding: 24px; background: #f0f4f8;
+  }
+  .fichas-empty {
+    height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #a0aec0; font-size: 14px; gap: 8px;
+  }
+  .fichas-empty .icon { font-size: 48px; }
+
+  /* LA FICHA EN SÍ */
+  .ficha {
+    background: white; max-width: 780px; margin: 0 auto;
+    border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    overflow: hidden; font-size: 12px;
+  }
+  .ficha-header {
+    background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+    color: white; padding: 18px 24px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+  }
+  .ficha-header .tipo-badge {
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px; padding: 2px 8px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: inline-block;
+  }
+  .ficha-header h2 { font-size: 17px; font-weight: 700; line-height: 1.2; margin-bottom: 4px; }
+  .ficha-header .sub { font-size: 11px; opacity: 0.85; }
+  .ficha-fecha { font-size: 10px; opacity: 0.7; text-align: right; white-space: nowrap; margin-left: 12px; flex-shrink: 0; }
+
+  .ficha-body { padding: 20px 24px; }
+  .ficha-seccion { margin-bottom: 18px; }
+  .ficha-seccion-titulo {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #2b6cb0; border-bottom: 2px solid #bee3f8; padding-bottom: 4px; margin-bottom: 10px;
+  }
+  .ficha-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+  .ficha-kpi {
+    background: #f7fafc; border-radius: 7px; padding: 10px 8px; text-align: center;
+    border-top: 3px solid #3182ce;
+  }
+  .ficha-kpi.verde { border-top-color: #38a169; }
+  .ficha-kpi.amarillo { border-top-color: #d69e2e; }
+  .ficha-kpi.rojo { border-top-color: #e53e3e; }
+  .ficha-kpi .kv { font-size: 20px; font-weight: 700; color: #1a202c; }
+  .ficha-kpi .kl { font-size: 10px; color: #718096; margin-top: 2px; line-height: 1.2; }
+
+  .ficha-desglose { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .ficha-desg-item {
+    background: #f7fafc; border-radius: 7px; padding: 10px 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ficha-desg-icon { font-size: 20px; }
+  .ficha-desg-val { font-size: 18px; font-weight: 700; color: #1a202c; }
+  .ficha-desg-label { font-size: 10px; color: #718096; }
+
+  .ficha-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .ficha-table th {
+    background: #edf2f7; padding: 6px 8px; text-align: left;
+    font-weight: 700; color: #4a5568; border-bottom: 2px solid #cbd5e0;
+  }
+  .ficha-table td { padding: 6px 8px; border-bottom: 1px solid #f0f4f8; }
+  .ficha-table tr:last-child td { border-bottom: none; }
+  .ficha-table tr:hover td { background: #f7fafc; }
+
+  .ficha-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ficha-info-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f4f8; }
+  .ficha-info-row:last-child { border: none; }
+  .ficha-info-label { color: #718096; }
+  .ficha-info-val { font-weight: 600; color: #1a202c; }
+  .ficha-info-box { background: #f7fafc; border-radius: 7px; padding: 10px 14px; }
+
+  .ficha-validacion { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 10px; }
+  .val-badge {
+    padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-align: center;
+  }
+  .val-si { background: #c6f6d5; color: #276749; }
+  .val-no { background: #fed7d7; color: #742a2a; }
+  .val-pend { background: #fefcbf; color: #744210; }
+  .val-na { background: #e2e8f0; color: #4a5568; }
+
+  .ficha-nota {
+    background: #fffbeb; border: 1px solid #fbd38d; border-radius: 6px;
+    padding: 8px 12px; font-size: 11px; color: #744210; margin-top: 10px;
+  }
+
+  .btn-imprimir {
+    background: #2b6cb0; color: white; border: none; padding: 9px 20px;
+    border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px; margin: 0 auto 16px;
+    transition: background 0.2s;
+  }
+  .btn-imprimir:hover { background: #1a365d; }
+  .ficha-tipo-tabs {
+    display: flex; gap: 8px; margin-bottom: 14px;
+  }
+  .ficha-tipo-btn {
+    padding: 7px 16px; border-radius: 6px; border: 2px solid #e2e8f0;
+    background: white; cursor: pointer; font-size: 12px; font-weight: 600; color: #4a5568;
+    transition: all 0.15s;
+  }
+  .ficha-tipo-btn.active { border-color: #3182ce; color: #2b6cb0; background: #ebf8ff; }
+
+  /* PRINT */
+  @media print {
+    header, .kpi-bar, .tab-bar, .fichas-selector, .btn-imprimir,
+    #tab-mapa, #tab-lineas, #tab-lineas-ee, #tab-glosario, #tab-proyeccion { display: none !important; }
+    .fichas-layout { display: block !important; }
+    .fichas-preview { padding: 0 !important; background: white !important; overflow: visible !important; }
+    .fichas-empty { display: none !important; }
+    .ficha { box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; }
+    .tab-content { display: block !important; }
+    #tab-fichas { display: block !important; }
+    body { background: white !important; }
+    @page { margin: 1.5cm; }
+  }
+
+  /* GLOSARIO */
+  .glosario-wrap { padding: 24px; max-width: 900px; }
+  .glosario-wrap h2 { font-size: 16px; font-weight: 700; color: #1a365d; margin-bottom: 4px; }
+  .glosario-wrap .subtitulo { font-size: 12px; color: #718096; margin-bottom: 20px; }
+  .glosario-seccion { margin-bottom: 24px; }
+  .glosario-seccion h3 {
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #2b6cb0; border-bottom: 2px solid #bee3f8; padding-bottom: 4px; margin-bottom: 12px;
+  }
+  .glosario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .glosario-item {
+    background: #f7fafc; border-radius: 8px; padding: 10px 14px;
+    border-left: 3px solid #3182ce;
+  }
+  .glosario-item .term { font-weight: 700; font-size: 13px; color: #1a365d; }
+  .glosario-item .def { font-size: 12px; color: #4a5568; margin-top: 3px; line-height: 1.5; }
+  .glosario-item .formula { font-size: 11px; color: #805ad5; margin-top: 4px; font-style: italic; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #f0f4f8; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .kpi-bar { grid-template-columns: repeat(3, 1fr); }
+    .split-layout { grid-template-columns: 1fr; grid-template-rows: 50vh auto; }
+    .side-panel { height: 50vh; border-left: none; border-top: 1px solid #e2e8f0; }
+  }
+
+  /* ===== TOOLTIPS EN ENCABEZADOS ===== */
+  [data-tip] { position: relative; cursor: help; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%);
+    background: #1a202c; color: #e2e8f0;
+    font-size: 11px; font-weight: 400; line-height: 1.55;
+    padding: 9px 13px; border-radius: 7px;
+    white-space: normal; width: 250px;
+    z-index: 9999; text-align: left;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.18s;
+  }
+  [data-tip]:hover::after { opacity: 1; }
+
+  /* ===== TUTORIAL MODAL ===== */
+  .tut-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.52); z-index: 9990;
+    align-items: center; justify-content: center;
+  }
+  .tut-bg.open { display: flex; }
+  .tut-box {
+    background: white; border-radius: 14px; padding: 28px 30px 24px;
+    max-width: 560px; width: 92%; max-height: 82vh; overflow-y: auto;
+    position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.28);
+  }
+  .tut-box h3 { font-size: 15px; font-weight: 700; color: #1a365d; margin-bottom: 16px; }
+  .tut-step { display: flex; gap: 12px; margin-bottom: 13px; align-items: flex-start; }
+  .tut-ico { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .tut-txt { font-size: 12.5px; line-height: 1.65; color: #2d3748; }
+  .tut-txt b { color: #2b6cb0; }
+  .tut-close {
+    position: absolute; top: 12px; right: 14px;
+    background: none; border: none; font-size: 22px; cursor: pointer;
+    color: #a0aec0; line-height: 1;
+  }
+  .tut-close:hover { color: #1a202c; }
+  .btn-tut {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 50%; width: 22px; height: 22px; cursor: pointer;
+    font-size: 11px; font-weight: 700; color: white;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0; vertical-align: middle; margin-left: 6px;
+  }
+  .btn-tut:hover { background: rgba(255,255,255,0.3); }
+
+  /* ===== FILAS EXPANDIBLES (NIVEL) ===== */
+  .btn-exp {
+    background: none; border: none; cursor: pointer;
+    font-size: 13px; color: #2b6cb0; padding: 0 4px 0 0;
+    display: inline-block; transition: transform 0.15s; line-height: 1;
+    vertical-align: middle;
+  }
+  .btn-exp.abierto { transform: rotate(90deg); }
+  .nivel-sub td {
+    background: #f7fafc !important; font-size: 11.5px; color: #4a5568;
+    padding: 4px 8px 4px 36px !important;
+  }
+  .nivel-sub td:not(:first-child) { padding-left: 8px !important; text-align: center; }
+  .nivel-sub td .esp-tag {
+    display: inline-block; background: #e9d8fd; color: #553c9a;
+    border-radius: 4px; padding: 1px 5px; font-size: 10px; margin-left: 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🚌</div>
+  <div>
+    <h1>Visor de Gestión de Transporte Escolar</h1>
+    <p>SLEP Petorca · Año escolar 2026</p>
+  </div>
+  <div class="badge-fuente">
+    Fuente: Nómina/Matriz de Transporte<br>
+    Reporte AEL · Directorio EE
+  </div>
+</header>
+
+<!-- KPI BAR -->
+<div class="kpi-bar" id="kpi-bar">
+  <!-- Se llena por JS -->
+</div>
+
+<!-- TABS -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('mapa')">🗺 Mapa de Establecimientos</button>
+  <button class="tab-btn" onclick="switchTab('lineas')">🚐 Líneas de Transporte</button>
+  <button class="tab-btn" onclick="switchTab('lineas-ee')">📍 Líneas por Establecimiento</button>
+  <button class="tab-btn" onclick="switchTab('fichas')">📋 Fichas</button>
+  <button class="tab-btn" onclick="switchTab('proyeccion')">📊 Proyección 2027</button>
+  <button class="tab-btn" onclick="switchTab('glosario')">📖 Glosario</button>
+  <button onclick="openTutorial()" title="Ayuda sobre esta pestaña" style="margin-left:auto;align-self:center;background:none;border:1px solid #bee3f8;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:12px;font-weight:700;color:#2b6cb0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">?</button>
+</div>
+
+<!-- MODAL TUTORIAL -->
+<div class="tut-bg" id="tut-bg" onclick="if(event.target===this)closeTutorial()">
+  <div class="tut-box">
+    <button class="tut-close" onclick="closeTutorial()">×</button>
+    <div id="tut-content"></div>
+  </div>
+</div>
+
+<!-- TAB: MAPA -->
+<div class="tab-content active" id="tab-mapa">
+  <div class="split-layout">
+    <div style="position:relative;">
+      <div id="mapa"></div>
+      <div class="leyenda-mapa">
+        <div class="titulo">Marcadores — % Cobertura</div>
+        <div class="leyenda-item"><div class="leyenda-dot" style="background:#38a169"></div> ≥ 90%</div>
+        <div class="leyenda-item"><div class="leyenda-dot" style="background:#d69e2e"></div> 60–89%</div>
+        <div class="leyenda-item"><div class="leyenda-dot" style="background:#e53e3e"></div> &lt; 60%</div>
+        <div class="leyenda-item"><div class="leyenda-dot" style="background:#a0aec0"></div> Sin datos</div>
+        <div class="titulo" style="margin-top:8px">Tamaño = demanda</div>
+        <div class="leyenda-item" style="gap:4px">
+          <div class="leyenda-dot" style="background:#718096;width:8px;height:8px"></div>
+          <div class="leyenda-dot" style="background:#718096;width:13px;height:13px"></div>
+          <div class="leyenda-dot" style="background:#718096;width:18px;height:18px"></div>
+          <span style="font-size:10px;color:#4a5568">Mayor = más estudiantes</span>
+        </div>
+        <div class="titulo" style="margin-top:8px">Líneas de ruta</div>
+        <div class="leyenda-item"><div style="background:linear-gradient(90deg,hsl(0,70%,42%),hsl(137,70%,42%),hsl(275,70%,42%));height:4px;width:40px;border-radius:2px"></div> Color único por línea</div>
+        <div class="leyenda-item" style="font-size:10px;color:#4a5568">Grosor = estudiantes asignados</div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="panel-header">
+        <span>Establecimientos (<span id="ee-count">0</span>)</span>
+        <span id="ee-total-info" style="font-size:11px;color:#718096;font-weight:400;"></span>
+      </div>
+      <div class="filtros">
+        <label>Buscar</label>
+        <input type="text" id="buscar-ee" placeholder="Nombre o RBD..." oninput="filtrarEE()">
+        <label>Comuna</label>
+        <select id="filtro-comuna" onchange="filtrarEE()">
+          <option value="">Todas</option>
+          <option>Cabildo</option>
+          <option>La Ligua</option>
+          <option>Papudo</option>
+          <option>Petorca</option>
+        </select>
+        <label>Área</label>
+        <select id="filtro-area" onchange="filtrarEE()">
+          <option value="">Todas</option>
+          <option>Urbano</option>
+          <option>Rural</option>
+        </select>
+        <label>Con transporte asignado</label>
+        <select id="filtro-transporte" onchange="filtrarEE()">
+          <option value="">Todos</option>
+          <option value="si">Con transporte</option>
+          <option value="no">Sin transporte</option>
+        </select>
+      </div>
+      <div style="overflow-y: auto; flex: 1;">
+        <table class="side-table" id="tabla-ee">
+          <thead>
+            <tr>
+              <th onclick="sortEE('nombre')" id="th-ee-nombre">Establecimiento<span class="sort-icon"></span></th>
+              <th onclick="sortEE('pctCob')" id="th-ee-pctCob">Cobertura<span class="sort-icon"></span></th>
+              <th onclick="sortEE('brecha')" id="th-ee-brecha">Brecha<span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-ee"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: LÍNEAS -->
+<div class="tab-content" id="tab-lineas">
+  <div class="filtros-top">
+    <div>
+      <label>Buscar</label>
+      <input type="text" id="buscar-linea" placeholder="N° línea o patente..." oninput="filtrarLineas()">
+    </div>
+    <div>
+      <label>Comuna</label>
+      <select id="filtro-linea-comuna" onchange="filtrarLineas()">
+        <option value="">Todas</option>
+        <option>Cabildo</option>
+        <option>La Ligua</option>
+        <option>Papudo</option>
+        <option>Petorca</option>
+      </select>
+    </div>
+    <div>
+      <label>Tipo vehículo</label>
+      <select id="filtro-vehiculo" onchange="filtrarLineas()">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <div>
+      <label>Tipo adjudicación</label>
+      <select id="filtro-adjudicacion" onchange="filtrarLineas()">
+        <option value="">Todos</option>
+      </select>
+    </div>
+  </div>
+  <div class="full-table-wrap">
+    <table class="data-table" id="tabla-lineas">
+      <thead>
+        <tr>
+          <th onclick="sortLineas('n')" id="th-l-n">#<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('linea')" id="th-l-linea">N° Línea<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('comuna')" id="th-l-comuna">Comuna<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('vehiculo')" id="th-l-vehiculo">Vehículo<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('tipoAdj')" id="th-l-tipoAdj">Tipo Adjudicación<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('cap')" id="th-l-cap">Cap.<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('asig')" id="th-l-asig">Asig.<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('disp')" id="th-l-disp">Disp.<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('pctOcup')" id="th-l-pctOcup">% Ocupación<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('patente')" id="th-l-patente">Patente<span class="sort-icon"></span></th>
+          <th onclick="sortLineas('proveedor')" id="th-l-proveedor">Proveedor / Conductor<span class="sort-icon"></span></th>
+        </tr>
+      </thead>
+      <tbody id="tbody-lineas"></tbody>
+    </table>
+    <div style="padding:8px 0; color:#718096; font-size:11px;" id="lineas-footer"></div>
+  </div>
+</div>
+
+<!-- TAB: LÍNEAS POR EE -->
+<div class="tab-content" id="tab-lineas-ee">
+  <div class="filtros-top">
+    <div>
+      <label>Buscar establecimiento o línea</label>
+      <input type="text" id="buscar-lee" placeholder="Nombre EE o N° línea..." oninput="filtrarLineasEE()">
+    </div>
+    <div>
+      <label>Comuna</label>
+      <select id="filtro-lee-comuna" onchange="filtrarLineasEE()">
+        <option value="">Todas</option>
+        <option>Cabildo</option>
+        <option>La Ligua</option>
+        <option>Papudo</option>
+        <option>Petorca</option>
+      </select>
+    </div>
+  </div>
+  <div class="full-table-wrap">
+    <table class="data-table" id="tabla-lee">
+      <thead>
+        <tr>
+          <th onclick="sortLEE('linea')" id="th-lee-linea">N° Línea<span class="sort-icon"></span></th>
+          <th onclick="sortLEE('comuna')" id="th-lee-comuna">Comuna<span class="sort-icon"></span></th>
+          <th onclick="sortLEE('orden')" id="th-lee-orden">Ord. Parada<span class="sort-icon"></span></th>
+          <th onclick="sortLEE('rbd')" id="th-lee-rbd">RBD<span class="sort-icon"></span></th>
+          <th onclick="sortLEE('ee')" id="th-lee-ee">Establecimiento<span class="sort-icon"></span></th>
+          <th onclick="sortLEE('benef')" id="th-lee-benef">Beneficiarios<span class="sort-icon"></span></th>
+        </tr>
+      </thead>
+      <tbody id="tbody-lee"></tbody>
+    </table>
+    <div style="padding:8px 0; color:#718096; font-size:11px;" id="lee-footer"></div>
+  </div>
+</div>
+
+<!-- TAB: FICHAS -->
+<div class="tab-content" id="tab-fichas">
+  <div class="fichas-layout">
+    <!-- SELECTOR IZQUIERDO -->
+    <div class="fichas-selector">
+      <div class="ficha-tipo-tabs">
+        <button class="ficha-tipo-btn active" id="btn-tipo-ee" onclick="setFichaTipo('ee')">🏫 Por EE</button>
+        <button class="ficha-tipo-btn" id="btn-tipo-linea" onclick="setFichaTipo('linea')">🚐 Por Línea</button>
+      </div>
+      <h3 id="fichas-selector-label">Establecimiento</h3>
+      <input type="text" id="fichas-buscar" placeholder="Buscar..." oninput="filtrarFichasList()">
+      <select id="fichas-comuna" onchange="filtrarFichasList()">
+        <option value="">Todas las comunas</option>
+        <option>Cabildo</option><option>La Ligua</option><option>Papudo</option><option>Petorca</option>
+      </select>
+      <div id="fichas-list"></div>
+    </div>
+    <!-- PREVIEW DERECHO -->
+    <div class="fichas-preview" id="fichas-preview">
+      <div class="fichas-empty">
+        <div class="icon">📋</div>
+        <div>Selecciona un establecimiento o línea para ver su ficha</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: GLOSARIO -->
+<div class="tab-content" id="tab-glosario">
+  <div class="glosario-wrap">
+    <h2>Glosario de términos — Visor Transporte Escolar SLEP Petorca</h2>
+    <p class="subtitulo">Definiciones de los indicadores y variables usados en el visor. Fuente: Nómina/Matriz de Transporte, Reporte AEL, Directorio de EE.</p>
+
+    <div class="glosario-seccion">
+      <h3>Establecimientos Educacionales (EE)</h3>
+      <div class="glosario-grid">
+        <div class="glosario-item">
+          <div class="term">RBD</div>
+          <div class="def">Rol Base de Datos. Identificador único nacional asignado por el Mineduc a cada establecimiento educacional.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Matrícula Actual</div>
+          <div class="def">Número de estudiantes matriculados en el establecimiento en el año en curso (2026).</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Cupos Declarados</div>
+          <div class="def">Capacidad máxima de atención declarada por el establecimiento ante el Mineduc.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Vacantes Referenciales</div>
+          <div class="def">Diferencia entre Cupos Declarados y Matrícula Actual. Indica la capacidad sin ocupar de forma referencial.
+            <div class="formula">= Cupos Declarados − Matrícula Actual</div>
+          </div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Área</div>
+          <div class="def">Clasificación territorial del establecimiento: <b>Urbano</b> (dentro de zonas consolidadas) o <b>Rural</b> (zonas dispersas, generalmente con mayor dependencia del transporte).</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Encargado Transporte</div>
+          <div class="def">Persona responsable de la coordinación y validación del transporte escolar en el establecimiento.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Valida Marzo / Abril 2026</div>
+          <div class="def">Indica si el establecimiento validó el listado de estudiantes que requieren transporte en el mes correspondiente (SI / NO / PENDIENTE / NO APLICA).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glosario-seccion">
+      <h3>Demanda y Cobertura de Transporte</h3>
+      <div class="glosario-grid">
+        <div class="glosario-item">
+          <div class="term">Demanda Nómina 2026</div>
+          <div class="def">Número de estudiantes que solicitaron transporte escolar según la nómina oficial 2026. Es la demanda validada por el establecimiento.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Alumnos No Aplica Cobertura</div>
+          <div class="def">Estudiantes que requieren transporte pero están excluidos del cálculo de cobertura (p. ej. alumnos con transporte propio, fuera de zona o casos especiales).</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Brecha (Demanda − Asig.)</div>
+          <div class="def">Diferencia entre la demanda neta y los cupos asignados. Valor positivo indica déficit; negativo indica superávit de cupos.
+            <div class="formula">= Demanda − Alumnos No Aplica − Total Cupos Asignados</div>
+          </div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">% Cobertura</div>
+          <div class="def">Proporción de la demanda neta cubierta por los cupos asignados. Semáforo: ≥90% verde, 60–89% amarillo, &lt;60% rojo.
+            <div class="formula">= Cupos Asignados ÷ (Demanda − No Aplica)</div>
+          </div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">% Dependencia Transporte</div>
+          <div class="def">Porcentaje de la matrícula total que depende del transporte escolar para asistir al establecimiento.
+            <div class="formula">= Demanda Nómina ÷ Matrícula Actual</div>
+          </div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">% Cobertura Virtual</div>
+          <div class="def">Variante de cobertura calculada sobre la matrícula total, no sobre la demanda neta. Permite comparar la escala del transporte respecto del tamaño del establecimiento.
+            <div class="formula">= Cupos Asignados ÷ Matrícula Actual</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glosario-seccion">
+      <h3>Tipos de Cupos Asignados</h3>
+      <div class="glosario-grid">
+        <div class="glosario-item">
+          <div class="term">Cupos Línea Propia</div>
+          <div class="def">Cupos en vehículos de propiedad o administración directa del SLEP o establecimiento (no licitados ni MTT).</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Cupos Licitación SLEP</div>
+          <div class="def">Cupos en rutas adjudicadas mediante proceso de licitación pública o trato directo gestionado por el SLEP Petorca.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Cupos MTT</div>
+          <div class="def">Cupos en vehículos aportados por el Ministerio de Transportes y Telecomunicaciones a través del Programa de Transporte Escolar (CTE — Contrato de Transporte Escolar).</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Total Cupos Asignados</div>
+          <div class="def">Suma de todos los cupos disponibles para el establecimiento, independiente de su origen.
+            <div class="formula">= Cupos Línea Propia + Cupos Licitación + Cupos MTT</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glosario-seccion">
+      <h3>Líneas de Transporte</h3>
+      <div class="glosario-grid">
+        <div class="glosario-item">
+          <div class="term">Línea</div>
+          <div class="def">Ruta de transporte escolar identificada con un número correlativo y la comuna a la que pertenece (ej. "9 - CABILDO").</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Tipo Adjudicación</div>
+          <div class="def"><b>Licitación Pública:</b> proceso concursal abierto. <b>Trato Directo:</b> contratación directa con un proveedor, con justificación. <b>No Aplica:</b> línea propia o MTT.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">CTE (Contrato de Transporte Escolar)</div>
+          <div class="def">Vehículos aportados por el MTT a través de contratos directos con el Ministerio. Se identifican con código CTE + número (ej. CTE 1481).</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Capacidad / Cupos por Línea</div>
+          <div class="def">Número máximo de pasajeros que puede transportar el vehículo asignado a la línea según su habilitación técnica.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Cupos Asignados Nómina 2026</div>
+          <div class="def">Número de estudiantes efectivamente asignados a esa línea según la nómina 2026.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Cupos Disponibles</div>
+          <div class="def">Diferencia entre capacidad y cupos asignados. Valor negativo indica sobreocupación del vehículo.
+            <div class="formula">= Capacidad − Cupos Asignados</div>
+          </div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">% Ocupación</div>
+          <div class="def">Proporción de la capacidad del vehículo que está siendo utilizada. Valores sobre 100% indican sobreocupación (alerta roja).
+            <div class="formula">= Cupos Asignados ÷ Capacidad</div>
+          </div>
+        </div>
+        <div class="glosario-item">
+          <div class="term">Orden de Parada</div>
+          <div class="def">Número de secuencia en que el vehículo pasa por cada establecimiento dentro de su ruta. El orden 1 es el primer punto de recogida o destino.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PESTAÑA PROYECCIÓN 2027 -->
+<div class="tab-content" id="tab-proyeccion">
+  <div class="full-table-wrap" style="max-height:calc(100vh - 200px);">
+    <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+      <div>
+        <h3 style="font-size:15px;font-weight:700;color:#1a365d;margin:0 0 4px;">Proyección de Cupos 2027 vs. Capacidad de Transporte 2026</h3>
+        <p style="font-size:12px;color:#718096;margin:0;">Cupos declarados ante Mineduc para 2027 (SLEP Petorca) vs. transporte vigente 2026. Hover sobre cada columna para ver su definición. Haz clic en <b>▶</b> para ver detalle por nivel.</p>
+      </div>
+      <div style="margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <label style="font-size:12px;color:#718096;">Comuna</label>
+        <select id="proy-comuna" onchange="filtrarProyeccion()" style="font-size:12px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;">
+          <option value="">Todas</option>
+          <option>Cabildo</option><option>La Ligua</option><option>Papudo</option><option>Petorca</option>
+        </select>
+        <label style="font-size:12px;color:#718096;">Área</label>
+        <select id="proy-area" onchange="filtrarProyeccion()" style="font-size:12px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;">
+          <option value="">Todas</option><option>Urbano</option><option>Rural</option>
+        </select>
+        <label style="font-size:12px;color:#718096;">Riesgo</label>
+        <select id="proy-riesgo" onchange="filtrarProyeccion()" style="font-size:12px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;">
+          <option value="">Todos</option>
+          <option value="riesgo">🔴 Déficit alto</option>
+          <option value="alerta">⚠️ Alerta</option>
+          <option value="ok">✅ Suficiente</option>
+          <option value="sin-datos">— Sin datos transp.</option>
+        </select>
+      </div>
+    </div>
+    <div id="proy-kpis" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;"></div>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="tabla-proy">
+        <thead>
+          <tr>
+            <th style="width:28px;"></th>
+            <th id="th-proy-nombre" onclick="sortProy('nombre')" style="min-width:200px;"
+                data-tip="Nombre del establecimiento y su RBD (identificador único Mineduc). Haz clic en ▶ para ver el desglose por nivel.">EE</th>
+            <th id="th-proy-comuna" onclick="sortProy('comuna')"
+                data-tip="Comuna a la que pertenece el establecimiento: Cabildo, La Ligua, Papudo o Petorca.">Comuna</th>
+            <th id="th-proy-area" onclick="sortProy('area')"
+                data-tip="Clasificación territorial: Urbano (zona consolidada) o Rural (zona dispersa, mayor dependencia de transporte).">Área</th>
+            <th id="th-proy-matricula26" onclick="sortProy('matricula26')" style="min-width:88px;"
+                data-tip="Matrícula oficial del establecimiento en el año 2026.">Matr. 2026</th>
+            <th id="th-proy-cupos26" onclick="sortProy('cupos26')" style="min-width:88px;"
+                data-tip="Cupos declarados ante el Mineduc para el año 2026. Refleja la capacidad máxima de atención del EE en 2026.">Cupos Dec. 2026</th>
+            <th id="th-proy-cupos27" onclick="sortProy('cupos27')" style="min-width:88px;"
+                data-tip="Cupos declarados ante el Mineduc para el año 2027, según el archivo 'CUPOS 2027 SLEP Y DAEM'. Refleja la oferta proyectada para el próximo año.">Cupos Dec. 2027</th>
+            <th id="th-proy-deltaCupos" onclick="sortProy('deltaCupos')" style="min-width:78px;"
+                data-tip="Diferencia entre cupos 2027 y cupos 2026. Positivo (+) = más oferta de vacantes; negativo (−) = reducción. El porcentaje indica el cambio relativo.">Δ Cupos</th>
+            <th id="th-proy-cuposTransp26" onclick="sortProy('cuposTransp26')" style="min-width:108px;"
+                data-tip="Total de cupos de transporte escolar asignados al EE en 2026, sumando Línea Propia + Licitación SLEP + MTT. Es la capacidad de transporte actual disponible.">Transp. Asig. 2026</th>
+            <th id="th-proy-demandaEst27" onclick="sortProy('demandaEst27')" style="min-width:112px;"
+                data-tip="Demanda de transporte estimada para 2027. Fórmula: Cupos Dec. 2027 × % Dependencia Transporte 2026. Asume que si la matrícula llega al tope de cupos 2027, la proporción de alumnos que necesita transporte se mantiene igual a 2026.">Demand. Est. 2027 ★</th>
+            <th id="th-proy-brechaEst27" onclick="sortProy('brechaEst27')" style="min-width:103px;"
+                data-tip="Diferencia entre Demanda Estimada 2027 y Transporte Asignado 2026. Positivo = posible déficit (se necesitarían más cupos). Negativo = capacidad sobrante.">Brecha Est. 2027</th>
+            <th id="th-proy-riesgo" onclick="sortProy('riesgo')" style="min-width:118px;"
+                data-tip="Semáforo de riesgo de transporte para 2027. ✅ Suficiente: capacidad actual cubre la demanda estimada. ⚠️ Alerta: déficit de hasta el 20%. 🔴 Déficit alto: déficit superior al 20%. — Sin datos: no hay información de transporte 2026.">Riesgo Transp.</th>
+          </tr>
+        </thead>
+        <tbody id="body-proy"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:14px;background:#ebf8ff;border-radius:8px;padding:12px 16px;border-left:4px solid #3182ce;font-size:12px;color:#2c5282;line-height:1.6;">
+      <b>★ Demanda Estimada 2027 = Cupos Dec. 2027 × % Dep. Transp. 2026.</b> Es un indicador referencial: asume que si la matrícula alcanzara el tope de cupos 2027, la proporción que depende de transporte se mantiene igual a la de 2026. Las celdas "—" corresponden a EE sin datos de transporte en 2026.
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATOS
+// ============================================================
+const CUPOS2027 = [
+  {rbd:1121,cupos27:605,cursos27:22},{rbd:1122,cupos27:353,cursos27:10},{rbd:1123,cupos27:761,cursos27:22},
+  {rbd:1125,cupos27:198,cursos27:10},{rbd:1128,cupos27:324,cursos27:10},{rbd:1129,cupos27:26,cursos27:6},
+  {rbd:1130,cupos27:35,cursos27:6},{rbd:1131,cupos27:36,cursos27:6},{rbd:1132,cupos27:185,cursos27:8},
+  {rbd:1133,cupos27:88,cursos27:6},{rbd:1134,cupos27:24,cursos27:6},{rbd:1135,cupos27:60,cursos27:6},
+  {rbd:1136,cupos27:104,cursos27:8},{rbd:1137,cupos27:30,cursos27:6},{rbd:1139,cupos27:70,cursos27:8},
+  {rbd:1140,cupos27:60,cursos27:6},{rbd:1142,cupos27:100,cursos27:8},{rbd:1143,cupos27:35,cursos27:6},
+  {rbd:1144,cupos27:60,cursos27:6},{rbd:1145,cupos27:80,cursos27:8},{rbd:1147,cupos27:200,cursos27:10},
+  {rbd:1148,cupos27:525,cursos27:24},{rbd:1149,cupos27:252,cursos27:14},{rbd:1150,cupos27:30,cursos27:6},
+  {rbd:1151,cupos27:16,cursos27:6},{rbd:1152,cupos27:115,cursos27:8},{rbd:1153,cupos27:18,cursos27:6},
+  {rbd:1156,cupos27:100,cursos27:8},{rbd:1157,cupos27:80,cursos27:8},{rbd:1158,cupos27:30,cursos27:6},
+  {rbd:1160,cupos27:32,cursos27:8},{rbd:1161,cupos27:260,cursos27:10},{rbd:1167,cupos27:646,cursos27:17},
+  {rbd:1168,cupos27:700,cursos27:20},{rbd:1170,cupos27:181,cursos27:10},{rbd:1171,cupos27:48,cursos27:6},
+  {rbd:1173,cupos27:200,cursos27:10},{rbd:1174,cupos27:160,cursos27:10},{rbd:1176,cupos27:80,cursos27:80},
+  {rbd:1178,cupos27:250,cursos27:10},{rbd:1180,cupos27:251,cursos27:10},{rbd:1181,cupos27:18,cursos27:6},
+  {rbd:1182,cupos27:12,cursos27:6},{rbd:1191,cupos27:335,cursos27:10},{rbd:1192,cupos27:333,cursos27:10},
+  {rbd:11199,cupos27:733,cursos27:21},{rbd:11206,cupos27:30,cursos27:6},{rbd:12299,cupos27:20,cursos27:6},
+  {rbd:12336,cupos27:480,cursos27:14},{rbd:14479,cupos27:520,cursos27:19},{rbd:40099,cupos27:240,cursos27:8},
+  {rbd:40242,cupos27:256,cursos27:8},
+];
+
+// Detalle por nivel (r=rbd, n=nivel, esp=especialidad, c=cupos, k=cursos)
+const CUPOS2027_DET = [
+  {r:1121,n:'1° Medio',c:150,k:5},{r:1121,n:'2° Medio',c:155,k:5},{r:1121,n:'3° Medio',c:70,k:2},{r:1121,n:'4° Medio',c:70,k:2},
+  {r:1121,n:'3° Medio',esp:'ADMINISTRACIÓN',c:20,k:1},{r:1121,n:'4° Medio',esp:'ADMINISTRACIÓN',c:20,k:1},
+  {r:1121,n:'3° Medio',esp:'ELECTRICIDAD',c:20,k:1},{r:1121,n:'4° Medio',esp:'ELECTRICIDAD',c:20,k:1},
+  {r:1121,n:'3° Medio',esp:'CONECTIVIDAD Y REDES',c:20,k:1},{r:1121,n:'4° Medio',esp:'CONECTIVIDAD Y REDES',c:20,k:1},
+  {r:1121,n:'3° Medio',esp:'GASTRONOMÍA',c:20,k:1},{r:1121,n:'4° Medio',esp:'GASTRONOMÍA',c:20,k:1},
+  {r:1122,n:'Pre-Kínder',c:32,k:1},{r:1122,n:'Kínder',c:32,k:1},{r:1122,n:'1° Básico',c:36,k:1},{r:1122,n:'2° Básico',c:36,k:1},
+  {r:1122,n:'3° Básico',c:36,k:1},{r:1122,n:'4° Básico',c:37,k:1},{r:1122,n:'5° Básico',c:36,k:1},{r:1122,n:'6° Básico',c:36,k:1},
+  {r:1122,n:'7° Básico',c:36,k:1},{r:1122,n:'8° Básico',c:36,k:1},
+  {r:1123,n:'Pre-Kínder',c:30,k:1},{r:1123,n:'Kínder',c:30,k:1},{r:1123,n:'1° Básico',c:35,k:1},{r:1123,n:'2° Básico',c:35,k:1},
+  {r:1123,n:'3° Básico',c:35,k:1},{r:1123,n:'4° Básico',c:35,k:1},{r:1123,n:'5° Básico',c:70,k:2},{r:1123,n:'6° Básico',c:70,k:2},
+  {r:1123,n:'7° Básico',c:70,k:2},{r:1123,n:'8° Básico',c:70,k:2},{r:1123,n:'1° Medio',c:70,k:2},{r:1123,n:'2° Medio',c:71,k:2},
+  {r:1123,n:'3° Medio',c:70,k:2},{r:1123,n:'4° Medio',c:70,k:2},
+  {r:1125,n:'Pre-Kínder',c:15,k:1},{r:1125,n:'Kínder',c:15,k:1},{r:1125,n:'1° Básico',c:20,k:1},{r:1125,n:'2° Básico',c:20,k:1},
+  {r:1125,n:'3° Básico',c:24,k:1},{r:1125,n:'4° Básico',c:20,k:1},{r:1125,n:'5° Básico',c:24,k:1},{r:1125,n:'6° Básico',c:20,k:1},
+  {r:1125,n:'7° Básico',c:20,k:1},{r:1125,n:'8° Básico',c:20,k:1},
+  {r:1128,n:'Pre-Kínder',c:30,k:1},{r:1128,n:'Kínder',c:30,k:1},{r:1128,n:'1° Básico',c:33,k:1},{r:1128,n:'2° Básico',c:33,k:1},
+  {r:1128,n:'3° Básico',c:33,k:1},{r:1128,n:'4° Básico',c:33,k:1},{r:1128,n:'5° Básico',c:33,k:1},{r:1128,n:'6° Básico',c:33,k:1},
+  {r:1128,n:'7° Básico',c:33,k:1},{r:1128,n:'8° Básico',c:33,k:1},
+  {r:1129,n:'1° Básico',c:5,k:1},{r:1129,n:'2° Básico',c:5,k:1},{r:1129,n:'3° Básico',c:5,k:1},{r:1129,n:'4° Básico',c:4,k:1},
+  {r:1129,n:'5° Básico',c:4,k:1},{r:1129,n:'6° Básico',c:3,k:1},
+  {r:1130,n:'1° Básico',c:6,k:1},{r:1130,n:'2° Básico',c:4,k:1},{r:1130,n:'3° Básico',c:7,k:1},{r:1130,n:'4° Básico',c:9,k:1},
+  {r:1130,n:'5° Básico',c:5,k:1},{r:1130,n:'6° Básico',c:4,k:1},
+  {r:1131,n:'1° Básico',c:8,k:1},{r:1131,n:'2° Básico',c:7,k:1},{r:1131,n:'3° Básico',c:10,k:1},{r:1131,n:'4° Básico',c:5,k:1},
+  {r:1131,n:'5° Básico',c:4,k:1},{r:1131,n:'6° Básico',c:2,k:1},
+  {r:1132,n:'1° Básico',c:21,k:1},{r:1132,n:'2° Básico',c:21,k:1},{r:1132,n:'3° Básico',c:15,k:1},{r:1132,n:'4° Básico',c:21,k:1},
+  {r:1132,n:'5° Básico',c:21,k:1},{r:1132,n:'6° Básico',c:26,k:1},{r:1132,n:'7° Básico',c:30,k:1},{r:1132,n:'8° Básico',c:30,k:1},
+  {r:1133,n:'1° Básico',c:15,k:1},{r:1133,n:'2° Básico',c:15,k:1},{r:1133,n:'3° Básico',c:16,k:1},{r:1133,n:'4° Básico',c:10,k:1},
+  {r:1133,n:'5° Básico',c:15,k:1},{r:1133,n:'6° Básico',c:17,k:1},
+  {r:1134,n:'1° Básico',c:4,k:1},{r:1134,n:'2° Básico',c:4,k:1},{r:1134,n:'3° Básico',c:4,k:1},{r:1134,n:'4° Básico',c:4,k:1},
+  {r:1134,n:'5° Básico',c:4,k:1},{r:1134,n:'6° Básico',c:4,k:1},
+  {r:1135,n:'1° Básico',c:7,k:1},{r:1135,n:'2° Básico',c:13,k:1},{r:1135,n:'3° Básico',c:9,k:1},{r:1135,n:'4° Básico',c:11,k:1},
+  {r:1135,n:'5° Básico',c:10,k:1},{r:1135,n:'6° Básico',c:10,k:1},
+  {r:1136,n:'1° Básico',c:10,k:1},{r:1136,n:'2° Básico',c:10,k:1},{r:1136,n:'3° Básico',c:10,k:1},{r:1136,n:'4° Básico',c:12,k:1},
+  {r:1136,n:'5° Básico',c:10,k:1},{r:1136,n:'6° Básico',c:12,k:1},{r:1136,n:'7° Básico',c:20,k:1},{r:1136,n:'8° Básico',c:20,k:1},
+  {r:1137,n:'1° Básico',c:6,k:1},{r:1137,n:'2° Básico',c:6,k:1},{r:1137,n:'3° Básico',c:6,k:1},{r:1137,n:'4° Básico',c:6,k:1},
+  {r:1137,n:'5° Básico',c:3,k:1},{r:1137,n:'6° Básico',c:3,k:1},
+  {r:1139,n:'Pre-Kínder',c:11,k:1},{r:1139,n:'Kínder',c:11,k:1},{r:1139,n:'1° Básico',c:8,k:1},{r:1139,n:'2° Básico',c:8,k:1},
+  {r:1139,n:'3° Básico',c:7,k:1},{r:1139,n:'4° Básico',c:9,k:1},{r:1139,n:'5° Básico',c:8,k:1},{r:1139,n:'6° Básico',c:8,k:1},
+  {r:1140,n:'1° Básico',c:10,k:1},{r:1140,n:'2° Básico',c:10,k:1},{r:1140,n:'3° Básico',c:10,k:1},{r:1140,n:'4° Básico',c:10,k:1},
+  {r:1140,n:'5° Básico',c:10,k:1},{r:1140,n:'6° Básico',c:10,k:1},
+  {r:1142,n:'1° Básico',c:10,k:1},{r:1142,n:'2° Básico',c:10,k:1},{r:1142,n:'3° Básico',c:10,k:1},{r:1142,n:'4° Básico',c:10,k:1},
+  {r:1142,n:'5° Básico',c:10,k:1},{r:1142,n:'6° Básico',c:10,k:1},{r:1142,n:'7° Básico',c:20,k:1},{r:1142,n:'8° Básico',c:20,k:1},
+  {r:1143,n:'1° Básico',c:5,k:1},{r:1143,n:'2° Básico',c:4,k:1},{r:1143,n:'3° Básico',c:4,k:1},{r:1143,n:'4° Básico',c:7,k:1},
+  {r:1143,n:'5° Básico',c:6,k:1},{r:1143,n:'6° Básico',c:9,k:1},
+  {r:1144,n:'1° Básico',c:10,k:1},{r:1144,n:'2° Básico',c:10,k:1},{r:1144,n:'3° Básico',c:10,k:1},{r:1144,n:'4° Básico',c:10,k:1},
+  {r:1144,n:'5° Básico',c:10,k:1},{r:1144,n:'6° Básico',c:10,k:1},
+  {r:1145,n:'1° Básico',c:10,k:1},{r:1145,n:'2° Básico',c:10,k:1},{r:1145,n:'3° Básico',c:10,k:1},{r:1145,n:'4° Básico',c:10,k:1},
+  {r:1145,n:'5° Básico',c:10,k:1},{r:1145,n:'6° Básico',c:10,k:1},{r:1145,n:'7° Básico',c:10,k:1},{r:1145,n:'8° Básico',c:10,k:1},
+  {r:1147,n:'Pre-Kínder',c:20,k:1},{r:1147,n:'Kínder',c:20,k:1},{r:1147,n:'1° Básico',c:20,k:1},{r:1147,n:'2° Básico',c:20,k:1},
+  {r:1147,n:'3° Básico',c:20,k:1},{r:1147,n:'4° Básico',c:20,k:1},{r:1147,n:'5° Básico',c:20,k:1},{r:1147,n:'6° Básico',c:20,k:1},
+  {r:1147,n:'7° Básico',c:20,k:1},{r:1147,n:'8° Básico',c:20,k:1},
+  {r:1148,n:'Pre-Kínder',c:20,k:1},{r:1148,n:'Kínder',c:20,k:1},{r:1148,n:'1° Básico',c:20,k:1},{r:1148,n:'2° Básico',c:20,k:1},
+  {r:1148,n:'3° Básico',c:20,k:1},{r:1148,n:'4° Básico',c:25,k:1},{r:1148,n:'5° Básico',c:25,k:1},{r:1148,n:'6° Básico',c:25,k:1},
+  {r:1148,n:'7° Básico',c:35,k:2},{r:1148,n:'8° Básico',c:40,k:2},{r:1148,n:'1° Medio',c:60,k:3},{r:1148,n:'2° Medio',c:70,k:3},
+  {r:1148,n:'3° Medio',c:50,k:2},{r:1148,n:'4° Medio',c:50,k:2},
+  {r:1148,n:'3° Medio',esp:'ADMINISTRACIÓN',c:25,k:1},{r:1148,n:'4° Medio',esp:'ADMINISTRACIÓN',c:20,k:1},
+  {r:1149,n:'Pre-Kínder',c:12,k:1},{r:1149,n:'Kínder',c:15,k:1},{r:1149,n:'1° Básico',c:15,k:1},{r:1149,n:'2° Básico',c:15,k:1},
+  {r:1149,n:'3° Básico',c:15,k:1},{r:1149,n:'4° Básico',c:15,k:1},{r:1149,n:'5° Básico',c:15,k:1},{r:1149,n:'6° Básico',c:15,k:1},
+  {r:1149,n:'7° Básico',c:15,k:1},{r:1149,n:'8° Básico',c:20,k:1},{r:1149,n:'1° Medio',c:25,k:1},{r:1149,n:'2° Medio',c:25,k:1},
+  {r:1149,n:'3° Medio',esp:'AGROPECUARIA',c:25,k:1},{r:1149,n:'4° Medio',esp:'AGROPECUARIA',c:25,k:1},
+  {r:1150,n:'1° Básico',c:5,k:1},{r:1150,n:'2° Básico',c:5,k:1},{r:1150,n:'3° Básico',c:5,k:1},{r:1150,n:'4° Básico',c:5,k:1},
+  {r:1150,n:'5° Básico',c:5,k:1},{r:1150,n:'6° Básico',c:5,k:1},
+  {r:1151,n:'1° Básico',c:4,k:1},{r:1151,n:'2° Básico',c:4,k:1},{r:1151,n:'3° Básico',c:2,k:1},{r:1151,n:'4° Básico',c:2,k:1},
+  {r:1151,n:'5° Básico',c:2,k:1},{r:1151,n:'6° Básico',c:2,k:1},
+  {r:1152,n:'Pre-Kínder',c:15,k:1},{r:1152,n:'Kínder',c:15,k:1},{r:1152,n:'1° Básico',c:10,k:1},{r:1152,n:'2° Básico',c:15,k:1},
+  {r:1152,n:'3° Básico',c:15,k:1},{r:1152,n:'4° Básico',c:15,k:1},{r:1152,n:'5° Básico',c:15,k:1},{r:1152,n:'6° Básico',c:15,k:1},
+  {r:1153,n:'1° Básico',c:3,k:1},{r:1153,n:'2° Básico',c:3,k:1},{r:1153,n:'3° Básico',c:3,k:1},{r:1153,n:'4° Básico',c:3,k:1},
+  {r:1153,n:'5° Básico',c:3,k:1},{r:1153,n:'6° Básico',c:3,k:1},
+  {r:1156,n:'1° Básico',c:10,k:1},{r:1156,n:'2° Básico',c:10,k:1},{r:1156,n:'3° Básico',c:10,k:1},{r:1156,n:'4° Básico',c:10,k:1},
+  {r:1156,n:'5° Básico',c:10,k:1},{r:1156,n:'6° Básico',c:10,k:1},{r:1156,n:'7° Básico',c:20,k:1},{r:1156,n:'8° Básico',c:20,k:1},
+  {r:1157,n:'Pre-Kínder',c:10,k:1},{r:1157,n:'Kínder',c:10,k:1},{r:1157,n:'1° Básico',c:10,k:1},{r:1157,n:'2° Básico',c:10,k:1},
+  {r:1157,n:'3° Básico',c:10,k:1},{r:1157,n:'4° Básico',c:10,k:1},{r:1157,n:'5° Básico',c:10,k:1},{r:1157,n:'6° Básico',c:10,k:1},
+  {r:1158,n:'1° Básico',c:5,k:1},{r:1158,n:'2° Básico',c:5,k:1},{r:1158,n:'3° Básico',c:5,k:1},{r:1158,n:'4° Básico',c:5,k:1},
+  {r:1158,n:'5° Básico',c:5,k:1},{r:1158,n:'6° Básico',c:5,k:1},
+  {r:1160,n:'Pre-Kínder',c:6,k:1},{r:1160,n:'Kínder',c:6,k:1},{r:1160,n:'1° Básico',c:4,k:1},{r:1160,n:'2° Básico',c:4,k:1},
+  {r:1160,n:'3° Básico',c:3,k:1},{r:1160,n:'4° Básico',c:3,k:1},{r:1160,n:'5° Básico',c:3,k:1},{r:1160,n:'6° Básico',c:3,k:1},
+  {r:1161,n:'Pre-Kínder',c:26,k:1},{r:1161,n:'Kínder',c:26,k:1},{r:1161,n:'1° Básico',c:26,k:1},{r:1161,n:'2° Básico',c:26,k:1},
+  {r:1161,n:'3° Básico',c:26,k:1},{r:1161,n:'4° Básico',c:26,k:1},{r:1161,n:'5° Básico',c:26,k:1},{r:1161,n:'6° Básico',c:26,k:1},
+  {r:1161,n:'7° Básico',c:26,k:1},{r:1161,n:'8° Básico',c:26,k:1},
+  {r:1167,n:'1° Medio',c:190,k:5},{r:1167,n:'2° Medio',c:152,k:4},{r:1167,n:'3° Medio',c:38,k:1},{r:1167,n:'4° Medio',c:38,k:1},
+  {r:1167,n:'3° Medio',esp:'ADMINISTRACIÓN',c:38,k:1},{r:1167,n:'4° Medio',esp:'ADMINISTRACIÓN',c:38,k:1},
+  {r:1167,n:'3° Medio',esp:'MECÁNICA AUTOMOTRIZ',c:38,k:1},{r:1167,n:'4° Medio',esp:'MECÁNICA AUTOMOTRIZ',c:38,k:1},
+  {r:1167,n:'3° Medio',esp:'GASTRONOMÍA',c:38,k:1},{r:1167,n:'4° Medio',esp:'GASTRONOMÍA',c:38,k:1},
+  {r:1168,n:'Pre-Kínder',c:70,k:2},{r:1168,n:'Kínder',c:70,k:2},{r:1168,n:'1° Básico',c:70,k:2},{r:1168,n:'2° Básico',c:70,k:2},
+  {r:1168,n:'3° Básico',c:70,k:2},{r:1168,n:'4° Básico',c:70,k:2},{r:1168,n:'5° Básico',c:70,k:2},{r:1168,n:'6° Básico',c:70,k:2},
+  {r:1168,n:'7° Básico',c:70,k:2},{r:1168,n:'8° Básico',c:70,k:2},
+  {r:1170,n:'Pre-Kínder',c:18,k:1},{r:1170,n:'Kínder',c:18,k:1},{r:1170,n:'1° Básico',c:18,k:1},{r:1170,n:'2° Básico',c:19,k:1},
+  {r:1170,n:'3° Básico',c:18,k:1},{r:1170,n:'4° Básico',c:18,k:1},{r:1170,n:'5° Básico',c:18,k:1},{r:1170,n:'6° Básico',c:18,k:1},
+  {r:1170,n:'7° Básico',c:18,k:1},{r:1170,n:'8° Básico',c:18,k:1},
+  {r:1171,n:'1° Básico',c:8,k:1},{r:1171,n:'2° Básico',c:8,k:1},{r:1171,n:'3° Básico',c:8,k:1},{r:1171,n:'4° Básico',c:8,k:1},
+  {r:1171,n:'5° Básico',c:8,k:1},{r:1171,n:'6° Básico',c:8,k:1},
+  {r:1173,n:'Pre-Kínder',c:20,k:1},{r:1173,n:'Kínder',c:20,k:1},{r:1173,n:'1° Básico',c:20,k:1},{r:1173,n:'2° Básico',c:20,k:1},
+  {r:1173,n:'3° Básico',c:20,k:1},{r:1173,n:'4° Básico',c:20,k:1},{r:1173,n:'5° Básico',c:20,k:1},{r:1173,n:'6° Básico',c:20,k:1},
+  {r:1173,n:'7° Básico',c:20,k:1},{r:1173,n:'8° Básico',c:20,k:1},
+  {r:1174,n:'Pre-Kínder',c:15,k:1},{r:1174,n:'Kínder',c:15,k:1},{r:1174,n:'1° Básico',c:15,k:1},{r:1174,n:'2° Básico',c:15,k:1},
+  {r:1174,n:'3° Básico',c:10,k:1},{r:1174,n:'4° Básico',c:15,k:1},{r:1174,n:'5° Básico',c:20,k:1},{r:1174,n:'6° Básico',c:25,k:1},
+  {r:1174,n:'7° Básico',c:20,k:1},{r:1174,n:'8° Básico',c:10,k:1},
+  {r:1176,n:'Pre-Kínder',c:10,k:10},{r:1176,n:'Kínder',c:10,k:10},{r:1176,n:'1° Básico',c:10,k:10},{r:1176,n:'2° Básico',c:10,k:10},
+  {r:1176,n:'3° Básico',c:10,k:10},{r:1176,n:'4° Básico',c:10,k:10},{r:1176,n:'5° Básico',c:10,k:10},{r:1176,n:'6° Básico',c:10,k:10},
+  {r:1178,n:'Pre-Kínder',c:25,k:1},{r:1178,n:'Kínder',c:25,k:1},{r:1178,n:'1° Básico',c:25,k:1},{r:1178,n:'2° Básico',c:25,k:1},
+  {r:1178,n:'3° Básico',c:25,k:1},{r:1178,n:'4° Básico',c:25,k:1},{r:1178,n:'5° Básico',c:25,k:1},{r:1178,n:'6° Básico',c:25,k:1},
+  {r:1178,n:'7° Básico',c:25,k:1},{r:1178,n:'8° Básico',c:25,k:1},
+  {r:1180,n:'Pre-Kínder',c:24,k:1},{r:1180,n:'Kínder',c:24,k:1},{r:1180,n:'1° Básico',c:24,k:1},{r:1180,n:'2° Básico',c:24,k:1},
+  {r:1180,n:'3° Básico',c:24,k:1},{r:1180,n:'4° Básico',c:24,k:1},{r:1180,n:'5° Básico',c:23,k:1},{r:1180,n:'6° Básico',c:24,k:1},
+  {r:1180,n:'7° Básico',c:30,k:1},{r:1180,n:'8° Básico',c:30,k:1},
+  {r:1181,n:'1° Básico',c:3,k:1},{r:1181,n:'2° Básico',c:3,k:1},{r:1181,n:'3° Básico',c:3,k:1},{r:1181,n:'4° Básico',c:3,k:1},
+  {r:1181,n:'5° Básico',c:3,k:1},{r:1181,n:'6° Básico',c:3,k:1},
+  {r:1182,n:'1° Básico',c:2,k:1},{r:1182,n:'2° Básico',c:1,k:1},{r:1182,n:'3° Básico',c:1,k:1},{r:1182,n:'4° Básico',c:1,k:1},
+  {r:1182,n:'5° Básico',c:2,k:1},{r:1182,n:'6° Básico',c:5,k:1},
+  {r:1191,n:'Pre-Kínder',c:30,k:1},{r:1191,n:'Kínder',c:30,k:1},{r:1191,n:'1° Básico',c:30,k:1},{r:1191,n:'2° Básico',c:30,k:1},
+  {r:1191,n:'3° Básico',c:35,k:1},{r:1191,n:'4° Básico',c:35,k:1},{r:1191,n:'5° Básico',c:35,k:1},{r:1191,n:'6° Básico',c:40,k:1},
+  {r:1191,n:'7° Básico',c:35,k:1},{r:1191,n:'8° Básico',c:35,k:1},
+  {r:1192,n:'Pre-Kínder',c:32,k:1},{r:1192,n:'Kínder',c:32,k:1},{r:1192,n:'1° Básico',c:32,k:1},{r:1192,n:'2° Básico',c:32,k:1},
+  {r:1192,n:'3° Básico',c:36,k:1},{r:1192,n:'4° Básico',c:30,k:1},{r:1192,n:'5° Básico',c:34,k:1},{r:1192,n:'6° Básico',c:37,k:1},
+  {r:1192,n:'7° Básico',c:34,k:1},{r:1192,n:'8° Básico',c:34,k:1},
+  {r:11199,n:'Pre-Kínder',c:30,k:1},{r:11199,n:'Kínder',c:30,k:1},{r:11199,n:'1° Básico',c:35,k:1},{r:11199,n:'2° Básico',c:35,k:1},
+  {r:11199,n:'3° Básico',c:35,k:1},{r:11199,n:'4° Básico',c:35,k:1},{r:11199,n:'5° Básico',c:35,k:1},{r:11199,n:'6° Básico',c:70,k:2},
+  {r:11199,n:'7° Básico',c:70,k:2},{r:11199,n:'8° Básico',c:70,k:2},{r:11199,n:'1° Medio',c:72,k:2},{r:11199,n:'2° Medio',c:72,k:2},
+  {r:11199,n:'3° Medio',c:72,k:2},{r:11199,n:'4° Medio',c:72,k:2},
+  {r:11206,n:'1° Básico',c:5,k:1},{r:11206,n:'2° Básico',c:5,k:1},{r:11206,n:'3° Básico',c:5,k:1},{r:11206,n:'4° Básico',c:5,k:1},
+  {r:11206,n:'5° Básico',c:5,k:1},{r:11206,n:'6° Básico',c:5,k:1},
+  {r:12299,n:'1° Básico',c:3,k:1},{r:12299,n:'2° Básico',c:3,k:1},{r:12299,n:'3° Básico',c:3,k:1},{r:12299,n:'4° Básico',c:5,k:1},
+  {r:12299,n:'5° Básico',c:3,k:1},{r:12299,n:'6° Básico',c:3,k:1},
+  {r:12336,n:'1° Medio',c:120,k:4},{r:12336,n:'2° Medio',c:120,k:4},
+  {r:12336,n:'3° Medio',esp:'EXPLOTACIÓN MINERA',c:40,k:1},{r:12336,n:'4° Medio',esp:'EXPLOTACIÓN MINERA',c:40,k:1},
+  {r:12336,n:'3° Medio',esp:'METALURGIA EXTRACTIVA',c:40,k:1},{r:12336,n:'4° Medio',esp:'METALURGIA EXTRACTIVA',c:40,k:1},
+  {r:12336,n:'3° Medio',esp:'ASISTENCIA EN GEOLOGÍA',c:40,k:1},{r:12336,n:'4° Medio',esp:'ASISTENCIA EN GEOLOGÍA',c:40,k:1},
+  {r:14479,n:'Pre-Kínder',c:30,k:1},{r:14479,n:'Kínder',c:50,k:2},{r:14479,n:'1° Básico',c:50,k:2},{r:14479,n:'2° Básico',c:50,k:2},
+  {r:14479,n:'3° Básico',c:50,k:2},{r:14479,n:'4° Básico',c:50,k:2},{r:14479,n:'5° Básico',c:60,k:2},{r:14479,n:'6° Básico',c:60,k:2},
+  {r:14479,n:'7° Básico',c:60,k:2},{r:14479,n:'8° Básico',c:60,k:2},
+  {r:40099,n:'1° Medio',c:60,k:2},{r:40099,n:'2° Medio',c:60,k:2},
+  {r:40099,n:'3° Medio',esp:'SERVICIOS DE HOTELERÍA',c:30,k:1},{r:40099,n:'4° Medio',esp:'SERVICIOS DE HOTELERÍA',c:30,k:1},
+  {r:40099,n:'3° Medio',esp:'ACUICULTURA',c:30,k:1},{r:40099,n:'4° Medio',esp:'ACUICULTURA',c:30,k:1},
+  {r:40242,n:'1° Básico',c:32,k:1},{r:40242,n:'2° Básico',c:32,k:1},{r:40242,n:'3° Básico',c:32,k:1},{r:40242,n:'4° Básico',c:32,k:1},
+  {r:40242,n:'5° Básico',c:32,k:1},{r:40242,n:'6° Básico',c:32,k:1},{r:40242,n:'7° Básico',c:32,k:1},{r:40242,n:'8° Básico',c:32,k:1},
+];
+
+const EE_DATA = [
+  {rbd:1167,nombre:"LICEO Y ESCUELA MUNICIPAL",comuna:"Cabildo",area:"Urbano",tipo:"Liceo",categoria:"LICEO",matricula:453,cuposDec:685,demanda:212,cuposLinea:0,cuposLic:58,cuposMTT:128,cuposTotal:186,noAplica:0,validaMar:"NO",validaAbr:"PENDIENTE",encargado:"MAURICIO BRITO",brecha:26,pctCob:0.877,pctDep:0.468,lat:-32.42717,lng:-71.066162},
+  {rbd:1168,nombre:"ESCUELA HANS WENKE MENGERS",comuna:"Cabildo",area:"Urbano",tipo:"Escuela",categoria:"ESCUELA",matricula:323,cuposDec:680,demanda:16,cuposLinea:0,cuposLic:15,cuposMTT:0,cuposTotal:15,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"LUIS LILLO",brecha:1,pctCob:0.9375,pctDep:0.050,lat:-32.433739,lng:-71.06971},
+  {rbd:1170,nombre:"ESCUELA BASICA VALLE DE ARTIFICIO",comuna:"Cabildo",area:"Urbano",tipo:"Escuela",categoria:"ESCUELA",matricula:129,cuposDec:192,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.394451,lng:-71.094757},
+  {rbd:1171,nombre:"ESCUELA BASICA LA FRONTERA DE ALICAHUE",comuna:"Cabildo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:13,cuposDec:48,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.351131,lng:-70.782494},
+  {rbd:1173,nombre:"ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO",comuna:"Cabildo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:113,cuposDec:203,demanda:42,cuposLinea:0,cuposLic:42,cuposMTT:0,cuposTotal:42,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"PABLO CESAR LAZCANO",brecha:0,pctCob:1.0,pctDep:0.372,lat:-32.3881,lng:-70.853813},
+  {rbd:1174,nombre:"ESCUELA BASICA SAN LORENZO",comuna:"Cabildo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:91,cuposDec:170,demanda:27,cuposLinea:0,cuposLic:24,cuposMTT:0,cuposTotal:24,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"SARA LEIVA",brecha:3,pctCob:0.889,pctDep:0.297,lat:-32.434921,lng:-70.983932},
+  {rbd:1176,nombre:"ESCUELA PABLO NERUDA",comuna:"Cabildo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:37,cuposDec:120,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.404999,lng:-71.034103},
+  {rbd:1178,nombre:"ESCUELA BASICA LA VINA",comuna:"Cabildo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:159,cuposDec:250,demanda:56,cuposLinea:0,cuposLic:56,cuposMTT:0,cuposTotal:56,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"JACQUELINE FIERRO",brecha:0,pctCob:1.0,pctDep:0.352,lat:-32.42622,lng:-70.920151},
+  {rbd:1180,nombre:"ESCUELA BASICA G-45",comuna:"Cabildo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:231,cuposDec:250,demanda:29,cuposLinea:0,cuposLic:29,cuposMTT:0,cuposTotal:29,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"MARIELA CORTES PAEZ",brecha:0,pctCob:1.0,pctDep:0.126,lat:-32.44672,lng:-70.947403},
+  {rbd:1181,nombre:"ESCUELA BASICA LOS ANGELES",comuna:"Cabildo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:6,cuposDec:30,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.494251,lng:-70.962929},
+  {rbd:1182,nombre:"ESCUELA BASICA G-47",comuna:"Cabildo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:8,cuposDec:12,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.525879,lng:-70.925194},
+  {rbd:11196,nombre:"CTRO.REC.ATENC.DIVERS.CRAD PAUL PERCY HARRIS",comuna:"Cabildo",area:"Urbano",tipo:"Escuela Especial",categoria:"ESCUELA ESPECIAL",matricula:null,cuposDec:null,demanda:7,cuposLinea:0,cuposLic:3,cuposMTT:4,cuposTotal:7,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"NICOLEY BASCUÑAN",brecha:0,pctCob:1.0,pctDep:null,lat:-32.432453,lng:-71.07298},
+  {rbd:11206,nombre:"ESCUELA MUNICIPAL LAS PUERTAS",comuna:"Cabildo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:9,cuposDec:30,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.484169,lng:-70.93235},
+  {rbd:12336,nombre:"LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA",comuna:"Cabildo",area:"Urbano",tipo:"Liceo",categoria:"LICEO",matricula:469,cuposDec:476,demanda:181,cuposLinea:0,cuposLic:45,cuposMTT:136,cuposTotal:181,noAplica:0,validaMar:"NO",validaAbr:"PENDIENTE",encargado:"SANDRA ESTAY",brecha:0,pctCob:1.0,pctDep:0.386,lat:-32.43253,lng:-71.07803},
+  {rbd:14479,nombre:"ESCUELA BASICA MUNICIPAL ARAUCARIA",comuna:"Cabildo",area:"Urbano",tipo:"Escuela",categoria:"ESCUELA",matricula:340,cuposDec:520,demanda:6,cuposLinea:0,cuposLic:5,cuposMTT:0,cuposTotal:5,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"VANESSA ALCOTA",brecha:1,pctCob:0.833,pctDep:0.018,lat:-32.426559,lng:-71.068977},
+  {rbd:40242,nombre:"COLEGIO BICENTENARIO",comuna:"Cabildo",area:"Urbano",tipo:"Escuela",categoria:"ESCUELA",matricula:222,cuposDec:256,demanda:4,cuposLinea:0,cuposLic:4,cuposMTT:0,cuposTotal:4,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"VICTOR VALDENEGRO",brecha:0,pctCob:1.0,pctDep:0.018,lat:-32.43409,lng:-71.079422},
+  {rbd:5402002,nombre:"RINCONCITO",comuna:"Cabildo",area:"Rural",tipo:"Sala Cuna y Jardín Infantil",categoria:"SALA CUNA Y JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.440039,lng:-71.078977},
+  {rbd:5402004,nombre:"SANTA MARTA",comuna:"Cabildo",area:"Urbano",tipo:"Sala Cuna y Jardín Infantil",categoria:"SALA CUNA Y JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.40055802,lng:-71.09233117},
+  // LA LIGUA
+  {rbd:1120,nombre:"CENTRO DE EDUCACION DE ADULTOS LA LIGUA",comuna:"La Ligua",area:"Urbano",tipo:"Liceo",categoria:"LICEO",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.44651794,lng:-71.2309494},
+  {rbd:1121,nombre:"LICEO PULMAHUE DE LA LIGUA",comuna:"La Ligua",area:"Urbano",tipo:"Liceo",categoria:"LICEO",matricula:537,cuposDec:605,demanda:196,cuposLinea:6,cuposLic:35,cuposMTT:91,cuposTotal:132,noAplica:63,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"VALENTINA REINOSO",brecha:1,pctCob:0.992,pctDep:0.365,lat:-32.44585,lng:-71.230652},
+  {rbd:1122,nombre:"ESCUELA REPUBLICA DE VENEZUELA",comuna:"La Ligua",area:"Urbano",tipo:"Escuela",categoria:"ESCUELA",matricula:313,cuposDec:352,demanda:17,cuposLinea:3,cuposLic:14,cuposMTT:0,cuposTotal:17,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"MARIA CAROLINA PEÑA",brecha:0,pctCob:1.0,pctDep:0.054,lat:-32.44978,lng:-71.230087},
+  {rbd:1123,nombre:"ESCUELA GABRIELA MISTRAL",comuna:"La Ligua",area:"Urbano",tipo:"Colegio",categoria:"COLEGIO",matricula:728,cuposDec:795,demanda:127,cuposLinea:1,cuposLic:36,cuposMTT:63,cuposTotal:100,noAplica:0,validaMar:"NO",validaAbr:"PENDIENTE",encargado:"ROSA OLIVARES VEGA",brecha:27,pctCob:0.787,pctDep:0.174,lat:-32.44978,lng:-71.232132},
+  {rbd:1125,nombre:"ESCUELA DIEGO PORTALES",comuna:"La Ligua",area:"Urbano",tipo:"Escuela",categoria:"ESCUELA",matricula:130,cuposDec:227,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.446461,lng:-71.283279},
+  {rbd:1126,nombre:"ESCUELA ESPECIAL SOL NACIENTE",comuna:"La Ligua",area:"Urbano",tipo:"Escuela Especial",categoria:"ESCUELA ESPECIAL",matricula:null,cuposDec:null,demanda:28,cuposLinea:28,cuposLic:0,cuposMTT:0,cuposTotal:28,noAplica:0,validaMar:"NO APLICA",validaAbr:"PENDIENTE",encargado:"MARCELO MATAMALA",brecha:0,pctCob:1.0,pctDep:null,lat:-32.44747,lng:-71.23663},
+  {rbd:1128,nombre:"ESCUELA COMUNIDADES DE VALLE HERMOSO",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:278,cuposDec:321,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.438622,lng:-71.210793},
+  {rbd:1129,nombre:"ESCUELA ANGEL MENAY",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:12,cuposDec:26,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.412281,lng:-71.215149},
+  {rbd:1130,nombre:"ESC. BASICA LOS HORNOS DE HUAQUEN",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:33,cuposDec:37,demanda:29,cuposLinea:0,cuposLic:29,cuposMTT:0,cuposTotal:29,noAplica:0,validaMar:"NO",validaAbr:"PENDIENTE",encargado:"KATHERTINE GODOY",brecha:0,pctCob:1.0,pctDep:0.879,lat:-32.23756,lng:-71.344963},
+  {rbd:1131,nombre:"ESC. BASICA CASAS VIEJAS DE LONGOTOMA",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:30,cuposDec:34,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.338921,lng:-71.318733},
+  {rbd:1132,nombre:"ESCUELA BASICA POZA VERDE",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:167,cuposDec:187,demanda:76,cuposLinea:0,cuposLic:76,cuposMTT:0,cuposTotal:76,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"CAROLINA ROSALES",brecha:0,pctCob:1.0,pctDep:0.455,lat:-32.39204,lng:-71.376633},
+  {rbd:1133,nombre:"ESC.BASICA LAS CASAS DE HUAQUEN",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:73,cuposDec:80,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.332409,lng:-71.404457},
+  {rbd:1134,nombre:"CARMEN SANCHEZ ARAYA",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:15,cuposDec:25,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.375839,lng:-71.355011},
+  {rbd:1135,nombre:"ESCUELA BASICA LOS MOLLES",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:52,cuposDec:60,demanda:18,cuposLinea:0,cuposLic:18,cuposMTT:0,cuposTotal:18,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"MACARENA SANTOS",brecha:0,pctCob:1.0,pctDep:0.346,lat:-32.23172,lng:-71.509933},
+  {rbd:1136,nombre:"ESCUELA BASICA PUYANCON",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:64,cuposDec:112,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.309711,lng:-71.217072},
+  {rbd:1137,nombre:"ESCUELA BASICA HORTENCIA POWELL S.",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:23,cuposDec:30,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.335602,lng:-71.18029},
+  {rbd:1139,nombre:"ESCUELA MINISTRO GOMEZ MILLAS",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:34,cuposDec:70,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.4422,lng:-71.188499},
+  {rbd:1140,nombre:"ESCUELA BASICA CARLOS ARIZTIA RUIZ",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:42,cuposDec:60,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.31897,lng:-71.288788},
+  {rbd:1142,nombre:"ESCUELA LA CANELA",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:46,cuposDec:100,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.36237,lng:-71.158661},
+  {rbd:1143,nombre:"ESCUELA BASICA QUEBRADILLA",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:32,cuposDec:37,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.48983,lng:-71.258789},
+  {rbd:1144,nombre:"ESCUELA BASICA PICHICUY",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:36,cuposDec:60,demanda:20,cuposLinea:0,cuposLic:18,cuposMTT:0,cuposTotal:18,noAplica:0,validaMar:"NO",validaAbr:"PENDIENTE",encargado:"MARIA PIA OSORIO",brecha:2,pctCob:0.9,pctDep:0.556,lat:-32.33988,lng:-71.45867},
+  {rbd:1145,nombre:"ESCUELA ENRIQUE DOLL ROJAS",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:51,cuposDec:80,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.476089,lng:-71.186836},
+  {rbd:11199,nombre:"COLEGIO LUIS CRUZ MARTINEZ",comuna:"La Ligua",area:"Urbano",tipo:"Colegio",categoria:"COLEGIO",matricula:635,cuposDec:739,demanda:70,cuposLinea:1,cuposLic:35,cuposMTT:49,cuposTotal:85,noAplica:0,validaMar:"SI",validaAbr:"PENDIENTE",encargado:"LISETTE FERNANDEZ",brecha:-15,pctCob:1.214,pctDep:0.110,lat:-32.45105,lng:-71.232498},
+  {rbd:12299,nombre:"ESCUELA BASICA ANEXO PICHILEMU",comuna:"La Ligua",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:8,cuposDec:20,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.38187,lng:-71.121147},
+  {rbd:5401002,nombre:"SANTA TERESA",comuna:"La Ligua",area:"Urbano",tipo:"Sala Cuna y Jardín Infantil",categoria:"SALA CUNA Y JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.44764214,lng:-71.23046215},
+  {rbd:5401003,nombre:"PULMAHUE",comuna:"La Ligua",area:"Urbano",tipo:"Sala Cuna y Jardín Infantil",categoria:"SALA CUNA Y JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.44682554,lng:-71.2308677},
+  {rbd:5401004,nombre:"MANITOS DE COLORES",comuna:"La Ligua",area:"Urbano",tipo:"Jardín Infantil",categoria:"JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.446253,lng:-71.283897},
+  {rbd:5401005,nombre:"MANITOS DE ANGEL",comuna:"La Ligua",area:"Rural",tipo:"Sala Cuna y Jardín Infantil",categoria:"SALA CUNA Y JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.30968194,lng:-71.21688987},
+  {rbd:5401006,nombre:"EL CARMEN CUNCUNITA",comuna:"La Ligua",area:"Urbano",tipo:"Sala Cuna y Jardín Infantil",categoria:"SALA CUNA Y JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.47654455,lng:-71.18605776},
+  {rbd:5401007,nombre:"HUMBERTO BASULTO",comuna:"La Ligua",area:"Urbano",tipo:"Sala Cuna y Jardín Infantil",categoria:"SALA CUNA Y JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.45172383,lng:-71.22610072},
+  // PAPUDO
+  {rbd:1191,nombre:"ESCUELA PAPUDO",comuna:"Papudo",area:"Urbano",tipo:"Escuela",categoria:"ESCUELA",matricula:301,cuposDec:338,demanda:93,cuposLinea:73,cuposLic:0,cuposMTT:0,cuposTotal:73,noAplica:3,validaMar:"NO APLICA",validaAbr:"PENDIENTE",encargado:"DARIO IBACACHE",brecha:17,pctCob:0.811,pctDep:0.309,lat:-32.507349,lng:-71.439671},
+  {rbd:1192,nombre:"ESCUELA RURAL PULLALLY",comuna:"Papudo",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:296,cuposDec:340,demanda:69,cuposLinea:52,cuposLic:0,cuposMTT:0,cuposTotal:52,noAplica:13,validaMar:"NO APLICA",validaAbr:"PENDIENTE",encargado:"ALDO BUSTOS",brecha:4,pctCob:0.929,pctDep:0.233,lat:-32.43726,lng:-71.314987},
+  {rbd:40099,nombre:"LICEO TECNICO PROFESIONAL PAPUDO",comuna:"Papudo",area:"Urbano",tipo:"Liceo",categoria:"LICEO",matricula:196,cuposDec:250,demanda:99,cuposLinea:56,cuposLic:41,cuposMTT:0,cuposTotal:97,noAplica:0,validaMar:"NO",validaAbr:"PENDIENTE",encargado:"GABRIELA BASTÍAS",brecha:2,pctCob:0.98,pctDep:0.505,lat:-32.509251,lng:-71.445961},
+  {rbd:5403001,nombre:"RAYITO DE SOL",comuna:"Papudo",area:"Rural",tipo:"Sala Cuna y Jardín Infantil",categoria:"SALA CUNA Y JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.435278,lng:-71.317553},
+  {rbd:5403002,nombre:"BARQUITO DE PAPEL",comuna:"Papudo",area:"Urbano",tipo:"Jardín Infantil",categoria:"JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.507349,lng:-71.439671},
+  // PETORCA
+  {rbd:1147,nombre:"ESCUELA FERNANDO GARCIA OLDINI",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:101,cuposDec:200,demanda:101,cuposLinea:0,cuposLic:101,cuposMTT:0,cuposTotal:101,noAplica:0,validaMar:"SI",validaAbr:null,encargado:"PAULINA MARTINEZ HIDALGO",brecha:0,pctCob:1.0,pctDep:1.0,lat:-32.28054,lng:-71.011673},
+  {rbd:1148,nombre:"LICEO JOSE MANUEL BORGOÑO NUNEZ",comuna:"Petorca",area:"Urbano",tipo:"Colegio",categoria:"COLEGIO",matricula:389,cuposDec:541,demanda:226,cuposLinea:0,cuposLic:226,cuposMTT:0,cuposTotal:226,noAplica:0,validaMar:"SI",validaAbr:null,encargado:"ANA JUDITH CARVAJAL",brecha:0,pctCob:1.0,pctDep:0.581,lat:-32.251511,lng:-70.930328},
+  {rbd:1149,nombre:"LICEO CORDILLERA",comuna:"Petorca",area:"Rural",tipo:"Colegio",categoria:"COLEGIO",matricula:148,cuposDec:420,demanda:113,cuposLinea:39,cuposLic:74,cuposMTT:0,cuposTotal:113,noAplica:0,validaMar:"SI",validaAbr:null,encargado:"DEBORA HIDALGO",brecha:0,pctCob:1.0,pctDep:0.764,lat:-32.22171,lng:-70.832336},
+  {rbd:1150,nombre:"ESCUELA BASICA NEFTALI REYES B.",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:7,cuposDec:30,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.321411,lng:-71.058487},
+  {rbd:1151,nombre:"ESCUELA BASICA VILLA SANTA ANA",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:5,cuposDec:16,demanda:3,cuposLinea:0,cuposLic:3,cuposMTT:0,cuposTotal:3,noAplica:0,validaMar:"SI",validaAbr:null,encargado:"YESENIA GIL MORALES",brecha:0,pctCob:1.0,pctDep:0.6,lat:-32.179588,lng:-70.811203},
+  {rbd:1152,nombre:"ESCUELA EDUARDO FREI MONTALVA",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:69,cuposDec:112,demanda:69,cuposLinea:0,cuposLic:68,cuposMTT:0,cuposTotal:68,noAplica:1,validaMar:"NO",validaAbr:null,encargado:"JIMENA FARIAS",brecha:0,pctCob:1.0,pctDep:1.0,lat:-32.238201,lng:-70.874077},
+  {rbd:1153,nombre:"ESCUELA BASICA EL CRUCERO",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:3,cuposDec:18,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.0923,lng:-70.800072},
+  {rbd:1156,nombre:"ESCUELA BASICA G-24",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:42,cuposDec:100,demanda:34,cuposLinea:0,cuposLic:34,cuposMTT:0,cuposTotal:34,noAplica:0,validaMar:"SI",validaAbr:null,encargado:"XIMENA PACHECO",brecha:0,pctCob:1.0,pctDep:0.81,lat:-32.252949,lng:-71.137863},
+  {rbd:1157,nombre:"ESCUELA BASICA LOS ALAMOS EL SOBRANTE",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:33,cuposDec:80,demanda:28,cuposLinea:0,cuposLic:28,cuposMTT:0,cuposTotal:28,noAplica:0,validaMar:"SI",validaAbr:null,encargado:"KARINA MATURANA",brecha:0,pctCob:1.0,pctDep:0.848,lat:-32.227631,lng:-70.807617},
+  {rbd:1158,nombre:"ESCUELA BASICA BENANCIO PEREZ",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:7,cuposDec:30,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.196499,lng:-71.132347},
+  {rbd:1160,nombre:"ESCUELA HOGAR FRONTERIZA DE CHALACO",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:9,cuposDec:32,demanda:12,cuposLinea:0,cuposLic:12,cuposMTT:0,cuposTotal:12,noAplica:0,validaMar:"SI",validaAbr:null,encargado:"WILLIAM SANTANA",brecha:0,pctCob:1.333,pctDep:1.333,lat:-32.187481,lng:-70.803452},
+  {rbd:1161,nombre:"ESCUELA BASICA PEDEGUA",comuna:"Petorca",area:"Rural",tipo:"Escuela",categoria:"ESCUELA",matricula:173,cuposDec:260,demanda:102,cuposLinea:0,cuposLic:102,cuposMTT:0,cuposTotal:102,noAplica:0,validaMar:"SI",validaAbr:null,encargado:"MARITZA LEIVA",brecha:0,pctCob:1.0,pctDep:0.59,lat:-32.357109,lng:-71.069817},
+  {rbd:5404001,nombre:"LAMPARITA",comuna:"Petorca",area:"Urbano",tipo:"Sala Cuna y Jardín Infantil",categoria:"SALA CUNA Y JARDÍN INFANTIL",matricula:null,cuposDec:null,demanda:52,cuposLinea:0,cuposLic:52,cuposMTT:0,cuposTotal:52,noAplica:0,validaMar:"SI",validaAbr:null,encargado:"PAOLA ZAMORA",brecha:0,pctCob:1.0,pctDep:null,lat:-32.248611,lng:-70.924889},
+  {rbd:5404002,nombre:"MUNDO DE PEQUES-CHINCOLCO",comuna:"Petorca",area:"Rural",tipo:"Sala Cuna",categoria:"SALA CUNA",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.231847,lng:-70.854405},
+  {rbd:5404003,nombre:"MIS PRIMEROS PASOS",comuna:"Petorca",area:"Rural",tipo:"Sala Cuna",categoria:"SALA CUNA",matricula:null,cuposDec:null,demanda:null,cuposLinea:null,cuposLic:null,cuposMTT:null,cuposTotal:null,noAplica:null,validaMar:null,validaAbr:null,encargado:null,brecha:null,pctCob:null,pctDep:null,lat:-32.35760738,lng:-71.07023799},
+];
+
+const LINEAS_DATA = [
+  {n:1,linea:"1 - LA LIGUA",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Bus",cap:46,asig:36,disp:10,pctOcup:0.783,patente:"BWSW74",proveedor:"TRANSPORTES OLGUIN"},
+  {n:2,linea:"2 - LA LIGUA",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Bus",cap:45,asig:39,disp:6,pctOcup:0.867,patente:"ZW1553",proveedor:"TRANSPORTES OLGUIN"},
+  {n:3,linea:"3 - LA LIGUA",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Bus",cap:44,asig:37,disp:7,pctOcup:0.841,patente:"GFCL24",proveedor:"RODRIGO ADOLFO ORDENES CHACANA"},
+  {n:4,linea:"4 - LA LIGUA",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:31,asig:18,disp:13,pctOcup:0.581,patente:"DSTX84",proveedor:"TRANSPORTES BEIZA SPA"},
+  {n:5,linea:"5 - LA LIGUA",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:33,asig:18,disp:15,pctOcup:0.545,patente:"JPZC11",proveedor:"TRANSPORTES OLGUIN"},
+  {n:6,linea:"6 - LA LIGUA",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:29,asig:29,disp:0,pctOcup:1.0,patente:"CBXV17",proveedor:"TRANSPORTES BEIZA SPA"},
+  {n:7,linea:"7 - LA LIGUA",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Bus",cap:48,asig:42,disp:6,pctOcup:0.875,patente:"WU1978",proveedor:"TRANSPORTES OLGUIN"},
+  {n:8,linea:"8 - LA LIGUA",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Bus",cap:48,asig:43,disp:5,pctOcup:0.896,patente:"FXZX87",proveedor:"TRANSPORTES OLGUIN"},
+  {n:9,linea:"9 - CABILDO",comuna:"Cabildo",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Furgon",cap:58,asig:56,disp:2,pctOcup:0.966,patente:"KGCR74",proveedor:"CRISTIAN DEL TRANSITO QUIROZ VILCHES"},
+  {n:10,linea:"10 - CABILDO",comuna:"Cabildo",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Furgon",cap:40,asig:42,disp:-2,pctOcup:1.05,patente:"RYJT65",proveedor:"CAROLINA MANZANO SEGURA"},
+  {n:11,linea:"11 - CABILDO",comuna:"Cabildo",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:29,asig:24,disp:5,pctOcup:0.828,patente:"CFKS30",proveedor:"SERVICIOS TRAVEL PARAISO SPA"},
+  {n:12,linea:"12 - CABILDO",comuna:"Cabildo",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:27,asig:29,disp:-2,pctOcup:1.074,patente:"HBGZ54",proveedor:"ALVARO OLIVARES DUBO"},
+  {n:13,linea:"13 - CABILDO",comuna:"Cabildo",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Bus",cap:90,asig:91,disp:-1,pctOcup:1.011,patente:"YP7070",proveedor:"SERVICIOS TRAVEL PARAISO SPA"},
+  {n:14,linea:"14 - CABILDO",comuna:"Cabildo",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:29,asig:39,disp:-10,pctOcup:1.345,patente:"CFKS30",proveedor:"SERVICIOS TRAVEL PARAISO SPA"},
+  {n:15,linea:"15 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Minibus",cap:30,asig:32,disp:-2,pctOcup:1.067,patente:"CPPS13",proveedor:"G&G TRANSPORTES SPA"},
+  {n:16,linea:"16 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:58,asig:58,disp:0,pctOcup:1.0,patente:"CJRL71",proveedor:"TRANSPORTES BEIZA SPA"},
+  {n:17,linea:"17 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Bus",cap:62,asig:74,disp:-12,pctOcup:1.194,patente:"GWFD19",proveedor:"EDUARDO LEONEL ALVARADO BERRIOS"},
+  {n:18,linea:"18 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:28,asig:28,disp:0,pctOcup:1.0,patente:"JHTH97",proveedor:"PEDRO DANTE SEGURA FLORES"},
+  {n:19,linea:"19 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:88,asig:101,disp:-13,pctOcup:1.148,patente:"DLRJ97",proveedor:"JOAN NICOLAS FERREIRA ROBLEDO"},
+  {n:20,linea:"20 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Minibus",cap:28,asig:102,disp:-74,pctOcup:3.643,patente:"JCGP36",proveedor:"ANGELYS ARACELLY SALAZAR ASTUDILLO"},
+  {n:null,linea:"20,1 - PETORCA",comuna:"Petorca",adj:null,activa:null,tipoAdj:null,vehiculo:"Furgon",cap:58,asig:0,disp:58,pctOcup:0,patente:"HDXB66",proveedor:null},
+  {n:21,linea:"21 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Bus",cap:72,asig:40,disp:32,pctOcup:0.556,patente:"DHYR51",proveedor:"LORETO ROJAS OLIVARES"},
+  {n:22,linea:"22 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Minibus",cap:38,asig:28,disp:10,pctOcup:0.737,patente:"CGFP18",proveedor:"G&G TRANSPORTES SPA"},
+  {n:23,linea:"23 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Furgon",cap:28,asig:28,disp:0,pctOcup:1.0,patente:"DHYR51",proveedor:"LORETO ROJAS OLIVARES"},
+  {n:24,linea:"24 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Furgon",cap:30,asig:24,disp:6,pctOcup:0.8,patente:"LXLG22",proveedor:"TRANSPORTES PATRICIA LEVIA GUAJARDO EIRL"},
+  {n:25,linea:"25 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Minibus",cap:29,asig:34,disp:-5,pctOcup:1.172,patente:"ZS7622",proveedor:"TRANSPORTES JUANA VENENCIANO LTDA"},
+  {n:26,linea:"26 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Bus",cap:88,asig:79,disp:9,pctOcup:0.898,patente:"YW4596",proveedor:"SERVICIOS TRAVEL PARAISO SPA"},
+  {n:27,linea:"27 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Furgon",cap:28,asig:15,disp:13,pctOcup:0.536,patente:"FJKJ95",proveedor:"JUAN CARLOS BUSTAMANTE BUSTAMANTE"},
+  {n:28,linea:"28 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Furgon",cap:28,asig:13,disp:15,pctOcup:0.464,patente:"FJKJ95",proveedor:"JUAN CARLOS BUSTAMANTE BUSTAMANTE"},
+  {n:29,linea:"29 - PETORCA",comuna:"Petorca",adj:"SI",activa:"SI",tipoAdj:"LICITACIÓN PÚBLICA",vehiculo:"Bus",cap:48,asig:44,disp:4,pctOcup:0.917,patente:"CVTR97",proveedor:"EDUARDO LEONEL ALVARADO BERRIOS"},
+  {n:30,linea:"30 - PAPUDO",comuna:"Papudo",adj:"SI",activa:"SI",tipoAdj:"TRATO DIRECTO",vehiculo:"Bus",cap:42,asig:41,disp:1,pctOcup:0.976,patente:"FBZB12",proveedor:"TRANSPORTES BEIZA SPA"},
+  {n:31,linea:"CTE 1481",comuna:"Cabildo",adj:"SI",activa:"SI",tipoAdj:null,vehiculo:"Bus",cap:46,asig:54,disp:-8,pctOcup:1.174,patente:null,proveedor:"MINISTERIO DE TRANSPORTE"},
+  {n:32,linea:"CTE 1895",comuna:"Cabildo",adj:"SI",activa:"SI",tipoAdj:null,vehiculo:"Bus",cap:82,asig:83,disp:-1,pctOcup:1.012,patente:null,proveedor:"MINISTERIO DE TRANSPORTE"},
+  {n:33,linea:"CTE 1946",comuna:"Cabildo",adj:"SI",activa:"SI",tipoAdj:null,vehiculo:"Bus",cap:132,asig:131,disp:1,pctOcup:0.992,patente:null,proveedor:"MINISTERIO DE TRANSPORTE"},
+  {n:34,linea:"CTE 1492",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:null,vehiculo:"Minibus",cap:49,asig:50,disp:-1,pctOcup:1.020,patente:null,proveedor:"MINISTERIO DE TRANSPORTE"},
+  {n:35,linea:"CTE 1493",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:null,vehiculo:"Bus",cap:22,asig:26,disp:-4,pctOcup:1.182,patente:null,proveedor:"MINISTERIO DE TRANSPORTE"},
+  {n:36,linea:"CTE 1494",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:null,vehiculo:"Bus",cap:27,asig:28,disp:-1,pctOcup:1.037,patente:null,proveedor:"MINISTERIO DE TRANSPORTE"},
+  {n:37,linea:"CTE 1896",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:null,vehiculo:"Bus",cap:62,asig:49,disp:13,pctOcup:0.790,patente:null,proveedor:"MINISTERIO DE TRANSPORTE"},
+  {n:38,linea:"CTE 2046",comuna:"La Ligua",adj:"SI",activa:"SI",tipoAdj:null,vehiculo:"Bus",cap:62,asig:50,disp:12,pctOcup:0.806,patente:null,proveedor:"MINISTERIO DE TRANSPORTE"},
+  {n:39,linea:"LINEA PROPIA - PAPUDO 1",comuna:"Papudo",adj:"NO APLICA",activa:"SI",tipoAdj:"NO APLICA",vehiculo:"BUS",cap:45,asig:43,disp:2,pctOcup:0.956,patente:"SWZD51",proveedor:"LINEA PROPIA PAPUDO"},
+  {n:40,linea:"LINEA PROPIA - PAPUDO 2",comuna:"Papudo",adj:"NO APLICA",activa:"SI",tipoAdj:"NO APLICA",vehiculo:"BUS",cap:45,asig:77,disp:-32,pctOcup:1.711,patente:"SWZD52",proveedor:"LINEA PROPIA PAPUDO"},
+  {n:41,linea:"LINEA PROPIA - PAPUDO 3",comuna:"Papudo",adj:"NO APLICA",activa:"SI",tipoAdj:"NO APLICA",vehiculo:"BUS",cap:90,asig:60,disp:30,pctOcup:0.667,patente:"JYTK22",proveedor:"LINEA PROPIA PAPUDO"},
+  {n:42,linea:"LINEA PROPIA - LA LIGUA 1",comuna:"La Ligua",adj:"NO APLICA",activa:"SI",tipoAdj:"NO APLICA",vehiculo:"FURGON",cap:24,asig:14,disp:10,pctOcup:0.583,patente:"LCPF10",proveedor:"LINEA PROPIA LA LIGUA"},
+  {n:43,linea:"LINEA PROPIA - LA LIGUA 2",comuna:"La Ligua",adj:"NO APLICA",activa:"SI",tipoAdj:"NO APLICA",vehiculo:"FURGON",cap:16,asig:14,disp:2,pctOcup:0.875,patente:"BPJS75",proveedor:"LINEA PROPIA LA LIGUA"},
+  {n:44,linea:"LINEA PROPIA - LA LIGUA 3",comuna:"La Ligua",adj:"NO APLICA",activa:"SI",tipoAdj:"NO APLICA",vehiculo:"MICROBUS",cap:29,asig:12,disp:17,pctOcup:0.414,patente:"FYBV71",proveedor:"LINEA PROPIA LA LIGUA"},
+  {n:45,linea:"LINEA PROPIA - PETORCA 1",comuna:"Petorca",adj:"NO APLICA",activa:"SI",tipoAdj:"NO APLICA",vehiculo:"FURGON",cap:58,asig:39,disp:19,pctOcup:0.672,patente:"KFVP26",proveedor:"LINEA PROPIA PETORCA"},
+];
+
+const LEE_DATA = [
+  {linea:"1 - LA LIGUA",comuna:"La Ligua",orden:1,rbd:1121,ee:"1121 - LICEO PULMAHUE DE LA LIGUA",benef:"-",lat:-32.44585,lng:-71.230652},
+  {linea:"1 - LA LIGUA",comuna:"La Ligua",orden:2,rbd:1123,ee:"1123 - ESCUELA GABRIELA MISTRAL",benef:"-",lat:-32.44978,lng:-71.232132},
+  {linea:"1 - LA LIGUA",comuna:"La Ligua",orden:3,rbd:11199,ee:"11199 - COLEGIO LUIS CRUZ MARTINEZ",benef:"-",lat:-32.45105,lng:-71.232498},
+  {linea:"1 - LA LIGUA",comuna:"La Ligua",orden:4,rbd:1122,ee:"1122 - ESCUELA REPUBLICA DE VENEZUELA",benef:"-",lat:-32.44978,lng:-71.230087},
+  {linea:"2 - LA LIGUA",comuna:"La Ligua",orden:1,rbd:1132,ee:"1132 - ESCUELA BASICA POZA VERDE",benef:"-",lat:-32.39204,lng:-71.376633},
+  {linea:"3 - LA LIGUA",comuna:"La Ligua",orden:1,rbd:1132,ee:"1132 - ESCUELA BASICA POZA VERDE",benef:"-",lat:-32.39204,lng:-71.376633},
+  {linea:"4 - LA LIGUA",comuna:"La Ligua",orden:1,rbd:1135,ee:"1135 - ESCUELA BASICA LOS MOLLES",benef:"-",lat:-32.23172,lng:-71.509933},
+  {linea:"5 - LA LIGUA",comuna:"La Ligua",orden:1,rbd:1144,ee:"1144 - ESCUELA BASICA PICHICUY",benef:"-",lat:-32.33988,lng:-71.45867},
+  {linea:"6 - LA LIGUA",comuna:"La Ligua",orden:1,rbd:1130,ee:"1130 - ESC. BASICA LOS HORNOS DE HUAQUEN",benef:"-",lat:-32.23756,lng:-71.344963},
+  {linea:"7 - LA LIGUA",comuna:"La Ligua",orden:1,rbd:1121,ee:"1121 - LICEO PULMAHUE DE LA LIGUA",benef:"-",lat:-32.44585,lng:-71.230652},
+  {linea:"7 - LA LIGUA",comuna:"La Ligua",orden:2,rbd:11199,ee:"11199 - COLEGIO LUIS CRUZ MARTINEZ",benef:"-",lat:-32.45105,lng:-71.232498},
+  {linea:"7 - LA LIGUA",comuna:"La Ligua",orden:3,rbd:1123,ee:"1123 - ESCUELA GABRIELA MISTRAL",benef:"-",lat:-32.44978,lng:-71.232132},
+  {linea:"8 - LA LIGUA",comuna:"La Ligua",orden:1,rbd:1121,ee:"1121 - LICEO PULMAHUE DE LA LIGUA",benef:"-",lat:-32.44585,lng:-71.230652},
+  {linea:"8 - LA LIGUA",comuna:"La Ligua",orden:2,rbd:1123,ee:"1123 - ESCUELA GABRIELA MISTRAL",benef:"-",lat:-32.44978,lng:-71.232132},
+  {linea:"8 - LA LIGUA",comuna:"La Ligua",orden:3,rbd:11199,ee:"11199 - COLEGIO LUIS CRUZ MARTINEZ",benef:"-",lat:-32.45105,lng:-71.232498},
+  {linea:"8 - LA LIGUA",comuna:"La Ligua",orden:4,rbd:1122,ee:"1122 - ESCUELA REPUBLICA DE VENEZUELA",benef:"-",lat:-32.44978,lng:-71.230087},
+  {linea:"9 - CABILDO",comuna:"Cabildo",orden:1,rbd:1178,ee:"1178 - ESCUELA BASICA LA VINA",benef:"-",lat:-32.42622,lng:-70.920151},
+  {linea:"10 - CABILDO",comuna:"Cabildo",orden:1,rbd:1173,ee:"1173 - ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO",benef:"-",lat:-32.3881,lng:-70.853813},
+  {linea:"11 - CABILDO",comuna:"Cabildo",orden:1,rbd:1174,ee:"1174 - ESCUELA BASICA SAN LORENZO",benef:"-",lat:-32.434921,lng:-70.983932},
+  {linea:"12 - CABILDO",comuna:"Cabildo",orden:1,rbd:1180,ee:"1180 - ESCUELA BASICA G-45",benef:"-",lat:-32.44672,lng:-70.947403},
+  {linea:"13 - CABILDO",comuna:"Cabildo",orden:1,rbd:12336,ee:"12336 - LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA",benef:"-",lat:-32.43253,lng:-71.07803},
+  {linea:"13 - CABILDO",comuna:"Cabildo",orden:2,rbd:1167,ee:"1167 - LICEO Y ESCUELA MUNICIPAL",benef:"-",lat:-32.42717,lng:-71.066162},
+  {linea:"13 - CABILDO",comuna:"Cabildo",orden:3,rbd:14479,ee:"14479 - ESCUELA BASICA MUNICIPAL ARAUCARIA",benef:"-",lat:-32.426559,lng:-71.068977},
+  {linea:"13 - CABILDO",comuna:"Cabildo",orden:4,rbd:1168,ee:"1168 - ESCUELA HANS WENKE MENGERS",benef:"-",lat:-32.433739,lng:-71.06971},
+  {linea:"13 - CABILDO",comuna:"Cabildo",orden:5,rbd:40242,ee:"40242 - COLEGIO BICENTENARIO",benef:"-",lat:-32.43409,lng:-71.079422},
+  {linea:"13 - CABILDO",comuna:"Cabildo",orden:6,rbd:11196,ee:"11196 - CTRO.REC.ATENC.DIVERS.CRAD PAUL PERCY HARRIS",benef:"-",lat:-32.432453,lng:-71.07298},
+  {linea:"14 - CABILDO",comuna:"Cabildo",orden:1,rbd:12336,ee:"12336 - LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA",benef:"-",lat:-32.43253,lng:-71.07803},
+  {linea:"14 - CABILDO",comuna:"Cabildo",orden:2,rbd:1167,ee:"1167 - LICEO Y ESCUELA MUNICIPAL",benef:"-",lat:-32.42717,lng:-71.066162},
+  {linea:"14 - CABILDO",comuna:"Cabildo",orden:3,rbd:14479,ee:"14479 - ESCUELA BASICA MUNICIPAL ARAUCARIA",benef:"-",lat:-32.426559,lng:-71.068977},
+  {linea:"14 - CABILDO",comuna:"Cabildo",orden:4,rbd:40242,ee:"40242 - COLEGIO BICENTENARIO",benef:"-",lat:-32.43409,lng:-71.079422},
+  {linea:"15 - PETORCA",comuna:"Petorca",orden:1,rbd:1148,ee:"1148 - LICEO JOSE MANUEL BORGOÑO NUNEZ",benef:"-",lat:-32.251511,lng:-70.930328},
+  {linea:"16 - PETORCA",comuna:"Petorca",orden:1,rbd:1148,ee:"1148 - LICEO JOSE MANUEL BORGOÑO NUNEZ",benef:"-",lat:-32.251511,lng:-70.930328},
+  {linea:"17 - PETORCA",comuna:"Petorca",orden:1,rbd:1149,ee:"1149 - LICEO CORDILLERA",benef:"-",lat:-32.22171,lng:-70.832336},
+  {linea:"18 - PETORCA",comuna:"Petorca",orden:1,rbd:1157,ee:"1157 - ESCUELA BASICA LOS ALAMOS EL SOBRANTE",benef:"-",lat:-32.227631,lng:-70.807617},
+  {linea:"19 - PETORCA",comuna:"Petorca",orden:1,rbd:1147,ee:"1147 - ESCUELA FERNANDO GARCIA OLDINI",benef:"-",lat:-32.28054,lng:-71.011673},
+  {linea:"20 - PETORCA",comuna:"Petorca",orden:1,rbd:1161,ee:"1161 - ESCUELA BASICA PEDEGUA",benef:"-",lat:-32.357109,lng:-71.069817},
+  {linea:"20,1 - PETORCA",comuna:"Petorca",orden:1,rbd:1161,ee:"1161 - ESCUELA BASICA PEDEGUA",benef:"-",lat:-32.357109,lng:-71.069817},
+  {linea:"21 - PETORCA",comuna:"Petorca",orden:1,rbd:1152,ee:"1152 - ESCUELA EDUARDO FREI MONTALVA",benef:"-",lat:-32.238201,lng:-70.874077},
+  {linea:"22 - PETORCA",comuna:"Petorca",orden:1,rbd:1152,ee:"1152 - ESCUELA EDUARDO FREI MONTALVA",benef:"-",lat:-32.238201,lng:-70.874077},
+  {linea:"23 - PETORCA",comuna:"Petorca",orden:1,rbd:5404001,ee:"5404001 - LAMPARITA",benef:"-",lat:-32.248611,lng:-70.924889},
+  {linea:"24 - PETORCA",comuna:"Petorca",orden:1,rbd:5404001,ee:"5404001 - LAMPARITA",benef:"-",lat:-32.248611,lng:-70.924889},
+  {linea:"25 - PETORCA",comuna:"Petorca",orden:1,rbd:1156,ee:"1156 - ESCUELA BASICA G-24",benef:"-",lat:-32.252949,lng:-71.137863},
+  {linea:"26 - PETORCA",comuna:"Petorca",orden:1,rbd:1148,ee:"1148 - LICEO JOSE MANUEL BORGOÑO NUNEZ",benef:"-",lat:-32.251511,lng:-70.930328},
+  {linea:"27 - PETORCA",comuna:"Petorca",orden:1,rbd:1160,ee:"1160 - ESCUELA HOGAR FRONTERIZA DE CHALACO",benef:"-",lat:-32.187481,lng:-70.803452},
+  {linea:"27 - PETORCA",comuna:"Petorca",orden:2,rbd:1151,ee:"1151 - ESCUELA BASICA VILLA SANTA ANA",benef:"-",lat:-32.179588,lng:-70.811203},
+  {linea:"28 - PETORCA",comuna:"Petorca",orden:1,rbd:1149,ee:"1149 - LICEO CORDILLERA",benef:"-",lat:-32.22171,lng:-70.832336},
+  {linea:"28 - PETORCA",comuna:"Petorca",orden:2,rbd:1148,ee:"1148 - LICEO JOSE MANUEL BORGOÑO NUNEZ",benef:"-",lat:-32.251511,lng:-70.930328},
+  {linea:"29 - PETORCA",comuna:"Petorca",orden:1,rbd:1149,ee:"1149 - LICEO CORDILLERA",benef:"-",lat:-32.22171,lng:-70.832336},
+  {linea:"29 - PETORCA",comuna:"Petorca",orden:2,rbd:1148,ee:"1148 - LICEO JOSE MANUEL BORGOÑO NUNEZ",benef:"-",lat:-32.251511,lng:-70.930328},
+  {linea:"30 - PAPUDO",comuna:"Papudo",orden:1,rbd:1191,ee:"1191 - ESCUELA PAPUDO",benef:"-",lat:-32.507349,lng:-71.439671},
+  {linea:"30 - PAPUDO",comuna:"Papudo",orden:2,rbd:40099,ee:"40099 - LICEO TECNICO PROFESIONAL PAPUDO",benef:"-",lat:-32.509251,lng:-71.445961},
+  {linea:"CTE 1481",comuna:"Cabildo",orden:1,rbd:11196,ee:"11196 - CTRO.REC.ATENC.DIVERS.CRAD PAUL PERCY HARRIS",benef:"2",lat:-32.432453,lng:-71.07298},
+  {linea:"CTE 1481",comuna:"Cabildo",orden:2,rbd:12336,ee:"12336 - LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA",benef:"14",lat:-32.43253,lng:-71.07803},
+  {linea:"CTE 1481",comuna:"Cabildo",orden:3,rbd:1167,ee:"1167 - LICEO Y ESCUELA MUNICIPAL",benef:"29",lat:-32.42717,lng:-71.066162},
+  {linea:"CTE 1895",comuna:"Cabildo",orden:1,rbd:12336,ee:"12336 - LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA",benef:"52",lat:-32.43253,lng:-71.07803},
+  {linea:"CTE 1895",comuna:"Cabildo",orden:2,rbd:1167,ee:"1167 - LICEO Y ESCUELA MUNICIPAL",benef:"30",lat:-32.42717,lng:-71.066162},
+  {linea:"CTE 1946",comuna:"Cabildo",orden:1,rbd:11196,ee:"11196 - CTRO.REC.ATENC.DIVERS.CRAD PAUL PERCY HARRIS",benef:"1",lat:-32.432453,lng:-71.07298},
+  {linea:"CTE 1946",comuna:"Cabildo",orden:2,rbd:12336,ee:"12336 - LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA",benef:"88",lat:-32.43253,lng:-71.07803},
+  {linea:"CTE 1946",comuna:"Cabildo",orden:3,rbd:1167,ee:"1167 - LICEO Y ESCUELA MUNICIPAL",benef:"43",lat:-32.42717,lng:-71.066162},
+  {linea:"CTE 1492",comuna:"La Ligua",orden:1,rbd:1121,ee:"1121 - LICEO PULMAHUE DE LA LIGUA",benef:"22",lat:-32.44585,lng:-71.230652},
+  {linea:"CTE 1492",comuna:"La Ligua",orden:2,rbd:1123,ee:"1123 - ESCUELA GABRIELA MISTRAL",benef:"15",lat:-32.44978,lng:-71.232132},
+  {linea:"CTE 1492",comuna:"La Ligua",orden:3,rbd:11199,ee:"11199 - COLEGIO LUIS CRUZ MARTINEZ",benef:"12",lat:-32.45105,lng:-71.232498},
+  {linea:"CTE 1493",comuna:"La Ligua",orden:1,rbd:11199,ee:"11199 - COLEGIO LUIS CRUZ MARTINEZ",benef:"16",lat:-32.45105,lng:-71.232498},
+  {linea:"CTE 1493",comuna:"La Ligua",orden:2,rbd:1121,ee:"1121 - LICEO PULMAHUE DE LA LIGUA",benef:"6",lat:-32.44585,lng:-71.230652},
+  {linea:"CTE 1494",comuna:"La Ligua",orden:1,rbd:1121,ee:"1121 - LICEO PULMAHUE DE LA LIGUA",benef:"20",lat:-32.44585,lng:-71.230652},
+  {linea:"CTE 1494",comuna:"La Ligua",orden:2,rbd:1123,ee:"1123 - ESCUELA GABRIELA MISTRAL",benef:"5",lat:-32.44978,lng:-71.232132},
+  {linea:"CTE 1494",comuna:"La Ligua",orden:3,rbd:11199,ee:"11199 - COLEGIO LUIS CRUZ MARTINEZ",benef:"2",lat:-32.45105,lng:-71.232498},
+  {linea:"CTE 1896",comuna:"La Ligua",orden:1,rbd:1121,ee:"1121 - LICEO PULMAHUE DE LA LIGUA",benef:"26",lat:-32.44585,lng:-71.230652},
+  {linea:"CTE 1896",comuna:"La Ligua",orden:2,rbd:1123,ee:"1123 - ESCUELA GABRIELA MISTRAL",benef:"25",lat:-32.44978,lng:-71.232132},
+  {linea:"CTE 1896",comuna:"La Ligua",orden:3,rbd:11199,ee:"11199 - COLEGIO LUIS CRUZ MARTINEZ",benef:"11",lat:-32.45105,lng:-71.232498},
+  {linea:"CTE 2046",comuna:"La Ligua",orden:1,rbd:1121,ee:"1121 - LICEO PULMAHUE DE LA LIGUA",benef:"28",lat:-32.44585,lng:-71.230652},
+  {linea:"CTE 2046",comuna:"La Ligua",orden:2,rbd:1123,ee:"1123 - ESCUELA GABRIELA MISTRAL",benef:"13",lat:-32.44978,lng:-71.232132},
+  {linea:"CTE 2046",comuna:"La Ligua",orden:3,rbd:11199,ee:"11199 - COLEGIO LUIS CRUZ MARTINEZ",benef:"11",lat:-32.45105,lng:-71.232498},
+  {linea:"LINEA PROPIA - PAPUDO 1",comuna:"Papudo",orden:1,rbd:1191,ee:"1191 - ESCUELA PAPUDO",benef:"-",lat:-32.507349,lng:-71.439671},
+  {linea:"LINEA PROPIA - PAPUDO 1",comuna:"Papudo",orden:2,rbd:1192,ee:"1192 - ESCUELA RURAL PULLALLY",benef:"-",lat:-32.43726,lng:-71.314987},
+  {linea:"LINEA PROPIA - PAPUDO 1",comuna:"Papudo",orden:3,rbd:40099,ee:"40099 - LICEO TECNICO PROFESIONAL PAPUDO",benef:"-",lat:-32.509251,lng:-71.445961},
+  {linea:"LINEA PROPIA - PAPUDO 2",comuna:"Papudo",orden:1,rbd:40099,ee:"40099 - LICEO TECNICO PROFESIONAL PAPUDO",benef:"-",lat:-32.509251,lng:-71.445961},
+  {linea:"LINEA PROPIA - PAPUDO 2",comuna:"Papudo",orden:2,rbd:1191,ee:"1191 - ESCUELA PAPUDO",benef:"-",lat:-32.507349,lng:-71.439671},
+  {linea:"LINEA PROPIA - PAPUDO 2",comuna:"Papudo",orden:3,rbd:1192,ee:"1192 - ESCUELA RURAL PULLALLY",benef:"-",lat:-32.43726,lng:-71.314987},
+  {linea:"LINEA PROPIA - PAPUDO 3",comuna:"Papudo",orden:1,rbd:1191,ee:"1191 - ESCUELA PAPUDO",benef:"-",lat:-32.507349,lng:-71.439671},
+  {linea:"LINEA PROPIA - PAPUDO 3",comuna:"Papudo",orden:2,rbd:1192,ee:"1192 - ESCUELA RURAL PULLALLY",benef:"-",lat:-32.43726,lng:-71.314987},
+  {linea:"LINEA PROPIA - LA LIGUA 1",comuna:"La Ligua",orden:1,rbd:1126,ee:"1126 - ESCUELA ESPECIAL SOL NACIENTE",benef:"-",lat:-32.44747,lng:-71.23663},
+  {linea:"LINEA PROPIA - LA LIGUA 2",comuna:"La Ligua",orden:1,rbd:1126,ee:"1126 - ESCUELA ESPECIAL SOL NACIENTE",benef:"-",lat:-32.44747,lng:-71.23663},
+  {linea:"LINEA PROPIA - LA LIGUA 3",comuna:"La Ligua",orden:1,rbd:1121,ee:"1121 - LICEO PULMAHUE DE LA LIGUA",benef:"-",lat:-32.44585,lng:-71.230652},
+  {linea:"LINEA PROPIA - LA LIGUA 3",comuna:"La Ligua",orden:2,rbd:1123,ee:"1123 - ESCUELA GABRIELA MISTRAL",benef:"-",lat:-32.44978,lng:-71.232132},
+  {linea:"LINEA PROPIA - LA LIGUA 3",comuna:"La Ligua",orden:3,rbd:11199,ee:"11199 - COLEGIO LUIS CRUZ MARTINEZ",benef:"-",lat:-32.45105,lng:-71.232498},
+];
+
+// ============================================================
+// UTILIDADES
+// ============================================================
+function pct(v){ return v !== null && v !== undefined ? Math.round(v*100)+'%' : '—'; }
+function cobChip(v){
+  if(v===null||v===undefined) return '<span class="chip chip-gris">Sin datos</span>';
+  const p = v*100;
+  if(p >= 90) return `<span class="chip chip-verde">${Math.round(p)}%</span>`;
+  if(p >= 60) return `<span class="chip chip-amarillo">${Math.round(p)}%</span>`;
+  return `<span class="chip chip-rojo">${Math.round(p)}%</span>`;
+}
+function cobColor(v){
+  if(v===null||v===undefined) return '#a0aec0';
+  if(v*100 >= 90) return '#38a169';
+  if(v*100 >= 60) return '#d69e2e';
+  return '#e53e3e';
+}
+function ocupColor(v){
+  if(v > 1.0) return '#e53e3e';
+  if(v > 0.85) return '#d69e2e';
+  return '#3182ce';
+}
+function num(v){ return v !== null && v !== undefined ? v.toLocaleString('es-CL') : '—'; }
+
+// ============================================================
+// KPIs
+// ============================================================
+function renderKPIs(){
+  const conTransporte = EE_DATA.filter(e => e.demanda !== null);
+  const totalDemanda = conTransporte.reduce((s,e)=>s+(e.demanda||0),0);
+  const totalAsig = conTransporte.reduce((s,e)=>s+(e.cuposTotal||0),0);
+  const cobPromedio = conTransporte.filter(e=>e.pctCob!==null).reduce((s,e)=>s+e.pctCob,0) / conTransporte.filter(e=>e.pctCob!==null).length;
+  const sinCobertura = conTransporte.filter(e=>e.pctCob!==null && e.pctCob*100 < 90).length;
+  const totalLineas = LINEAS_DATA.length;
+  const sobreocupadas = LINEAS_DATA.filter(l=>l.pctOcup > 1.0).length;
+
+  document.getElementById('kpi-bar').innerHTML = `
+    <div class="kpi-card azul"><div class="valor">${EE_DATA.length}</div><div class="label">EE en el territorio</div></div>
+    <div class="kpi-card verde"><div class="valor">${conTransporte.length}</div><div class="label">EE con transporte</div></div>
+    <div class="kpi-card azul"><div class="valor">${num(totalDemanda)}</div><div class="label">Estudiantes demanda 2026</div></div>
+    <div class="kpi-card verde"><div class="valor">${num(totalAsig)}</div><div class="label">Cupos asignados</div></div>
+    <div class="kpi-card ${cobPromedio>=0.9?'verde':cobPromedio>=0.6?'amarillo':'rojo'}"><div class="valor">${Math.round(cobPromedio*100)}%</div><div class="label">Cobertura promedio</div></div>
+    <div class="kpi-card ${sobreocupadas>0?'rojo':'verde'}"><div class="valor">${sobreocupadas} / ${totalLineas}</div><div class="label">Líneas sobreocupadas</div></div>
+  `;
+}
+
+// ============================================================
+// MAPA
+// ============================================================
+let map, markersMap = {}, routeLines = [], selectedRBD = null;
+
+function initMapa(){
+  map = L.map('mapa').setView([-32.35, -71.0], 9);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 19
+  }).addTo(map);
+
+  // Color único por línea usando ángulo áureo (máxima separación perceptual)
+  const lineNames = [...new Set(LEE_DATA.map(r => r.linea))];
+  const lineColorMap = {};
+  lineNames.forEach((linea, i) => {
+    const h = Math.round((i * 137.508) % 360);
+    lineColorMap[linea] = `hsl(${h}, 70%, 42%)`;
+  });
+
+  // Dibujar líneas de rutas coloreadas por línea
+  const lineGroups = {};
+  LEE_DATA.forEach(r => {
+    if(!lineGroups[r.linea]) lineGroups[r.linea] = [];
+    lineGroups[r.linea].push([r.lat, r.lng]);
+  });
+
+  // Calcular demanda máxima por establecimiento para escalar grosor
+  const demandaMax = Math.max(...LINEAS_DATA.map(l => l.asig || 0));
+
+  Object.entries(lineGroups).forEach(([linea, coords]) => {
+    if(coords.length > 1){
+      const lineData = LINEAS_DATA.find(l => l.linea.trim() === linea.trim());
+      const asig = lineData ? (lineData.asig || 0) : 0;
+      const weight = Math.max(2, Math.min(8, 2 + (asig / demandaMax) * 6));
+      const color = lineColorMap[linea] || '#666';
+      const polyline = L.polyline(coords, {
+        color, weight, opacity: 0.75, dashArray: null
+      }).addTo(map);
+      polyline.bindTooltip(
+        `<b>${linea}</b><br>${asig} estudiantes asignados`,
+        {sticky: true}
+      );
+      routeLines.push(polyline);
+    }
+  });
+
+  // Marcadores EE — semaforizado por cobertura, tamaño por demanda
+  const demandaEEMax = Math.max(...EE_DATA.map(e => e.demanda || 0));
+  EE_DATA.forEach(ee => {
+    if(!ee.lat || !ee.lng) return;
+    const color = cobColor(ee.pctCob);
+    const radius = ee.demanda
+      ? Math.max(7, Math.min(18, 7 + Math.sqrt(ee.demanda / demandaEEMax) * 11))
+      : 5;
+    const marker = L.circleMarker([ee.lat, ee.lng], {
+      radius,
+      fillColor: color, color: 'white',
+      weight: 2, opacity: 1, fillOpacity: 0.88
+    }).addTo(map);
+
+    // Popup
+    const lineasEE = [...new Set(LEE_DATA.filter(l=>l.rbd===ee.rbd).map(l=>l.linea))].join(', ') || '—';
+    marker.bindPopup(`
+      <div class="popup-title">RBD ${ee.rbd} — ${ee.nombre}</div>
+      <div class="popup-row"><span class="popup-label">Comuna</span><span class="popup-val">${ee.comuna}</span></div>
+      <div class="popup-row"><span class="popup-label">Área</span><span class="popup-val">${ee.area}</span></div>
+      <div class="popup-row"><span class="popup-label">Tipo</span><span class="popup-val">${ee.tipo}</span></div>
+      <div class="popup-row"><span class="popup-label">Matrícula</span><span class="popup-val">${num(ee.matricula)}</span></div>
+      <div class="popup-row"><span class="popup-label">Demanda 2026</span><span class="popup-val">${num(ee.demanda)}</span></div>
+      <div class="popup-row"><span class="popup-label">Cupos asignados</span><span class="popup-val">${num(ee.cuposTotal)}</span></div>
+      <div class="popup-row"><span class="popup-label">Brecha</span><span class="popup-val">${num(ee.brecha)}</span></div>
+      <div class="popup-row"><span class="popup-label">% Cobertura</span><span class="popup-val">${cobChip(ee.pctCob)}</span></div>
+      <div class="popup-row"><span class="popup-label">Encargado</span><span class="popup-val">${ee.encargado||'—'}</span></div>
+      <div class="popup-row"><span class="popup-label">Líneas</span><span class="popup-val" style="font-size:10px">${lineasEE}</span></div>
+    `);
+
+    marker.on('click', () => {
+      selectEE(ee.rbd);
+    });
+    markersMap[ee.rbd] = marker;
+  });
+
+  renderTablaEE(EE_DATA);
+}
+
+// ============================================================
+// TABLA EE (panel lateral)
+// ============================================================
+function filtrarEE(){
+  const buscar = document.getElementById('buscar-ee').value.toLowerCase();
+  const comuna = document.getElementById('filtro-comuna').value;
+  const area = document.getElementById('filtro-area').value;
+  const transporte = document.getElementById('filtro-transporte').value;
+
+  let filtrados = EE_DATA.filter(e => {
+    if(buscar && !e.nombre.toLowerCase().includes(buscar) && !String(e.rbd).includes(buscar)) return false;
+    if(comuna && e.comuna !== comuna) return false;
+    if(area && e.area !== area) return false;
+    if(transporte === 'si' && e.demanda === null) return false;
+    if(transporte === 'no' && e.demanda !== null) return false;
+    return true;
+  });
+
+  // Mantener orden activo
+  const s = sortStates.ee;
+  if(s.col) filtrados = sortArr(filtrados, s.col, s.dir);
+  currentEE = filtrados;
+
+  // Actualizar visibilidad marcadores
+  EE_DATA.forEach(e => {
+    if(!markersMap[e.rbd]) return;
+    const visible = filtrados.some(f => f.rbd === e.rbd);
+    if(visible) markersMap[e.rbd].addTo(map);
+    else markersMap[e.rbd].remove();
+  });
+
+  renderTablaEE(filtrados);
+}
+
+function renderTablaEE(datos){
+  const tbody = document.getElementById('tbody-ee');
+  tbody.innerHTML = '';
+  document.getElementById('ee-count').textContent = datos.length;
+  document.getElementById('ee-total-info').textContent =
+    `Demanda: ${datos.reduce((s,e)=>s+(e.demanda||0),0)}`;
+
+  datos.forEach(e => {
+    const tr = document.createElement('tr');
+    if(e.rbd === selectedRBD) tr.classList.add('selected');
+    tr.innerHTML = `
+      <td><b>${e.rbd}</b><br><span style="color:#4a5568;font-size:11px">${e.nombre}</span><br>
+      <span style="color:#718096;font-size:10px">${e.comuna} · ${e.area}</span></td>
+      <td>${cobChip(e.pctCob)}</td>
+      <td style="font-size:12px;font-weight:${e.brecha>0?'700':'400'};color:${e.brecha>0?'#e53e3e':e.brecha<0?'#38a169':'#4a5568'}">${e.brecha !== null ? (e.brecha > 0 ? '+'+e.brecha : e.brecha) : '—'}</td>
+    `;
+    tr.addEventListener('click', () => {
+      selectEE(e.rbd);
+      if(markersMap[e.rbd]) {
+        map.setView([e.lat, e.lng], 13);
+        markersMap[e.rbd].openPopup();
+      }
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function selectEE(rbd){
+  selectedRBD = rbd;
+  document.querySelectorAll('#tbody-ee tr').forEach(tr => tr.classList.remove('selected'));
+  // Re-select in current list
+  const rows = document.querySelectorAll('#tbody-ee tr');
+  rows.forEach(tr => {
+    if(tr.cells[0] && tr.cells[0].querySelector('b') && tr.cells[0].querySelector('b').textContent == rbd){
+      tr.classList.add('selected');
+      tr.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }
+  });
+}
+
+// ============================================================
+// TABLA LÍNEAS
+// ============================================================
+function initLineas(){
+  const vehiculos = [...new Set(LINEAS_DATA.map(l=>l.vehiculo).filter(Boolean))].sort();
+  const adjFil = document.getElementById('filtro-adjudicacion');
+  const vehFil = document.getElementById('filtro-vehiculo');
+  const adjTypes = [...new Set(LINEAS_DATA.map(l=>l.tipoAdj).filter(Boolean))].sort();
+  vehiculos.forEach(v => { const o=document.createElement('option'); o.textContent=v; vehFil.appendChild(o); });
+  adjTypes.forEach(v => { const o=document.createElement('option'); o.textContent=v; adjFil.appendChild(o); });
+  renderTablaLineas(LINEAS_DATA);
+}
+
+function filtrarLineas(){
+  const buscar = document.getElementById('buscar-linea').value.toLowerCase();
+  const comuna = document.getElementById('filtro-linea-comuna').value;
+  const vehiculo = document.getElementById('filtro-vehiculo').value;
+  const adj = document.getElementById('filtro-adjudicacion').value;
+  let filtrados = LINEAS_DATA.filter(l => {
+    if(buscar && !l.linea.toLowerCase().includes(buscar) && !(l.patente||'').toLowerCase().includes(buscar) && !(l.proveedor||'').toLowerCase().includes(buscar)) return false;
+    if(comuna && l.comuna !== comuna) return false;
+    if(vehiculo && (l.vehiculo||'').toUpperCase() !== vehiculo.toUpperCase()) return false;
+    if(adj && l.tipoAdj !== adj) return false;
+    return true;
+  });
+  const s = sortStates.lineas;
+  if(s.col) filtrados = sortArr(filtrados, s.col, s.dir);
+  currentLineas = filtrados;
+  renderTablaLineas(filtrados);
+}
+
+function renderTablaLineas(datos){
+  const tbody = document.getElementById('tbody-lineas');
+  tbody.innerHTML = '';
+  const totalCap = datos.reduce((s,l)=>s+l.cap,0);
+  const totalAsig = datos.reduce((s,l)=>s+l.asig,0);
+  const sobreocup = datos.filter(l=>l.pctOcup>1).length;
+  document.getElementById('lineas-footer').textContent = `${datos.length} líneas · Capacidad total: ${totalCap} · Asignados: ${totalAsig} · Sobreocupadas: ${sobreocup}`;
+
+  datos.forEach(l => {
+    const pct = l.pctOcup;
+    const pctPx = Math.min(100, Math.round(pct*100));
+    const barColor = ocupColor(pct);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${l.n||''}</td>
+      <td><b>${l.linea}</b></td>
+      <td>${l.comuna}</td>
+      <td>${l.vehiculo||'—'}</td>
+      <td style="font-size:11px">${l.tipoAdj||'—'}</td>
+      <td>${l.cap}</td>
+      <td>${l.asig}</td>
+      <td style="color:${l.disp<0?'#e53e3e':'#276749'};font-weight:${l.disp<0?'700':'400'}">${l.disp}</td>
+      <td>
+        <div class="barra-wrap"><div class="barra-fill" style="width:${pctPx}%;background:${barColor}"></div></div>
+        <span style="font-size:11px;color:${barColor};font-weight:600;margin-left:4px">${Math.round(pct*100)}%</span>
+      </td>
+      <td style="font-size:11px">${l.patente||'—'}</td>
+      <td style="font-size:11px;max-width:160px">${l.proveedor||'—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// TABLA LÍNEAS-EE
+// ============================================================
+function filtrarLineasEE(){
+  const buscar = document.getElementById('buscar-lee').value.toLowerCase();
+  const comuna = document.getElementById('filtro-lee-comuna').value;
+  let filtrados = LEE_DATA.filter(r => {
+    if(buscar && !r.ee.toLowerCase().includes(buscar) && !r.linea.toLowerCase().includes(buscar)) return false;
+    if(comuna && r.comuna !== comuna) return false;
+    return true;
+  });
+  const s = sortStates.lee;
+  if(s.col) filtrados = sortArr(filtrados, s.col, s.dir);
+  currentLEE = filtrados;
+  renderTablaLEE(filtrados);
+}
+
+function renderTablaLEE(datos){
+  const tbody = document.getElementById('tbody-lee');
+  tbody.innerHTML = '';
+  document.getElementById('lee-footer').textContent = `${datos.length} registros`;
+  datos.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${r.linea}</b></td>
+      <td>${r.comuna}</td>
+      <td style="text-align:center">${r.orden}</td>
+      <td>${r.rbd}</td>
+      <td>${r.ee.replace(/^\d+ - /,'')}</td>
+      <td style="text-align:center;color:${r.benef==='-'?'#a0aec0':'inherit'}">${r.benef === '-' ? 'Sin registro' : r.benef}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+let activeTabId = 'mapa';
+function switchTab(id){
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+  activeTabId = id;
+  if(id === 'mapa' && map) setTimeout(()=>map.invalidateSize(),100);
+  if(id === 'fichas') filtrarFichasList();
+}
+
+// ============================================================
+// TUTORIAL MODAL
+// ============================================================
+const TUTORIALES = {
+  mapa: {
+    titulo: '🗺 Tutorial — Mapa de Establecimientos',
+    pasos: [
+      {ico:'🔵', txt: '<b>Círculos coloreados</b>: cada punto es un establecimiento. El color indica el <b>% de cobertura de transporte</b>: 🟢 ≥90%, 🟡 60–89%, 🔴 &lt;60%, ⬜ sin datos.'},
+      {ico:'📏', txt: '<b>Tamaño del círculo</b>: proporcional a la demanda de transporte del EE. Círculos más grandes = más estudiantes requieren transporte.'},
+      {ico:'〰️', txt: '<b>Líneas de colores</b>: representan las rutas de transporte activas. Cada línea tiene un color único; el grosor indica la cantidad de alumnos asignados.'},
+      {ico:'🔍', txt: '<b>Filtros del panel lateral</b>: busca por nombre/RBD, filtra por comuna, área o estado de transporte. La lista se actualiza y el mapa resalta los EE filtrados.'},
+      {ico:'👆', txt: '<b>Clic sobre un marcador</b>: muestra un popup con el resumen del EE (nombre, matrícula, cupos, cobertura).'},
+    ]
+  },
+  lineas: {
+    titulo: '🚐 Tutorial — Líneas de Transporte',
+    pasos: [
+      {ico:'📋', txt: '<b>Cada fila</b> es una línea de transporte activa. Incluye vehículo, patente, proveedor y tipo de adjudicación (Licitación Pública, Trato Directo o MTT/CTE).'},
+      {ico:'🎯', txt: '<b>% Ocupación</b>: ratio entre alumnos asignados y capacidad del vehículo. Semáforo: 🟢 ≥90%, 🟡 70–89%, 🔴 &lt;70%.'},
+      {ico:'↕️', txt: '<b>Ordenar</b>: haz clic en cualquier encabezado de columna para ordenar de forma ascendente o descendente.'},
+      {ico:'🔍', txt: '<b>Filtros</b>: puedes buscar por N° de línea o patente, y filtrar por comuna y tipo de adjudicación.'},
+    ]
+  },
+  'lineas-ee': {
+    titulo: '📍 Tutorial — Líneas por Establecimiento',
+    pasos: [
+      {ico:'🔗', txt: '<b>Esta tabla</b> muestra la relación entre cada línea de transporte y los establecimientos a los que sirve, con el orden de parada.'},
+      {ico:'👥', txt: '<b>Beneficiarios</b>: cantidad de alumnos que usan esa línea en ese EE. Solo disponible para líneas CTE (MTT); el resto muestra "Sin registro".'},
+      {ico:'🔍', txt: '<b>Filtros</b>: filtra por línea específica, comuna o EE para encontrar rápidamente la combinación que buscas.'},
+      {ico:'↕️', txt: '<b>Ordenar</b>: haz clic en los encabezados para ordenar por cualquier columna.'},
+    ]
+  },
+  fichas: {
+    titulo: '📋 Tutorial — Fichas',
+    pasos: [
+      {ico:'🏫', txt: '<b>Ficha por EE</b>: selecciona un establecimiento en el listado para ver su ficha completa: matrícula, cupos, demanda, cobertura, líneas asignadas y encargado.'},
+      {ico:'🚐', txt: '<b>Ficha por Línea</b>: cambia a "Línea" para ver el detalle de cada ruta: capacidad, ocupación, paradas y establecimientos servidos.'},
+      {ico:'🖨️', txt: '<b>Imprimir</b>: el botón "Imprimir ficha" abre el diálogo de impresión mostrando solo la ficha seleccionada, sin el resto del visor.'},
+      {ico:'🔍', txt: '<b>Buscar y filtrar</b>: usa el buscador y el filtro de comuna para encontrar rápidamente el EE o línea que necesitas.'},
+    ]
+  },
+  proyeccion: {
+    titulo: '📊 Tutorial — Proyección 2027',
+    pasos: [
+      {ico:'📂', txt: '<b>Fuente de datos</b>: cupos declarados 2027 del archivo oficial Mineduc, cruzados con los datos de transporte vigentes 2026 del SLEP.'},
+      {ico:'🔢', txt: '<b>Δ Cupos</b>: diferencia entre cupos 2027 y cupos 2026. Positivo = más oferta; negativo = reducción. El % indica el cambio relativo.'},
+      {ico:'⚠️', txt: '<b>Demanda Estimada 2027</b>: si la matrícula llegara al tope de cupos 2027, ¿cuántos alumnos necesitarían transporte? Se calcula como Cupos 2027 × % Dep. Transporte 2026.'},
+      {ico:'🚨', txt: '<b>Semáforo de riesgo</b>: ✅ Suficiente (capacidad OK), ⚠️ Alerta (déficit ≤ 20%), 🔴 Déficit alto (déficit > 20%), — Sin datos de transporte 2026.'},
+      {ico:'▶', txt: '<b>Desglose por nivel</b>: haz clic en el triángulo ▶ al inicio de cada fila para expandir el detalle de cupos por nivel (1° Básico, 2° Medio, etc.) y especialidad TP.'},
+      {ico:'🖱️', txt: '<b>Tooltips</b>: pasa el cursor sobre el título de cada columna para ver su definición y fórmula de cálculo.'},
+    ]
+  },
+  glosario: {
+    titulo: '📖 Tutorial — Glosario',
+    pasos: [
+      {ico:'📚', txt: 'El glosario contiene las <b>definiciones de todos los indicadores y variables</b> usados en el visor.'},
+      {ico:'🔢', txt: 'Cada término incluye una <b>descripción clara</b> y, cuando corresponde, la <b>fórmula de cálculo</b> utilizada.'},
+      {ico:'💡', txt: 'Si tienes dudas sobre lo que significa una columna en las tablas o un indicador en el mapa, <b>consulta el glosario</b> primero.'},
+    ]
+  },
+};
+
+function openTutorial() {
+  const tut = TUTORIALES[activeTabId] || TUTORIALES.mapa;
+  const stepsHtml = tut.pasos.map(p =>
+    `<div class="tut-step"><div class="tut-ico">${p.ico}</div><div class="tut-txt">${p.txt}</div></div>`
+  ).join('');
+  document.getElementById('tut-content').innerHTML = `<h3>${tut.titulo}</h3>${stepsHtml}`;
+  document.getElementById('tut-bg').classList.add('open');
+}
+function closeTutorial() {
+  document.getElementById('tut-bg').classList.remove('open');
+}
+
+// ============================================================
+// FICHAS
+// ============================================================
+let fichaTipo = 'ee';
+let fichaSelectedId = null;
+
+function setFichaTipo(tipo) {
+  fichaTipo = tipo;
+  fichaSelectedId = null;
+  document.getElementById('btn-tipo-ee').classList.toggle('active', tipo === 'ee');
+  document.getElementById('btn-tipo-linea').classList.toggle('active', tipo === 'linea');
+  document.getElementById('fichas-selector-label').textContent = tipo === 'ee' ? 'Establecimiento' : 'Línea';
+  document.getElementById('fichas-buscar').placeholder = tipo === 'ee' ? 'Buscar EE o RBD...' : 'Buscar línea...';
+  document.getElementById('fichas-preview').innerHTML = '<div class="fichas-empty"><div class="icon">📋</div><div>Selecciona un elemento para ver su ficha</div></div>';
+  filtrarFichasList();
+}
+
+function filtrarFichasList() {
+  const buscar = (document.getElementById('fichas-buscar').value || '').toLowerCase();
+  const comuna = document.getElementById('fichas-comuna').value;
+  const list = document.getElementById('fichas-list');
+  list.innerHTML = '';
+
+  if (fichaTipo === 'ee') {
+    const items = EE_DATA.filter(e => {
+      if (comuna && e.comuna !== comuna) return false;
+      if (buscar && !e.nombre.toLowerCase().includes(buscar) && !String(e.rbd).includes(buscar)) return false;
+      return true;
+    });
+    items.forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'ficha-list-item' + (fichaSelectedId === e.rbd ? ' active' : '');
+      div.innerHTML = `<div class="item-rbd">RBD ${e.rbd}</div>
+        <div class="item-nombre">${e.nombre}</div>
+        <div class="item-sub">${e.comuna} · ${e.area} · ${e.tipo}</div>`;
+      div.onclick = () => { fichaSelectedId = e.rbd; filtrarFichasList(); generarFichaEE(e.rbd); };
+      list.appendChild(div);
+    });
+  } else {
+    const items = LINEAS_DATA.filter(l => {
+      if (comuna && l.comuna !== comuna) return false;
+      if (buscar && !l.linea.toLowerCase().includes(buscar) && !(l.proveedor||'').toLowerCase().includes(buscar)) return false;
+      return true;
+    });
+    items.forEach(l => {
+      const div = document.createElement('div');
+      div.className = 'ficha-list-item' + (fichaSelectedId === l.linea ? ' active' : '');
+      div.innerHTML = `<div class="item-rbd">${l.linea}</div>
+        <div class="item-nombre">${l.proveedor || 'Sin proveedor'}</div>
+        <div class="item-sub">${l.comuna} · ${l.vehiculo} · ${l.tipoAdj || '—'}</div>`;
+      div.onclick = () => { fichaSelectedId = l.linea; filtrarFichasList(); generarFichaLinea(l.linea); };
+      list.appendChild(div);
+    });
+  }
+}
+
+function fechaHoy() {
+  return new Date().toLocaleDateString('es-CL', {day:'2-digit', month:'long', year:'numeric'});
+}
+
+function cobClase(v) {
+  if (v === null || v === undefined) return '';
+  return v * 100 >= 90 ? 'verde' : v * 100 >= 60 ? 'amarillo' : 'rojo';
+}
+
+function valBadge(v) {
+  if (!v) return '<span class="val-badge val-na">Sin info</span>';
+  if (v === 'SI') return '<span class="val-badge val-si">✓ Validado</span>';
+  if (v === 'NO') return '<span class="val-badge val-no">✗ No validado</span>';
+  if (v === 'NO APLICA') return '<span class="val-badge val-na">No aplica</span>';
+  return `<span class="val-badge val-pend">⏳ ${v}</span>`;
+}
+
+function generarFichaEE(rbd) {
+  const ee = EE_DATA.find(e => e.rbd === rbd);
+  if (!ee) return;
+  const lineasEE = LEE_DATA.filter(l => l.rbd === rbd).sort((a,b) => a.orden - b.orden);
+  const lineasUnicas = [...new Set(lineasEE.map(l => l.linea))];
+  const pctCobNum = ee.pctCob !== null ? Math.round(ee.pctCob * 100) : null;
+  const totalBenef = lineasEE.reduce((s, l) => {
+    const n = parseInt(l.benef);
+    return s + (isNaN(n) ? 0 : n);
+  }, 0);
+
+  const fichaHTML = `
+  <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+  <div class="ficha" id="ficha-print">
+    <div class="ficha-header">
+      <div>
+        <div class="tipo-badge">${ee.tipo} · ${ee.area}</div>
+        <h2>RBD ${ee.rbd} — ${ee.nombre}</h2>
+        <div class="sub">${ee.comuna} · ${ee.categoria}</div>
+      </div>
+      <div class="ficha-fecha">
+        <b>SLEP Petorca</b><br>
+        Visor de Transporte 2026<br>
+        Generado: ${fechaHoy()}
+      </div>
+    </div>
+    <div class="ficha-body">
+
+      <!-- KPIs -->
+      <div class="ficha-seccion">
+        <div class="ficha-seccion-titulo">Indicadores de Transporte 2026</div>
+        <div class="ficha-kpis">
+          <div class="ficha-kpi">
+            <div class="kv">${num(ee.matricula)}</div>
+            <div class="kl">Matrícula Actual</div>
+          </div>
+          <div class="ficha-kpi">
+            <div class="kv">${num(ee.demanda)}</div>
+            <div class="kl">Demanda Nómina 2026</div>
+          </div>
+          <div class="ficha-kpi">
+            <div class="kv">${num(ee.cuposTotal)}</div>
+            <div class="kl">Cupos Asignados</div>
+          </div>
+          <div class="ficha-kpi" style="border-top-color:${ee.brecha > 0 ? '#e53e3e' : ee.brecha < 0 ? '#38a169' : '#718096'}">
+            <div class="kv" style="color:${ee.brecha > 0 ? '#e53e3e' : ee.brecha < 0 ? '#38a169' : '#4a5568'}">${ee.brecha !== null ? (ee.brecha > 0 ? '+'+ee.brecha : ee.brecha) : '—'}</div>
+            <div class="kl">Brecha (Déficit/Superávit)</div>
+          </div>
+          <div class="ficha-kpi ${cobClase(ee.pctCob)}">
+            <div class="kv">${pctCobNum !== null ? pctCobNum+'%' : '—'}</div>
+            <div class="kl">% Cobertura</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESGLOSE CUPOS -->
+      <div class="ficha-seccion">
+        <div class="ficha-seccion-titulo">Desglose de Cupos Asignados</div>
+        <div class="ficha-desglose">
+          <div class="ficha-desg-item">
+            <div class="ficha-desg-icon">🚌</div>
+            <div>
+              <div class="ficha-desg-val">${num(ee.cuposLinea) ?? '—'}</div>
+              <div class="ficha-desg-label">Línea Propia</div>
+            </div>
+          </div>
+          <div class="ficha-desg-item">
+            <div class="ficha-desg-icon">📋</div>
+            <div>
+              <div class="ficha-desg-val">${num(ee.cuposLic) ?? '—'}</div>
+              <div class="ficha-desg-label">Licitación SLEP</div>
+            </div>
+          </div>
+          <div class="ficha-desg-item">
+            <div class="ficha-desg-icon">🏛️</div>
+            <div>
+              <div class="ficha-desg-val">${num(ee.cuposMTT) ?? '—'}</div>
+              <div class="ficha-desg-label">MTT (CTE)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LÍNEAS ASIGNADAS -->
+      <div class="ficha-seccion">
+        <div class="ficha-seccion-titulo">Líneas de Transporte Asignadas (${lineasUnicas.length} línea${lineasUnicas.length !== 1 ? 's' : ''})</div>
+        ${lineasUnicas.length === 0 ? '<p style="color:#718096;font-size:12px">Este establecimiento no tiene líneas asignadas en la nómina 2026.</p>' : `
+        <table class="ficha-table">
+          <thead>
+            <tr>
+              <th>N° Línea</th>
+              <th>Proveedor / Conductor</th>
+              <th>Vehículo</th>
+              <th>Cap.</th>
+              <th>% Ocup.</th>
+              <th>Tipo Adj.</th>
+              <th>Beneficiarios en ruta</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lineasUnicas.map(nombreLinea => {
+              const ld = LINEAS_DATA.find(l => l.linea.trim() === nombreLinea.trim());
+              const lee = LEE_DATA.find(l => l.rbd === rbd && l.linea === nombreLinea);
+              const benef = lee ? lee.benef : '—';
+              return `<tr>
+                <td><b>${nombreLinea}</b></td>
+                <td>${ld ? ld.proveedor || '—' : '—'}</td>
+                <td>${ld ? ld.vehiculo || '—' : '—'}</td>
+                <td>${ld ? ld.cap : '—'}</td>
+                <td>${ld ? Math.round(ld.pctOcup * 100) + '%' : '—'}</td>
+                <td style="font-size:10px">${ld ? ld.tipoAdj || '—' : '—'}</td>
+                <td style="text-align:center;color:${benef==='-'?'#a0aec0':'inherit'}">${benef === '-' ? 'Sin registro' : benef}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`}
+      </div>
+
+      <!-- VALIDACIÓN Y GESTIÓN -->
+      <div class="ficha-seccion">
+        <div class="ficha-seccion-titulo">Gestión y Validación</div>
+        <div class="ficha-grid2">
+          <div class="ficha-info-box">
+            <div class="ficha-info-row">
+              <span class="ficha-info-label">Encargado/a transporte</span>
+              <span class="ficha-info-val">${ee.encargado || '—'}</span>
+            </div>
+            <div class="ficha-info-row">
+              <span class="ficha-info-label">Al. No Aplica Cobertura</span>
+              <span class="ficha-info-val">${num(ee.noAplica)}</span>
+            </div>
+          </div>
+          <div class="ficha-info-box">
+            <div class="ficha-seccion-titulo" style="margin-bottom:8px">Validación Nómina</div>
+            <div class="ficha-validacion">
+              <div>
+                <div style="font-size:10px;color:#718096;margin-bottom:3px">Marzo 2026</div>
+                ${valBadge(ee.validaMar)}
+              </div>
+              <div>
+                <div style="font-size:10px;color:#718096;margin-bottom:3px">Abril 2026</div>
+                ${valBadge(ee.validaAbr)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INGRESOS / EGRESOS POR MES -->
+      <div class="ficha-seccion">
+        <div class="ficha-seccion-titulo">Movimiento Mensual de Estudiantes (Ingresos / Egresos)</div>
+        <div class="ficha-info-box" style="background:#fffbeb;border:1px solid #fbd38d;">
+          <p style="color:#744210;font-size:11px;margin-bottom:8px">
+            ⚠️ Este apartado requiere el registro mensual de altas y bajas de la nómina. Los datos actuales solo reflejan el estado puntual 2026. Para completar esta sección, incorporar en la fuente de datos una columna de movimientos por mes (Marzo, Abril, Mayo…).
+          </p>
+          <table class="ficha-table" style="background:white;">
+            <thead>
+              <tr><th>Mes</th><th>Ingresos</th><th>Egresos</th><th>Saldo</th><th>Estado validación</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Marzo 2026</td><td>—</td><td>—</td><td>—</td><td>${valBadge(ee.validaMar)}</td></tr>
+              <tr><td>Abril 2026</td><td>—</td><td>—</td><td>—</td><td>${valBadge(ee.validaAbr)}</td></tr>
+              <tr><td>Mayo 2026</td><td>—</td><td>—</td><td>—</td><td><span class="val-badge val-pend">⏳ Pendiente</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /ficha-body -->
+  </div>`;
+
+  document.getElementById('fichas-preview').innerHTML = fichaHTML;
+}
+
+function generarFichaLinea(nombreLinea) {
+  const ld = LINEAS_DATA.find(l => l.linea === nombreLinea);
+  if (!ld) return;
+  const paradasLinea = LEE_DATA.filter(l => l.linea === nombreLinea).sort((a, b) => a.orden - b.orden);
+  const totalBenef = paradasLinea.reduce((s, l) => {
+    const n = parseInt(l.benef);
+    return s + (isNaN(n) ? 0 : n);
+  }, 0);
+  const pctOcupNum = Math.round(ld.pctOcup * 100);
+  const ocupClase = pctOcupNum > 100 ? 'rojo' : pctOcupNum > 85 ? 'amarillo' : 'verde';
+
+  const fichaHTML = `
+  <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+  <div class="ficha" id="ficha-print">
+    <div class="ficha-header">
+      <div>
+        <div class="tipo-badge">${ld.vehiculo} · ${ld.tipoAdj || 'Sin adjudicación'}</div>
+        <h2>${ld.linea}</h2>
+        <div class="sub">${ld.comuna} · ${ld.proveedor || 'Sin proveedor'}</div>
+      </div>
+      <div class="ficha-fecha">
+        <b>SLEP Petorca</b><br>
+        Visor de Transporte 2026<br>
+        Generado: ${fechaHoy()}
+      </div>
+    </div>
+    <div class="ficha-body">
+
+      <!-- KPIs -->
+      <div class="ficha-seccion">
+        <div class="ficha-seccion-titulo">Indicadores de la Línea 2026</div>
+        <div class="ficha-kpis">
+          <div class="ficha-kpi">
+            <div class="kv">${ld.cap}</div>
+            <div class="kl">Capacidad Vehículo</div>
+          </div>
+          <div class="ficha-kpi">
+            <div class="kv">${ld.asig}</div>
+            <div class="kl">Cupos Asignados</div>
+          </div>
+          <div class="ficha-kpi" style="border-top-color:${ld.disp < 0 ? '#e53e3e' : '#38a169'}">
+            <div class="kv" style="color:${ld.disp < 0 ? '#e53e3e' : '#38a169'}">${ld.disp}</div>
+            <div class="kl">Cupos Disponibles</div>
+          </div>
+          <div class="ficha-kpi ${ocupClase}">
+            <div class="kv">${pctOcupNum}%</div>
+            <div class="kl">% Ocupación</div>
+          </div>
+          <div class="ficha-kpi">
+            <div class="kv">${paradasLinea.length}</div>
+            <div class="kl">N° de Paradas</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATOS VEHÍCULO -->
+      <div class="ficha-seccion">
+        <div class="ficha-seccion-titulo">Datos del Vehículo y Contrato</div>
+        <div class="ficha-grid2">
+          <div class="ficha-info-box">
+            <div class="ficha-info-row">
+              <span class="ficha-info-label">Tipo de vehículo</span>
+              <span class="ficha-info-val">${ld.vehiculo || '—'}</span>
+            </div>
+            <div class="ficha-info-row">
+              <span class="ficha-info-label">Patente</span>
+              <span class="ficha-info-val">${ld.patente || '—'}</span>
+            </div>
+            <div class="ficha-info-row">
+              <span class="ficha-info-label">Proveedor / Conductor</span>
+              <span class="ficha-info-val">${ld.proveedor || '—'}</span>
+            </div>
+          </div>
+          <div class="ficha-info-box">
+            <div class="ficha-info-row">
+              <span class="ficha-info-label">Tipo adjudicación</span>
+              <span class="ficha-info-val">${ld.tipoAdj || '—'}</span>
+            </div>
+            <div class="ficha-info-row">
+              <span class="ficha-info-label">Línea adjudicada</span>
+              <span class="ficha-info-val">${ld.adj || '—'}</span>
+            </div>
+            <div class="ficha-info-row">
+              <span class="ficha-info-label">Línea activa</span>
+              <span class="ficha-info-val">${ld.activa || '—'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESTABLECIMIENTOS EN RUTA -->
+      <div class="ficha-seccion">
+        <div class="ficha-seccion-titulo">Establecimientos en esta Ruta (${paradasLinea.length} parada${paradasLinea.length !== 1 ? 's' : ''})</div>
+        ${paradasLinea.length === 0 ? '<p style="color:#718096;font-size:12px">Sin paradas registradas para esta línea.</p>' : `
+        <table class="ficha-table">
+          <thead>
+            <tr>
+              <th style="width:40px">Orden</th>
+              <th>Establecimiento</th>
+              <th>RBD</th>
+              <th>Comuna</th>
+              <th>Beneficiarios</th>
+              <th>% Cobertura EE</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${paradasLinea.map(p => {
+              const eeP = EE_DATA.find(e => e.rbd === p.rbd);
+              return `<tr>
+                <td style="text-align:center;font-weight:700">${p.orden}</td>
+                <td>${p.ee.replace(/^\d+ - /, '')}</td>
+                <td>${p.rbd}</td>
+                <td>${p.comuna}</td>
+                <td style="text-align:center;color:${p.benef==='-'?'#a0aec0':'inherit'}">${p.benef === '-' ? 'Sin registro' : p.benef}</td>
+                <td>${eeP ? cobChip(eeP.pctCob) : '—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+          ${totalBenef > 0 ? `<tfoot><tr style="background:#edf2f7;font-weight:700"><td colspan="4">Total beneficiarios registrados en nómina</td><td style="text-align:center">${totalBenef}</td><td></td></tr></tfoot>` : ''}
+        </table>`}
+      </div>
+
+    </div>
+  </div>`;
+
+  document.getElementById('fichas-preview').innerHTML = fichaHTML;
+}
+
+function initFichas() {
+  filtrarFichasList();
+}
+
+// ============================================================
+// SORT
+// ============================================================
+let currentEE = [...EE_DATA];
+let currentLineas = [...LINEAS_DATA];
+let currentLEE = [...LEE_DATA];
+const sortStates = { ee: {col: null, dir: 'asc'}, lineas: {col: null, dir: 'asc'}, lee: {col: null, dir: 'asc'} };
+
+function sortArr(arr, col, dir) {
+  return [...arr].sort((a, b) => {
+    let va = a[col], vb = b[col];
+    if(va === null || va === undefined) return 1;
+    if(vb === null || vb === undefined) return -1;
+    if(typeof va === 'string') va = va.toLowerCase();
+    if(typeof vb === 'string') vb = vb.toLowerCase();
+    if(va === vb) return 0;
+    return (dir === 'asc' ? 1 : -1) * (va > vb ? 1 : -1);
+  });
+}
+
+function updateSortHeaders(prefix, col, dir, cols) {
+  cols.forEach(c => {
+    const th = document.getElementById(`th-${prefix}-${c}`);
+    if(!th) return;
+    th.classList.remove('sort-asc', 'sort-desc');
+    if(c === col) th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+}
+
+function sortEE(col) {
+  const s = sortStates.ee;
+  s.dir = (s.col === col && s.dir === 'asc') ? 'desc' : 'asc';
+  s.col = col;
+  currentEE = sortArr(currentEE, col, s.dir);
+  updateSortHeaders('ee', col, s.dir, ['nombre','pctCob','brecha']);
+  renderTablaEE(currentEE);
+}
+
+function sortLineas(col) {
+  const s = sortStates.lineas;
+  s.dir = (s.col === col && s.dir === 'asc') ? 'desc' : 'asc';
+  s.col = col;
+  currentLineas = sortArr(currentLineas, col, s.dir);
+  updateSortHeaders('l', col, s.dir, ['n','linea','comuna','vehiculo','tipoAdj','cap','asig','disp','pctOcup','patente','proveedor']);
+  renderTablaLineas(currentLineas);
+}
+
+function sortLEE(col) {
+  const s = sortStates.lee;
+  s.dir = (s.col === col && s.dir === 'asc') ? 'desc' : 'asc';
+  s.col = col;
+  currentLEE = sortArr(currentLEE, col, s.dir);
+  updateSortHeaders('lee', col, s.dir, ['linea','comuna','orden','rbd','ee','benef']);
+  renderTablaLEE(currentLEE);
+}
+
+// ============================================================
+// PROYECCION 2027
+// ============================================================
+let proyData = [];
+let currentProy = [];
+const sortStatesProy = {col:null, dir:'asc'};
+
+function buildProyData() {
+  const map27 = {};
+  CUPOS2027.forEach(c => { map27[c.rbd] = c; });
+  proyData = EE_DATA
+    .filter(e => map27[e.rbd])
+    .map(e => {
+      const c27 = map27[e.rbd];
+      const cupos26 = e.cuposDec;
+      const cupos27 = c27.cupos27;
+      const deltaCupos = (cupos26 != null && cupos27 != null) ? cupos27 - cupos26 : null;
+      const pctDelta = (cupos26 && cupos27 != null) ? (cupos27 - cupos26) / cupos26 : null;
+      const pctDep = e.pctDep;
+      const demandaEst27 = (cupos27 != null && pctDep != null) ? Math.round(cupos27 * pctDep) : null;
+      const cuposTransp26 = e.cuposTotal;
+      const brechaEst27 = (demandaEst27 != null && cuposTransp26 != null) ? demandaEst27 - cuposTransp26 : null;
+      let riesgo = 'sin-datos';
+      if (brechaEst27 != null) {
+        if (brechaEst27 <= 0) riesgo = 'ok';
+        else if (brechaEst27 <= Math.max(cuposTransp26 * 0.2, 5)) riesgo = 'alerta';
+        else riesgo = 'riesgo';
+      }
+      return {
+        rbd:e.rbd, nombre:e.nombre, comuna:e.comuna, area:e.area,
+        matricula26:e.matricula, cupos26, cupos27, deltaCupos, pctDelta,
+        pctDep, cuposTransp26, demandaEst27, brechaEst27, riesgo
+      };
+    });
+}
+
+function filtrarProyeccion() {
+  const comuna = document.getElementById('proy-comuna').value;
+  const area = document.getElementById('proy-area').value;
+  const riesgo = document.getElementById('proy-riesgo').value;
+  currentProy = proyData.filter(e => {
+    if (comuna && e.comuna !== comuna) return false;
+    if (area && e.area !== area) return false;
+    if (riesgo && e.riesgo !== riesgo) return false;
+    return true;
+  });
+  renderKPIsProy(currentProy);
+  renderTablaProyeccion(currentProy);
+}
+
+function renderKPIsProy(data) {
+  const totalDelta = data.reduce((s,e) => s + (e.deltaCupos||0), 0);
+  const conAumento = data.filter(e => (e.deltaCupos||0) > 0).length;
+  const conBaja = data.filter(e => (e.deltaCupos||0) < 0).length;
+  const enRiesgo = data.filter(e => e.riesgo === 'riesgo').length;
+  const enAlerta = data.filter(e => e.riesgo === 'alerta').length;
+  const cards = [
+    {label:'EE con cupos 2027', valor:data.length, cls:'azul'},
+    {label:'Δ Cupos total', valor:(totalDelta>=0?'+':'')+totalDelta, cls:totalDelta>=0?'verde':'rojo'},
+    {label:'Con más cupos 2027', valor:conAumento, cls:'verde'},
+    {label:'Con menos cupos 2027', valor:conBaja, cls:'rojo'},
+    {label:'Posible déficit transp.', valor:enRiesgo+enAlerta, cls:(enRiesgo+enAlerta)>0?'amarillo':'verde'},
+  ];
+  document.getElementById('proy-kpis').innerHTML = cards.map(k =>
+    `<div class="kpi-card ${k.cls}"><div class="valor">${k.valor}</div><div class="label">${k.label}</div></div>`
+  ).join('');
+}
+
+const _detMap = {};
+CUPOS2027_DET.forEach(d => {
+  if (!_detMap[d.r]) _detMap[d.r] = [];
+  _detMap[d.r].push(d);
+});
+
+function renderTablaProyeccion(data) {
+  const body = document.getElementById('body-proy');
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:#718096;">Sin resultados para los filtros seleccionados</td></tr>';
+    return;
+  }
+  const RM = {
+    ok:{label:'✅ Suficiente',bg:'#c6f6d5',col:'#276749'},
+    alerta:{label:'⚠️ Alerta',bg:'#fefcbf',col:'#744210'},
+    riesgo:{label:'🔴 Déficit alto',bg:'#fed7d7',col:'#822727'},
+    'sin-datos':{label:'— Sin datos',bg:'#edf2f7',col:'#718096'},
+  };
+  const rows = [];
+  data.forEach(e => {
+    const r = RM[e.riesgo];
+    const dSign = e.deltaCupos > 0 ? '+' : '';
+    const dColor = e.deltaCupos > 0 ? '#276749' : e.deltaCupos < 0 ? '#822727' : '#718096';
+    const deltaHtml = e.deltaCupos != null
+      ? `<span style="color:${dColor};font-weight:700;">${dSign}${e.deltaCupos}</span>`
+        + (e.pctDelta != null ? `<br><span style="font-size:10px;color:#718096;">(${e.pctDelta>0?'+':''}${(e.pctDelta*100).toFixed(0)}%)</span>` : '')
+      : '—';
+    const brechaHtml = e.brechaEst27 != null
+      ? `<span style="color:${e.brechaEst27>0?'#822727':'#276749'};font-weight:700;">${e.brechaEst27>0?'+':''}${e.brechaEst27}</span>`
+      : '<span style="color:#718096;">—</span>';
+    const hasDet = (_detMap[e.rbd]||[]).length > 0;
+    rows.push(`<tr data-rbd="${e.rbd}">
+      <td style="text-align:center;width:28px;">${hasDet?`<button class="btn-exp" onclick="toggleNivel(this,${e.rbd})" title="Ver desglose por nivel">▶</button>`:''}</td>
+      <td><b>${e.nombre}</b><br><span style="font-size:10px;color:#2b6cb0;font-weight:700;">RBD ${e.rbd}</span></td>
+      <td>${e.comuna}</td>
+      <td>${e.area}</td>
+      <td style="text-align:center;">${e.matricula26??'—'}</td>
+      <td style="text-align:center;">${e.cupos26??'—'}</td>
+      <td style="text-align:center;font-weight:600;">${e.cupos27??'—'}</td>
+      <td style="text-align:center;">${deltaHtml}</td>
+      <td style="text-align:center;">${e.cuposTransp26!=null?e.cuposTransp26:'<span style="color:#718096;">—</span>'}</td>
+      <td style="text-align:center;">${e.demandaEst27!=null?e.demandaEst27:'<span style="color:#718096;">—</span>'}</td>
+      <td style="text-align:center;">${brechaHtml}</td>
+      <td><span style="background:${r.bg};color:${r.col};padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;">${r.label}</span></td>
+    </tr>`);
+  });
+  body.innerHTML = rows.join('');
+}
+
+function toggleNivel(btn, rbd) {
+  const mainRow = btn.closest('tr');
+  const isOpen = btn.classList.toggle('abierto');
+  // Remove existing sub-rows for this rbd
+  let next = mainRow.nextElementSibling;
+  while (next && next.classList.contains('nivel-sub') && next.dataset.rbdSub == rbd) {
+    const toRemove = next;
+    next = next.nextElementSibling;
+    toRemove.remove();
+  }
+  if (!isOpen) return;
+  const niveles = _detMap[rbd] || [];
+  const frag = document.createDocumentFragment();
+  niveles.forEach(d => {
+    const tr = document.createElement('tr');
+    tr.className = 'nivel-sub';
+    tr.dataset.rbdSub = rbd;
+    const espTag = d.esp ? `<span class="esp-tag">${d.esp}</span>` : '';
+    tr.innerHTML = `<td></td><td>${d.n}${espTag}</td><td colspan="2"></td>
+      <td></td><td></td>
+      <td style="text-align:center;font-weight:600;">${d.c}</td>
+      <td style="text-align:center;color:#718096;">${d.k} curso${d.k!==1?'s':''}</td>
+      <td colspan="4"></td>`;
+    frag.appendChild(tr);
+  });
+  mainRow.after(frag);
+}
+
+function sortProy(col) {
+  const s = sortStatesProy;
+  s.dir = (s.col === col && s.dir === 'asc') ? 'desc' : 'asc';
+  s.col = col;
+  currentProy = sortArr(currentProy, col, s.dir);
+  const cols = ['nombre','comuna','area','matricula26','cupos26','cupos27','deltaCupos','cuposTransp26','demandaEst27','brechaEst27','riesgo'];
+  updateSortHeaders('proy', col, s.dir, cols);
+  renderTablaProyeccion(currentProy);
+}
+
+function initProyeccion() {
+  buildProyData();
+  filtrarProyeccion();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderKPIs();
+  initMapa();
+  initLineas();
+  renderTablaLEE(LEE_DATA);
+  initFichas();
+  initProyeccion();
+});
+</script>
+</body>
+</html>

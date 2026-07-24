@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor SIMCE · SLEP Petorca 2025</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:14px;}
+#header{background:linear-gradient(135deg,#1e3a5f 0%,#0f2d4a 100%);padding:8px 16px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #2563eb;flex-shrink:0;}
+#header h1{font-size:1rem;font-weight:700;color:#fff;}
+.sub{font-size:.75rem;color:#94a3b8;}
+.badge-hdr{background:#2563eb;color:#fff;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;}
+#statsbar{background:#1e293b;display:flex;border-bottom:1px solid #334155;flex-shrink:0;}
+.stat{flex:1;padding:6px 10px;border-right:1px solid #334155;text-align:center;}
+.stat:last-child{border-right:none;}
+.stat .val{font-size:1.15rem;font-weight:700;color:#60a5fa;line-height:1;}
+.stat .lbl{font-size:.62rem;color:#94a3b8;margin-top:2px;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:center;gap:3px;}
+.stat-dual{display:flex;justify-content:center;gap:10px;align-items:baseline;}
+.stat-dual .sv{text-align:center;}
+.stat-dual .sv-tag{font-size:.55rem;font-weight:700;letter-spacing:.4px;line-height:1.3;}
+.stat-dual .sv-val{font-size:1.05rem;font-weight:700;line-height:1;}
+/* TOOLTIP */
+.tip{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;background:#334155;color:#94a3b8;font-size:.58rem;font-weight:700;cursor:default;position:relative;flex-shrink:0;}
+.tip::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#0f172a;color:#cbd5e1;font-size:.69rem;line-height:1.5;padding:7px 11px;border-radius:6px;white-space:normal;pointer-events:none;opacity:0;transition:opacity .15s;z-index:200;border:1px solid #334155;width:220px;text-align:left;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.tip:hover::after{opacity:1;}
+body.theme-light .tip{background:#dbeafe;color:#1d4ed8;}
+body.theme-light .tip::after{background:#fff;color:#1e293b;border-color:#e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,.12);}
+#main{display:flex;flex:1;overflow:hidden;}
+/* SIDEBAR */
+#sidebar{width:340px;background:#1e293b;border-right:1px solid #334155;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .2s;}
+#map-container.hidden{flex:0!important;min-width:0!important;width:0!important;overflow:hidden!important;}
+#right-panel.map-hidden{flex:1!important;width:auto!important;min-width:450px;}
+.map-toggle-btn{background:#1e3a5f;border:none;color:#93c5fd;padding:4px 10px;font-size:.7rem;cursor:pointer;border-radius:3px;white-space:nowrap;}
+.map-toggle-btn:hover{background:#2563eb;color:#fff;}
+#filter-toggle{width:100%;background:#0f172a;border:none;border-bottom:1px solid #334155;color:#94a3b8;padding:7px 12px;font-size:.74rem;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+#filter-toggle:hover{background:#1e3a5f;color:#e2e8f0;}
+#filter-toggle .arr{transition:transform .2s;font-size:.65rem;}
+#filter-toggle.open .arr{transform:rotate(180deg);}
+#filter-body{display:none;padding:8px 10px 6px;overflow-y:auto;max-height:320px;border-bottom:1px solid #334155;}
+#filter-body.open{display:block;}
+.fg{margin-bottom:8px;}
+.fg label{display:block;font-size:.7rem;color:#94a3b8;margin-bottom:3px;}
+.fg select{width:100%;background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:4px 7px;border-radius:4px;font-size:.76rem;cursor:pointer;}
+.fg select:focus{outline:none;border-color:#2563eb;}
+.cm-opts{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;}
+.cm-btn{padding:3px 8px;border-radius:3px;border:1px solid #334155;background:#0f172a;color:#94a3b8;font-size:.68rem;cursor:pointer;}
+.cm-btn.active{background:#2563eb;border-color:#2563eb;color:#fff;}
+#legend-box{padding:6px 10px;font-size:.7rem;flex-shrink:0;border-bottom:1px solid #334155;}
+.leg-title{color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;font-size:.64rem;}
+.leg-item{display:flex;align-items:center;gap:5px;margin-bottom:2px;color:#cbd5e1;font-size:.7rem;}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+#search-box{padding:6px 10px;background:#0f172a;border-bottom:1px solid #334155;flex-shrink:0;}
+#search-box input{width:100%;background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:5px 8px;border-radius:4px;font-size:.76rem;}
+#search-box input:focus{outline:none;border-color:#2563eb;}
+.count-info{padding:3px 10px;font-size:.66rem;color:#64748b;background:#1a2535;border-bottom:1px solid #1e293b;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;}
+.cmp-clear{background:none;border:none;color:#f59e0b;font-size:.64rem;cursor:pointer;padding:0;}
+.cmp-clear:hover{color:#fbbf24;}
+#school-list-panel{flex:1;overflow-y:auto;}
+.list-hdr{padding:6px 10px;font-size:.66rem;color:#64748b;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #1e293b;background:#1a2535;position:sticky;top:0;z-index:1;}
+.si{padding:8px 10px;border-bottom:1px solid #1a2535;cursor:pointer;transition:background .1s;display:flex;align-items:flex-start;gap:6px;}
+.si:hover{background:#0f172a;}
+.si.active{background:#1e3a5f;border-left:3px solid #2563eb;padding-left:7px;}
+.si.in-cmp{background:#0f2340;border-left:3px solid #22c55e;padding-left:7px;}
+.si-check{width:14px;height:14px;border:1px solid #334155;border-radius:3px;flex-shrink:0;margin-top:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#22c55e;background:#0f172a;}
+.si-check.checked{border-color:#22c55e;background:#052e16;}
+.si-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.si-body{flex:1;min-width:0;}
+.si-name{font-size:.77rem;font-weight:600;color:#e2e8f0;line-height:1.2;}
+.si-meta{font-size:.66rem;color:#64748b;margin-top:1px;}
+.si-badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:.62rem;font-weight:600;margin-top:2px;background:#1e3a5f;color:#93c5fd;}
+/* MAP */
+#map-container{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#map{flex:1;}
+/* RIGHT PANEL */
+#right-panel{width:450px;background:#1e293b;border-left:1px solid #334155;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+#right-panel.collapsed{width:0;overflow:hidden;}
+#right-panel-tabs{display:flex;background:#0f172a;border-bottom:1px solid #334155;flex-shrink:0;}
+.rptab{flex:1;padding:8px 4px;text-align:center;font-size:.74rem;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.rptab:hover{color:#94a3b8;}
+.rptab.active{color:#60a5fa;border-bottom-color:#2563eb;font-weight:600;}
+.rp-view{display:none;flex-direction:column;flex:1;overflow:hidden;}
+.rp-view.active{display:flex;}
+/* DETALLE */
+#view-detalle #det-hdr{padding:8px 14px;background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);border-bottom:2px solid #2563eb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+#view-detalle #det-hdr h3{font-size:.9rem;font-weight:700;color:#fff;flex:1;padding-right:6px;line-height:1.3;}
+#det-close{background:none;border:none;color:#64748b;cursor:pointer;font-size:1rem;padding:2px 6px;}
+#det-close:hover{color:#e2e8f0;}
+#det-content{flex:1;overflow-y:auto;padding:12px 14px;}
+.ds{margin-bottom:12px;}
+.ds-title{cursor:pointer;user-select:none;}
+.ds-title:hover{opacity:.85;}
+.ds-body{}
+
+.ds-title{font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:#2563eb;margin-bottom:6px;font-weight:700;border-bottom:1px solid #1e3a5f;padding-bottom:3px;}
+.dr{display:flex;justify-content:space-between;align-items:flex-start;padding:4px 0;border-bottom:1px solid #0f172a;}
+.dk{font-size:.76rem;color:#64748b;flex:0 0 42%;}
+.dv{font-size:.76rem;color:#e2e8f0;text-align:right;flex:1;word-break:break-word;}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;}
+.b-alto{background:#166534;color:#bbf7d0;}.b-medio{background:#1d4ed8;color:#bfdbfe;}
+.b-mb{background:#92400e;color:#fde68a;}.b-sc{background:#374151;color:#9ca3af;}
+.b-na{background:#1f2937;color:#6b7280;}.b-si{background:#14532d;color:#86efac;}
+.b-no{background:#7f1d1d;color:#fca5a5;}
+.simce-tabs{display:flex;gap:4px;margin-bottom:8px;}
+.stab{padding:4px 10px;border-radius:4px;border:1px solid #334155;background:#0f172a;color:#94a3b8;font-size:.72rem;cursor:pointer;}
+.stab.active{background:#2563eb;border-color:#2563eb;color:#fff;}
+.simce-block{display:none;}
+.simce-block.active{display:block;}
+.ptje-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.ptje-label{font-size:.72rem;color:#94a3b8;width:78px;flex-shrink:0;}
+.ptje-val{font-size:1rem;font-weight:700;color:#60a5fa;width:44px;}
+.ptje-bar-bg{flex:1;height:7px;background:#1e293b;border-radius:3px;overflow:hidden;}
+.ptje-bar{height:100%;border-radius:3px;background:#2563eb;}
+.eda-label{font-size:.68rem;color:#94a3b8;margin-bottom:2px;margin-top:5px;}
+.eda-stacked{display:flex;height:12px;border-radius:4px;overflow:hidden;}
+.eda-seg{display:flex;align-items:center;justify-content:center;font-size:.56rem;color:rgba(255,255,255,.9);}
+.eda-mini{display:flex;gap:6px;margin-top:2px;}
+.eda-mini span{font-size:.64rem;}
+.sexo-row{display:flex;gap:8px;margin-top:8px;}
+.sexo-card{flex:1;background:#0f172a;border-radius:5px;padding:7px 9px;}
+.sexo-card .sc-lbl{font-size:.66rem;color:#64748b;margin-bottom:3px;}
+.sc-val{font-size:.88rem;font-weight:700;color:#60a5fa;}
+.no-simce{font-size:.76rem;color:#64748b;text-align:center;padding:16px;}
+#chart-area{height:115px;padding:7px 14px;border-top:1px solid #334155;flex-shrink:0;}
+/* RESUMEN */
+#view-resumen{overflow-y:auto;padding:14px;}
+.rs-section{margin-bottom:16px;}
+.rs-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.7px;color:#2563eb;margin-bottom:8px;font-weight:700;border-bottom:1px solid #1e3a5f;padding-bottom:3px;}
+.rs-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.rs-card{background:#0f172a;border-radius:6px;padding:10px 12px;border:1px solid #1e3a5f;}
+.rs-card .rc-val{font-size:1.3rem;font-weight:700;color:#60a5fa;}
+.rs-card .rc-lbl{font-size:.66rem;color:#64748b;margin-top:2px;}
+.rs-table{width:100%;border-collapse:collapse;font-size:.72rem;}
+.rs-table th{text-align:left;padding:5px 7px;color:#64748b;border-bottom:1px solid #334155;font-weight:600;font-size:.66rem;text-transform:uppercase;letter-spacing:.3px;}
+.rs-table td{padding:5px 7px;border-bottom:1px solid #1a2535;color:#e2e8f0;vertical-align:middle;}
+.rs-table tr:hover td{background:#0f172a;}
+.rs-chart-wrap{height:160px;margin-bottom:8px;}
+/* COMPARATIVO */
+#view-cmp{overflow-y:auto;padding:0;flex-direction:column;}
+#view-graficos{display:none;flex-direction:column;overflow:hidden;}
+.gf-controls{padding:10px 14px;background:#0f172a;border-bottom:1px solid #334155;flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.gf-btn{padding:4px 10px;border-radius:4px;border:1px solid #334155;background:#1e293b;color:#94a3b8;font-size:.72rem;cursor:pointer;}
+.gf-btn.active{background:#2563eb;border-color:#2563eb;color:#fff;}
+.gf-sort{margin-left:auto;font-size:.68rem;color:#64748b;display:flex;align-items:center;gap:6px;}
+.gf-sort select{background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:3px 6px;border-radius:4px;font-size:.68rem;cursor:pointer;}
+.gf-chart-wrap{flex:1;overflow-y:auto;padding:10px 14px;}
+.gf-no-data{font-size:.76rem;color:#64748b;text-align:center;padding:30px;}
+.cmp-hint{font-size:.74rem;color:#64748b;margin-bottom:12px;line-height:1.5;}
+#cmp-table-wrap{overflow-x:auto;}
+.cmp-table{width:100%;border-collapse:collapse;font-size:.73rem;min-width:380px;}
+.cmp-table th{text-align:center;padding:6px 8px;color:#64748b;border-bottom:2px solid #334155;font-weight:600;font-size:.66rem;text-transform:uppercase;letter-spacing:.3px;background:#0f172a;position:sticky;top:0;}
+.cmp-table th:first-child{text-align:left;}
+.cmp-table td{padding:6px 8px;border-bottom:1px solid #1a2535;text-align:center;vertical-align:middle;}
+.cmp-table td:first-child{text-align:left;font-weight:600;color:#e2e8f0;max-width:140px;word-break:break-word;}
+.cmp-table tr:hover td{background:#0f172a;}
+.cmp-remove{background:none;border:none;color:#64748b;cursor:pointer;font-size:.8rem;padding:0 3px;}
+.cmp-remove:hover{color:#ef4444;}
+.pill{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.66rem;font-weight:600;}
+.pill-alto{background:#166534;color:#bbf7d0;}.pill-medio{background:#1d4ed8;color:#bfdbfe;}
+.pill-mb{background:#92400e;color:#fde68a;}.pill-sc{background:#374151;color:#9ca3af;}
+.pill-na{background:#1f2937;color:#6b7280;}
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#0f172a;}
+::-webkit-scrollbar-thumb{background:#334155;border-radius:2px;}
+.leaflet-popup-content-wrapper{background:#1e293b;border:1px solid #334155;color:#e2e8f0;}
+.leaflet-popup-tip{background:#1e293b;}
+.leaflet-popup-content{font-size:.78rem;line-height:1.5;min-width:180px;}
+.lp-title{font-weight:700;color:#60a5fa;margin-bottom:3px;font-size:.82rem;}
+.lp-meta{color:#94a3b8;font-size:.7rem;}
+
+
+body.theme-light .ds-title{color:#1d4ed8;background:#eff6ff;border-radius:4px;padding:4px 6px;}
+body.theme-light .sc-val{color:#1d4ed8;}
+body.theme-light .sexo-card{background:#f1f5f9;border:1px solid #e2e8f0;}
+body.theme-light .ptje-bar-bg{background:#dbeafe;}
+body.theme-light .rs-card{background:#f8fafc;border:1px solid #dbeafe;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+body.theme-light .no-simce{color:#64748b;}
+body.theme-light .stab{background:#e2e8f0;border-color:#cbd5e1;color:#334155;}
+body.theme-light #chart-area{background:#f8fafc;border-top:1px solid #e2e8f0;}
+
+/* ── TEMA CLARO ───────────────────────────────────────────────────────────── */
+body.theme-light{background:#f1f5f9;color:#1e293b;}
+body.theme-light #header{background:linear-gradient(135deg,#1d4ed8 0%,#1e40af 100%);}
+body.theme-light #statsbar{background:#e8edf3;border-bottom-color:#cbd5e1;}
+body.theme-light .stat .val{color:#1d4ed8;}
+body.theme-light .stat .lbl{color:#475569;}
+body.theme-light .stat{border-right-color:#cbd5e1;}
+body.theme-light #sidebar{background:#fff;border-right-color:#e2e8f0;}
+body.theme-light #filter-toggle{background:#f8fafc;color:#475569;border-bottom-color:#e2e8f0;}
+body.theme-light #filter-toggle:hover{background:#e2e8f0;color:#1e293b;}
+body.theme-light #filter-body{border-bottom-color:#e2e8f0;}
+body.theme-light .fg label{color:#475569;}
+body.theme-light .fg select{background:#f8fafc;border-color:#cbd5e1;color:#1e293b;}
+body.theme-light #legend-box{border-bottom-color:#e2e8f0;}
+body.theme-light .leg-item{color:#334155;}
+body.theme-light #search-box{background:#f8fafc;border-bottom-color:#e2e8f0;}
+body.theme-light #search-box input{background:#fff;border-color:#cbd5e1;color:#1e293b;}
+body.theme-light .count-info{background:#f1f5f9;color:#475569;}
+body.theme-light .list-hdr{background:#f1f5f9;color:#64748b;}
+body.theme-light .si{border-bottom-color:#e8edf3;}
+body.theme-light .si:hover{background:#f1f5f9;}
+body.theme-light .si.active{background:#dbeafe;border-left-color:#2563eb;}
+body.theme-light .si-name{color:#1e293b;}
+body.theme-light .si-meta{color:#64748b;}
+body.theme-light .si-badge{background:#dbeafe;color:#1d4ed8;}
+body.theme-light .si-check{background:#fff;border-color:#cbd5e1;}
+body.theme-light .si.in-cmp{background:#f0fdf4;border-left-color:#22c55e;}
+body.theme-light #right-panel{background:#fff;border-left-color:#e2e8f0;}
+body.theme-light #right-panel-tabs{background:#f8fafc;border-bottom-color:#e2e8f0;}
+body.theme-light .rptab{color:#64748b;}
+body.theme-light .rptab:hover{color:#334155;}
+body.theme-light .rptab.active{color:#1d4ed8;border-bottom-color:#2563eb;}
+body.theme-light #view-detalle #det-hdr{background:#eff6ff;border-bottom:2px solid #3b82f6;}
+body.theme-light #view-detalle #det-hdr h3{color:#1e40af;}
+body.theme-light #det-close{color:#94a3b8;}
+body.theme-light .ds-title{color:#1d4ed8;border-bottom-color:#dbeafe;}
+body.theme-light .dr{border-bottom-color:#f1f5f9;}
+body.theme-light .dk{color:#475569;}
+body.theme-light .dv{color:#1e293b;}
+body.theme-light .stab{background:#f1f5f9;border-color:#cbd5e1;color:#475569;}
+body.theme-light .stab.active{background:#2563eb;border-color:#2563eb;color:#fff;}
+body.theme-light .sexo-card{background:#f1f5f9;}
+body.theme-light .sexo-card .sc-lbl{color:#64748b;}
+body.theme-light .sc-val{color:#1d4ed8;}
+body.theme-light .no-simce{color:#64748b;}
+body.theme-light #chart-area{border-top-color:#e2e8f0;}
+body.theme-light .rs-title{color:#1d4ed8;border-bottom-color:#dbeafe;}
+body.theme-light .rs-card{background:#f8fafc;border-color:#dbeafe;}
+body.theme-light .rs-card .rc-val{color:#1d4ed8;}
+body.theme-light .rs-card .rc-lbl{color:#475569;}
+body.theme-light .rs-table th{color:#475569;border-bottom-color:#e2e8f0;}
+body.theme-light .rs-table td{color:#1e293b;border-bottom-color:#f1f5f9;}
+body.theme-light .rs-table tr:hover td{background:#f8fafc;}
+body.theme-light .cmp-hint{color:#475569;}
+body.theme-light .cmp-table th{background:#f8fafc;color:#475569;border-bottom-color:#e2e8f0;}
+body.theme-light .cmp-table td{color:#1e293b;border-bottom-color:#f1f5f9;}
+body.theme-light .cmp-table tr:hover td{background:#f8fafc;}
+body.theme-light .gf-controls{background:#f8fafc;border-bottom-color:#e2e8f0;}
+body.theme-light .gf-btn{background:#f1f5f9;border-color:#cbd5e1;color:#475569;}
+body.theme-light .gf-btn.active{background:#2563eb;border-color:#2563eb;color:#fff;}
+body.theme-light .gf-sort{color:#475569;}
+body.theme-light .gf-sort select{background:#f8fafc;border-color:#cbd5e1;color:#475569;}
+body.theme-light .gf-no-data{color:#64748b;}
+body.theme-light .leaflet-popup-content-wrapper{background:#fff;border-color:#e2e8f0;color:#1e293b;}
+body.theme-light .leaflet-popup-tip{background:#fff;}
+body.theme-light .lp-title{color:#1d4ed8;}
+body.theme-light .lp-meta{color:#475569;}
+body.theme-light ::-webkit-scrollbar-track{background:#f1f5f9;}
+body.theme-light ::-webkit-scrollbar-thumb{background:#cbd5e1;}
+body.theme-light .map-toggle-btn{background:#1e40af;color:#bfdbfe;}
+body.theme-light .badge-hdr{background:#1e40af;}
+body.theme-light .sub{color:#bfdbfe;}
+</style>
+</head>
+<body>
+<div id="header">
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <h1>🗺️ Visor SIMCE · SLEP Petorca</h1>
+      <span class="badge-hdr">2025</span>
+    </div>
+    <div class="sub">Resultados SIMCE · Categoría Desempeño · Directorio · Mapa Territorial</div>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;"><button class="map-toggle-btn" id="map-toggle-btn" onclick="toggleMap()">🗺️ Ocultar mapa</button><button class="map-toggle-btn" id="theme-btn" onclick="toggleTheme()" style="margin-left:4px;">☀️ Claro</button><span style="font-size:.68rem;color:#475569;">4°B · 8°B · 2°M</span></div>
+</div>
+<div id="statsbar">
+  <div class="stat">
+    <div class="val" id="st-total">—</div>
+    <div class="lbl">EE visibles <span class="tip" data-tip="Cantidad de establecimientos según los filtros activos. Cambia al aplicar filtros de comuna, área, microcentro, etc.">?</span></div>
+  </div>
+  <div class="stat">
+    <div class="val" id="st-mat">—</div>
+    <div class="lbl">Matrícula 2025 <span class="tip" data-tip="Suma total de matrículas 2025 de los EE actualmente visibles en el listado.">?</span></div>
+  </div>
+  <div class="stat">
+    <div class="stat-dual">
+      <div class="sv"><div class="sv-tag" style="color:#60a5fa;">LECT</div><div class="sv-val" style="color:#60a5fa;" id="st-4b">—</div></div>
+      <div class="sv"><div class="sv-tag" style="color:#f87171;">MATE</div><div class="sv-val" style="color:#f87171;" id="st-4b-m">—</div></div>
+    </div>
+    <div class="lbl">4° Básico <span class="tip" data-tip="Promedio SIMCE 2025 · 4° Básico. Es el promedio territorial del conjunto de EE visibles con datos, NO del establecimiento seleccionado. Varía según filtros.">?</span></div>
+  </div>
+  <div class="stat">
+    <div class="stat-dual">
+      <div class="sv"><div class="sv-tag" style="color:#60a5fa;">LECT</div><div class="sv-val" style="color:#60a5fa;" id="st-8b">—</div></div>
+      <div class="sv"><div class="sv-tag" style="color:#f87171;">MATE</div><div class="sv-val" style="color:#f87171;" id="st-8b-m">—</div></div>
+    </div>
+    <div class="lbl">8° Básico <span class="tip" data-tip="Promedio SIMCE 2025 · 8° Básico. Es el promedio territorial del conjunto de EE visibles con datos, NO del establecimiento seleccionado. Varía según filtros.">?</span></div>
+  </div>
+  <div class="stat">
+    <div class="stat-dual">
+      <div class="sv"><div class="sv-tag" style="color:#60a5fa;">LECT</div><div class="sv-val" style="color:#60a5fa;" id="st-2m">—</div></div>
+      <div class="sv"><div class="sv-tag" style="color:#f87171;">MATE</div><div class="sv-val" style="color:#f87171;" id="st-2m-m">—</div></div>
+    </div>
+    <div class="lbl">2° Medio <span class="tip" data-tip="Promedio SIMCE 2025 · 2° Medio. Es el promedio territorial del conjunto de EE visibles con datos, NO del establecimiento seleccionado. Varía según filtros.">?</span></div>
+  </div>
+  <div class="stat">
+    <div class="val" id="st-asist">—</div>
+    <div class="lbl">Asist. 2025 <span class="tip" data-tip="Promedio de asistencia 2025 de los EE visibles (usa dato 2024 si 2025 no está disponible).">?</span></div>
+  </div>
+</div>
+<div id="main">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <button id="filter-toggle" onclick="toggleFilters(this)">
+      <span>🔍 Filtros y color de marcadores</span><span class="arr">▼</span>
+    </button>
+    <div id="filter-body">
+      <div class="fg"><label>Comuna</label>
+        <select id="f-comuna" onchange="applyFilters()">
+          <option value="">Todas</option>
+          <option>Cabildo</option><option>La Ligua</option><option>Papudo</option><option>Petorca</option>
+        </select></div>
+      <div class="fg"><label>Área</label>
+        <select id="f-area" onchange="applyFilters()">
+          <option value="">Todas</option><option>Urbano</option><option>Rural</option>
+        </select></div>
+      <div class="fg"><label>Tipo establecimiento</label>
+        <select id="f-tipo" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option>Colegio</option><option>Escuela</option><option>Escuela Especial</option><option>Liceo</option>
+        </select></div>
+      <div class="fg"><label>Categoría de Enseñanza</label>
+        <select id="f-ensenanza" onchange="applyFilters()">
+          <option value="">Todas</option>
+          <option value="Básica">Básica</option>
+          <option value="Media">Media</option>
+          <option value="Especial">Especial (No rinde SIMCE)</option>
+        </select></div>
+      <div class="fg"><label>Microcentro</label>
+        <select id="f-micro" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option value="Incakán">Incakán</option>
+          <option value="Sembrando Futuro">Sembrando Futuro</option>
+          <option value="Valles de Cabildo">Valles de Cabildo</option>
+          <option value="No aplica">No aplica</option>
+        </select></div>
+      <div class="fg"><label>Profesional ATP</label>
+        <select id="f-atp" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option>Claudia Aguilera</option><option>Fabiola Bustos</option><option>Francisca Tapia</option><option>Leandro Ríos</option><option>Marjorie Gaete</option><option>Paula Cataldo</option><option>Susan Ramírez</option>
+        </select></div>
+      <div class="fg"><label>Prof. Apoyo Establecimientos</label>
+        <select id="f-apoyo" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option>Claudio Roa</option><option>Ester Santana</option><option>Jorge Aranda</option>
+        </select></div>
+      <div class="fg"><label>Categoría Desempeño 2019</label>
+        <select id="f-desemp" onchange="applyFilters()">
+          <option value="">Todas</option>
+          <option>Alto</option><option>Medio</option><option>Medio bajo</option>
+          <option>Sin Categoría</option><option>No aplica</option>
+        </select></div>
+      <div class="fg"><label>SNED 2026–2027</label>
+        <select id="f-sned" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option value="si">Con SNED</option><option value="no">Sin SNED</option>
+        </select></div>
+      <div class="fg"><label>Color marcadores por:</label>
+        <div class="cm-opts">
+          <button class="cm-btn active" onclick="setCM('desemp',this)">Desempeño</button>
+          <button class="cm-btn" onclick="setCM('simce4b',this)">SIMCE 4°B</button>
+          <button class="cm-btn" onclick="setCM('simce8b',this)">SIMCE 8°B</button>
+          <button class="cm-btn" onclick="setCM('simce2m',this)">SIMCE 2°M</button>
+          <button class="cm-btn" onclick="setCM('tipo',this)">Tipo EE</button>
+          <button class="cm-btn" onclick="setCM('area',this)">Área</button>
+          <button class="cm-btn" onclick="setCM('micro',this)">Microcentro</button>
+        </div></div>
+    </div>
+    <div id="legend-box"></div>
+    <div id="search-box">
+      <input type="text" id="search-inp" placeholder="Buscar establecimiento…" oninput="applyFilters()">
+    </div>
+    <div class="count-info" id="count-info">—</div>
+    <div id="school-list-panel">
+      <div class="list-hdr">Establecimientos · ✓ para comparar</div>
+      <div id="school-list"></div>
+    </div>
+  </div>
+  <!-- MAP -->
+  <div id="map-container"><div id="map"></div></div>
+  <!-- RIGHT PANEL -->
+  <div id="right-panel" class="collapsed">
+    <div id="right-panel-tabs">
+      <div class="rptab active" id="tab-detalle" onclick="switchView('detalle')">📋 Detalle EE</div>
+      <div class="rptab" id="tab-resumen" onclick="switchView('resumen')">📊 Resumen</div>
+      <div class="rptab" id="tab-cmp" onclick="switchView('cmp')">⚖️ Comparativo</div>
+      <div class="rptab" id="tab-graficos" onclick="switchView('graficos')">📈 Gráficos</div>
+      <div style="display:flex;align-items:center;padding:0 8px;">
+        <button id="det-close" onclick="closeDetail()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:1rem;">✕</button>
+      </div>
+    </div>
+    <!-- DETALLE -->
+    <div class="rp-view active" id="view-detalle" style="flex-direction:column;">
+      <div id="det-hdr">
+        <h3 id="det-title">Selecciona un establecimiento</h3>
+      </div>
+      <div id="det-content" style="flex:1;overflow-y:auto;padding:12px 14px;"></div>
+      <div id="chart-area" style="height:115px;padding:7px 14px;border-top:1px solid #334155;flex-shrink:0;display:none;">
+        <canvas id="chart-main"></canvas>
+      </div>
+    </div>
+    <!-- RESUMEN -->
+    <div class="rp-view" id="view-resumen" style="overflow-y:auto;padding:14px;display:none;"></div>
+    <!-- COMPARATIVO -->
+    <div class="rp-view" id="view-cmp" style="overflow-y:auto;padding:14px;display:none;"></div>
+    <!-- GRAFICOS -->
+    <div class="rp-view" id="view-graficos" style="flex-direction:column;overflow:hidden;"></div>
+  </div>
+</div>
+<script>
+
+var DATA  = [{"rbd": 1149, "nombre": "LICEO CORDILLERA", "nombre_corto": "1149 - LICEO CORDILLERA", "comuna": "Petorca", "area": "Rural", "tipo": "Colegio", "cobertura": "NT1 a 4° Medio", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.22171, "lng": -70.832336, "direccion": "Pedro Montt S/N", "distancia_km": 63.1, "matricula_2025": 163, "matricula_2026": 151, "diff_matricula": -12, "director": "Mario Andrés Zamora Valle", "cargo": "Director", "correo": "mario.zamora@edu.sleppetorca.gob.cl", "telefono": 944000188, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica", "Opción 4 Programa Integración Escolar", "Enseñanza Media T-P Agrícola Niños y Jóvenes"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "Medio", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 78.1959, "pie": "Con convenio", "pace": "Con programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 19, "asistencia_2022": 87.8, "asistencia_2023": 89.4, "asistencia_2024": 86.3, "asistencia_2025": 82.7, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Francisca Tapia", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 11199, "nombre": "COLEGIO LUIS CRUZ MARTINEZ", "nombre_corto": "11199 - COLEGIO LUIS CRUZ MARTINEZ", "comuna": "La Ligua", "area": "Urbano", "tipo": "Colegio", "cobertura": "NT1 a 4° Medio", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.45105, "lng": -71.232498, "direccion": "Luis Cruz Martínez 272", "distancia_km": 0.45, "matricula_2025": 670, "matricula_2026": 636, "diff_matricula": -34, "director": "Lisette Paola Fernández Arredondo", "cargo": "Directora", "correo": "lisette.fernandez@edu.sleppetorca.gob.cl", "telefono": 992086616, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica", "Enseñanza Media H-C niños y jóvenes"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "Medio", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 74.0268, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "Sí", "adeco_2026": "Sí", "docentes": null, "aaee": 32, "asistencia_2022": 92.1, "asistencia_2023": 88.3, "asistencia_2024": 91.2, "asistencia_2025": 84.0, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Paula Cataldo", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1123, "nombre": "ESCUELA GABRIELA MISTRAL", "nombre_corto": "1123 - ESCUELA GABRIELA MISTRAL", "comuna": "La Ligua", "area": "Urbano", "tipo": "Colegio", "cobertura": "NT1 a 4° Medio", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.44978, "lng": -71.23213200000001, "direccion": "Serrano 51 S/N", "distancia_km": 0.55, "matricula_2025": 747, "matricula_2026": 722, "diff_matricula": -25, "director": "Víctor Miguel Quinteros González", "cargo": "Director", "correo": "victor.quinteros@edu.sleppetorca.gob.cl", "telefono": 985811078, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica", "Enseñanza Media H-C niños y jóvenes"], "cat_desempeno_basica_2019": "Medio bajo", "cat_desempeno_media_2019": "Medio bajo", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 76.0892, "pie": "Con convenio", "pace": "Con programa", "adeco_2025": "Sí", "adeco_2026": "Sí", "docentes": null, "aaee": 49, "asistencia_2022": 85.9, "asistencia_2023": 83.3, "asistencia_2024": 85.2, "asistencia_2025": 79.8, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Francisca Tapia", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1148, "nombre": "LICEO JOSE MANUEL BORGOÑO NUNEZ", "nombre_corto": "1148 - LICEO JOSE MANUEL BORGOÑO NUNEZ", "comuna": "Petorca", "area": "Urbano", "tipo": "Colegio", "cobertura": "NT1 a 2° Nivel", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.251511, "lng": -70.930328, "direccion": "Cuartel 145", "distancia_km": 53.1, "matricula_2025": 454, "matricula_2026": 422, "diff_matricula": -32, "director": "Cesar Benito Marchant Arredondo", "cargo": "Director", "correo": "cesar.marchant@edu.sleppetorca.gob.cl", "telefono": 993669912, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica", "Enseñanza Media H-C niños y jóvenes", "Educación Media H-C Adultos (Decreto N°1000/2009)", "Enseñanza Media T-P Comercial Niños y Jóvenes"], "cat_desempeno_basica_2019": "Medio bajo", "cat_desempeno_media_2019": "Medio bajo", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 79.0289, "pie": "Con convenio", "pace": "Con programa", "adeco_2025": "Sí", "adeco_2026": "Sí", "docentes": null, "aaee": 28, "asistencia_2022": 86.4, "asistencia_2023": 87.3, "asistencia_2024": 86.0, "asistencia_2025": 81.7, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Francisca Tapia", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1181, "nombre": "ESCUELA BASICA LOS ANGELES", "nombre_corto": "1181 - ESCUELA BASICA LOS ANGELES", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Valles de Cabildo", "lat": -32.494251, "lng": -70.962929, "direccion": "Camino Cerro Negro KM 15", "distancia_km": 35.9, "matricula_2025": 9, "matricula_2026": 6, "diff_matricula": -3, "director": "María José Collao Saavedra", "cargo": "Profesora encargada", "correo": "mariajose.collao@edu.sleppetorca.gob.cl", "telefono": 954038501, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 89.8876, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 3, "asistencia_2022": 96.7, "asistencia_2023": 97.3, "asistencia_2024": 99.9, "asistencia_2025": 100.0, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Leandro Ríos", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1182, "nombre": "ESCUELA BASICA G-47", "nombre_corto": "1182 - ESCUELA BASICA G-47", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Valles de Cabildo", "lat": -32.525879, "lng": -70.925194, "direccion": "Guayacan S/n Camino A Cerro Negro", "distancia_km": 44.2, "matricula_2025": 9, "matricula_2026": 8, "diff_matricula": -1, "director": "Patricio Andrés Vilches Guerrero", "cargo": "Profesor encargado", "correo": "patricio.vilches.guerrero@edu.sleppetorca.gob.cl", "telefono": 989586411, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 39.5348, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 2, "asistencia_2022": null, "asistencia_2023": null, "asistencia_2024": 96.7, "asistencia_2025": 100.0, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Susan Ramírez", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 11206, "nombre": "ESCUELA MUNICIPAL LAS PUERTAS", "nombre_corto": "11206 - ESCUELA MUNICIPAL LAS PUERTAS", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Valles de Cabildo", "lat": -32.484169, "lng": -70.93235, "direccion": "Camino a Cerro Negro KM 19", "distancia_km": 39.1, "matricula_2025": 10, "matricula_2026": 10, "diff_matricula": 0, "director": "María José Plaza Pastén", "cargo": "Profesora encargada", "correo": "paulina.martinez@edu.sleppetorca.gob.cl", "telefono": 991934643, "estado_cargo": "Vacante", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 38.5245, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 2, "asistencia_2022": 97.5, "asistencia_2023": 96.9, "asistencia_2024": 99.4, "asistencia_2025": 90.0, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Leandro Ríos", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1171, "nombre": "ESCUELA BASICA LA FRONTERA DE ALICAHUE", "nombre_corto": "1171 - ESCUELA BASICA LA FRONTERA DE ALICAHUE", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Valles de Cabildo", "lat": -32.351131, "lng": -70.782494, "direccion": "Camino Alicahue KM 34", "distancia_km": 54.4, "matricula_2025": 14, "matricula_2026": 13, "diff_matricula": -1, "director": "Felipe Cristián Iturrieta Lazo", "cargo": "Profesor encargado", "correo": "felipe.iturrieta@edu.sleppetorca.gob.cl", "telefono": 961103369, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 79.452, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 2, "asistencia_2022": 96.8, "asistencia_2023": 99.2, "asistencia_2024": 99.0, "asistencia_2025": 96.3, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Fabiola Bustos", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1176, "nombre": "ESCUELA PABLO NERUDA", "nombre_corto": "1176 - ESCUELA PABLO NERUDA", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 6° Básico", "estado": "Abierto", "microcentro": "Valles de Cabildo", "lat": -32.404999, "lng": -71.034103, "direccion": "Camino Público KM 6", "distancia_km": 25.8, "matricula_2025": 38, "matricula_2026": 36, "diff_matricula": -2, "director": "José Alberto Astudillo Rodríguez", "cargo": "Director", "correo": "jose.astudillo@edu.sleppetorca.gob.cl", "telefono": 987603345, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 79, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 10, "asistencia_2022": 85.4, "asistencia_2023": 86.4, "asistencia_2024": 91.3, "asistencia_2025": 88.7, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Fabiola Bustos", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 12299, "nombre": "ESCUELA BASICA ANEXO PICHILEMU", "nombre_corto": "12299 - ESCUELA BASICA ANEXO PICHILEMU", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Sembrando Futuro", "lat": -32.38187, "lng": -71.121147, "direccion": "Pichilemu S/N", "distancia_km": 20.9, "matricula_2025": 7, "matricula_2026": 8, "diff_matricula": 1, "director": "Daniela Fernanda Gaete Tapia", "cargo": "Profesora encargada", "correo": "daniela.gaete@edu.sleppetorca.gob.cl", "telefono": 979649469, "estado_cargo": "Vacante", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 100, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 3, "asistencia_2022": 86.0, "asistencia_2023": 92.5, "asistencia_2024": 93.5, "asistencia_2025": 95.5, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Fabiola Bustos", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1129, "nombre": "ESCUELA ANGEL MENAY", "nombre_corto": "1129 - ESCUELA ANGEL MENAY", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Sembrando Futuro", "lat": -32.412281, "lng": -71.215149, "direccion": "Camino Público S/N", "distancia_km": 5.1, "matricula_2025": 16, "matricula_2026": 12, "diff_matricula": -4, "director": "Priscila Ninoska Villalobos Ramírez", "cargo": "Profesora encargada", "correo": "priscila.villalobos@edu.sleppetorca.gob.cl", "telefono": 981273608, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 83.9743, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 2, "asistencia_2022": 94.8, "asistencia_2023": 91.1, "asistencia_2024": 97.2, "asistencia_2025": 88.3, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Marjorie Gaete", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1134, "nombre": "CARMEN SANCHEZ ARAYA", "nombre_corto": "1134 - CARMEN SANCHEZ ARAYA", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Sembrando Futuro", "lat": -32.375839, "lng": -71.355011, "direccion": "San Manuel, Valle Longotoma S/N", "distancia_km": 20.8, "matricula_2025": 17, "matricula_2026": 16, "diff_matricula": -1, "director": "Sergio Francisco Vergara Tapia", "cargo": "Profesor Encargado", "correo": "sergio.vergara@edu.sleppetorca.gob.cl", "telefono": 942666797, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 59.0476, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 1, "asistencia_2022": 90.8, "asistencia_2023": 92.2, "asistencia_2024": 90.9, "asistencia_2025": 91.8, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Fabiola Bustos", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1137, "nombre": "ESCUELA BASICA HORTENCIA POWELL S.", "nombre_corto": "1137 - ESCUELA BASICA HORTENCIA POWELL S.", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Sembrando Futuro", "lat": -32.335602, "lng": -71.18029, "direccion": "Calle Principal S/N - Santa Marta -Longotoma S/N", "distancia_km": 21.4, "matricula_2025": 19, "matricula_2026": 23, "diff_matricula": 4, "director": "Carolina Andrea Acevedo Quezada", "cargo": "Profesor encargado ", "correo": "carolina.acevedo@edu.sleppetorca.gob.cl", "telefono": 991232162, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 66.1016, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 0, "asistencia_2022": 93.8, "asistencia_2023": 90.3, "asistencia_2024": 94.3, "asistencia_2025": 93.0, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Fabiola Bustos", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1131, "nombre": "ESC. BASICA CASAS VIEJAS DE LONGOTOMA", "nombre_corto": "1131 - ESC. BASICA CASAS VIEJAS DE LONGOTOMA", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Sembrando Futuro", "lat": -32.338921, "lng": -71.318733, "direccion": "Principal S/N Casas Viejas, Longotoma", "distancia_km": 26.9, "matricula_2025": 30, "matricula_2026": 31, "diff_matricula": 1, "director": "Nolberto Antonio Jeldes Espinoza", "cargo": "Profesor encargado", "correo": "nolberto.jeldes@edu.sleppetorca.gob.cl", "telefono": 931324656, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 74.7899, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 3, "asistencia_2022": 91.0, "asistencia_2023": 93.0, "asistencia_2024": 96.3, "asistencia_2025": 87.8, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Fabiola Bustos", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1143, "nombre": "ESCUELA BASICA QUEBRADILLA", "nombre_corto": "1143 - ESCUELA BASICA QUEBRADILLA", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.48983, "lng": -71.258789, "direccion": "Panamericana Norte KM 145", "distancia_km": 7.5, "matricula_2025": 34, "matricula_2026": 32, "diff_matricula": -2, "director": "Juan Pablo Espinoza Tordecilla", "cargo": "Profesor encargado ", "correo": "juan.espinoza@edu.sleppetorca.gob.cl", "telefono": 957685820, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 0.6, "trayectoria_sned": "Mantiene", "pct_prioritarios": 58.0281, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 3, "asistencia_2022": 89.6, "asistencia_2023": 92.7, "asistencia_2024": 94.4, "asistencia_2025": 87.9, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Susan Ramírez", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1130, "nombre": "ESC. BASICA LOS HORNOS DE HUAQUEN", "nombre_corto": "1130 - ESC. BASICA LOS HORNOS DE HUAQUEN", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Sembrando Futuro", "lat": -32.23756, "lng": -71.344963, "direccion": "Los Hornos S/N", "distancia_km": 42.7, "matricula_2025": 27, "matricula_2026": 33, "diff_matricula": 6, "director": "Katherine Cecilia Godoy Godoy", "cargo": "Profesora encargada", "correo": "katherine.godoy@edu.sleppetorca.gob.cl", "telefono": 947325717, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 84.5659, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 0, "asistencia_2022": 85.7, "asistencia_2023": 93.0, "asistencia_2024": 85.9, "asistencia_2025": 72.4, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Susan Ramírez", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1144, "nombre": "ESCUELA BASICA PICHICUY", "nombre_corto": "1144 - ESCUELA BASICA PICHICUY", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.33988, "lng": -71.45867, "direccion": "Avenida El Bosque Pichicuy 785", "distancia_km": 20.9, "matricula_2025": 39, "matricula_2026": 39, "diff_matricula": 0, "director": "María Pía Osorio Villanueva", "cargo": "Profesora encargada", "correo": "maria.osorio@edu.sleppetorca.gob.cl", "telefono": 964867256, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 85.6115, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 6, "asistencia_2022": 81.1, "asistencia_2023": 86.5, "asistencia_2024": 88.5, "asistencia_2025": 78.0, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Paula Cataldo", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1135, "nombre": "ESCUELA BASICA LOS MOLLES", "nombre_corto": "1135 - ESCUELA BASICA LOS MOLLES", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.23172, "lng": -71.509933, "direccion": "Pasaje Puquén esquina Avenida Los Pescadores S/N", "distancia_km": 41.3, "matricula_2025": 55, "matricula_2026": 52, "diff_matricula": -3, "director": "Macarena Andrea Santos Fredes", "cargo": "Profesora encargada", "correo": "macarena.santos@edu.sleppetorca.gob.cl", "telefono": 975559270, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio bajo", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 60.8843, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 0, "asistencia_2022": 87.5, "asistencia_2023": 88.2, "asistencia_2024": 89.6, "asistencia_2025": 83.0, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "Sí", "cp_atp": "Paula Cataldo", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1133, "nombre": "ESC.BASICA LAS CASAS DE HUAQUEN", "nombre_corto": "1133 - ESC.BASICA LAS CASAS DE HUAQUEN", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.332409, "lng": -71.404457, "direccion": "Avenida El Vencedor, Huaquen KM 170", "distancia_km": 27.9, "matricula_2025": 70, "matricula_2026": 72, "diff_matricula": 2, "director": "Paola Yanoli Fernández Pérez", "cargo": "Profesora encargada", "correo": "paola.fernandez@edu.sleppetorca.gob.cl", "telefono": 975901276, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 75.0392, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 0, "asistencia_2022": 87.9, "asistencia_2023": 81.6, "asistencia_2024": 82.4, "asistencia_2025": 85.7, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Susan Ramírez", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1142, "nombre": "ESCUELA LA CANELA", "nombre_corto": "1142 - ESCUELA LA CANELA", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.36237, "lng": -71.158661, "direccion": "La Canela S/N", "distancia_km": 16.9, "matricula_2025": 61, "matricula_2026": 46, "diff_matricula": -15, "director": "Ida Rosa Figueroa Pizarro", "cargo": "Profesora encargada", "correo": "ida.figueroa@edu.sleppetorca.gob.cl", "telefono": 971087891, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 72.3856, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 6, "asistencia_2022": 95.6, "asistencia_2023": 95.7, "asistencia_2024": 97.9, "asistencia_2025": 92.5, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Leandro Ríos", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1145, "nombre": "ESCUELA ENRIQUE DOLL ROJAS", "nombre_corto": "1145 - ESCUELA ENRIQUE DOLL ROJAS", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.476089, "lng": -71.186836, "direccion": "Los Tilos S/N - El Carmen -La Higuera S/N", "distancia_km": 6, "matricula_2025": 59, "matricula_2026": 51, "diff_matricula": -8, "director": "Patricio Emilio Morel Chacana", "cargo": "Profesor encargado", "correo": "patricio.morel@edu.sleppetorca.gob.cl", "telefono": 982072443, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 85.5579, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 10, "asistencia_2022": 81.4, "asistencia_2023": 82.0, "asistencia_2024": 89.7, "asistencia_2025": 84.9, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Leandro Ríos", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1140, "nombre": "ESCUELA BASICA CARLOS ARIZTIA RUIZ", "nombre_corto": "1140 - ESCUELA BASICA CARLOS ARIZTIA RUIZ", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.31897, "lng": -71.288788, "direccion": "El Trapiche S/N", "distancia_km": 31, "matricula_2025": 53, "matricula_2026": 60, "diff_matricula": 7, "director": "Andrea Araya", "cargo": "Profesora encargada", "correo": "andrea.araya@edu.sleppetorca.gob.cl", "telefono": 930680080, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Alto", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 63.1578, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 4, "asistencia_2022": 98.9, "asistencia_2023": 98.1, "asistencia_2024": 97.9, "asistencia_2025": 87.2, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Leandro Ríos", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1136, "nombre": "ESCUELA BASICA PUYANCON", "nombre_corto": "1136 - ESCUELA BASICA PUYANCON", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.309711, "lng": -71.217072, "direccion": "Puyancon S/N, Valle de Longotoma", "distancia_km": 26.2, "matricula_2025": 73, "matricula_2026": 65, "diff_matricula": -8, "director": "María Verónica Godoy Álvarez", "cargo": "Profesora encargada", "correo": "maria.godoy.alvarez@edu.sleppetorca.gob.cl", "telefono": 940084185, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 80.7542, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 5, "asistencia_2022": 95.2, "asistencia_2023": 94.9, "asistencia_2024": 96.5, "asistencia_2025": 92.5, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Leandro Ríos", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1139, "nombre": "ESCUELA MINISTRO GOMEZ MILLAS", "nombre_corto": "1139 - ESCUELA MINISTRO GOMEZ MILLAS", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 6° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.4422, "lng": -71.188499, "direccion": "Granadillo S/N, Valle Hermoso", "distancia_km": 5.6, "matricula_2025": 39, "matricula_2026": 34, "diff_matricula": -5, "director": "Angellina del Pilar Rodríguez Vicencio", "cargo": "Profesora encargada", "correo": "angellina.rodriguez@edu.sleppetorca.gob.cl", "telefono": 953796064, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 72.439, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 17, "asistencia_2022": 92.6, "asistencia_2023": 85.6, "asistencia_2024": 88.9, "asistencia_2025": 73.9, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Susan Ramírez", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1153, "nombre": "ESCUELA BASICA EL CRUCERO", "nombre_corto": "1153 - ESCUELA BASICA EL CRUCERO", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Incakán", "lat": -32.0923, "lng": -70.800072, "direccion": "Camino Público S/N, El Pedernal", "distancia_km": 82, "matricula_2025": 2, "matricula_2026": 3, "diff_matricula": 1, "director": "Andrés Fabián Gallardo Olivares", "cargo": "Profesor encargado", "correo": "andres.gallardo@edu.sleppetorca.gob.cl", "telefono": 962832979, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 100, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 2, "asistencia_2022": null, "asistencia_2023": null, "asistencia_2024": 99.4, "asistencia_2025": 100.0, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Claudia Aguilera", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1151, "nombre": "ESCUELA BASICA VILLA SANTA ANA", "nombre_corto": "1151 - ESCUELA BASICA VILLA SANTA ANA", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Incakán", "lat": -32.179588, "lng": -70.811203, "direccion": "Camino Principal S/N, Calle Larga", "distancia_km": 70.5, "matricula_2025": 7, "matricula_2026": 5, "diff_matricula": -2, "director": "Yesenia Fernanda Gil morales", "cargo": "Profesora encargada", "correo": "yesenia.gil@edu.sleppetorca.gob.cl", "telefono": 962844084, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 78.9473, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 4, "asistencia_2022": 89.0, "asistencia_2023": 87.9, "asistencia_2024": 97.3, "asistencia_2025": 100.0, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Claudia Aguilera", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1150, "nombre": "ESCUELA BASICA NEFTALI REYES B.", "nombre_corto": "1150 - ESCUELA BASICA NEFTALI REYES B.", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Incakán", "lat": -32.321411, "lng": -71.058487, "direccion": "Manuel Montt S/N", "distancia_km": 34.1, "matricula_2025": 5, "matricula_2026": 7, "diff_matricula": 2, "director": "Carolina Andrea Delgado Delgado", "cargo": "hans", "correo": "carolina.delgado@edu.sleppetorca.gob.cl", "telefono": 983828153, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 58.3333, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 5, "asistencia_2022": 90.4, "asistencia_2023": 90.4, "asistencia_2024": 94.2, "asistencia_2025": 82.2, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Marjorie Gaete", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1158, "nombre": "ESCUELA BASICA BENANCIO PEREZ", "nombre_corto": "1158 - ESCUELA BASICA BENANCIO PEREZ", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 6° Básico", "estado": "Abierto", "microcentro": "Incakán", "lat": -32.196499, "lng": -71.132347, "direccion": "Camino a Illapel S/N", "distancia_km": 57, "matricula_2025": 5, "matricula_2026": 7, "diff_matricula": 2, "director": "Jessica Fabiola Molina Gallardo", "cargo": "Profesora encargada", "correo": "jessica.molina@edu.sleppetorca.gob.cl", "telefono": 961118232, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 72.7272, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 1, "asistencia_2022": 95.1, "asistencia_2023": 92.2, "asistencia_2024": 92.1, "asistencia_2025": 82.5, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "Sí", "cp_atp": "Marjorie Gaete", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1156, "nombre": "ESCUELA BASICA G-24", "nombre_corto": "1156 - ESCUELA BASICA G-24", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.252949, "lng": -71.137863, "direccion": "Calle Principal S/N, Palquico", "distancia_km": 47.3, "matricula_2025": 45, "matricula_2026": 40, "diff_matricula": -5, "director": "Ximena Alejandra Pacheco Muñoz", "cargo": "Directora", "correo": "ximena.pacheco@edu.sleppetorca.gob.cl", "telefono": 982604325, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 90.6103, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 8, "asistencia_2022": 87.6, "asistencia_2023": 94.2, "asistencia_2024": 91.7, "asistencia_2025": 78.1, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Claudia Aguilera", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1160, "nombre": "ESCUELA HOGAR FRONTERIZA DE CHALACO", "nombre_corto": "1160 - ESCUELA HOGAR FRONTERIZA DE CHALACO", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 6° Básico", "estado": "Abierto", "microcentro": "Incakán", "lat": -32.187481, "lng": -70.803452, "direccion": "Camino Público Chalaco", "distancia_km": 68.8, "matricula_2025": 12, "matricula_2026": 9, "diff_matricula": -3, "director": "William Ángel Santana Espinoza", "cargo": "Profesor encargado", "correo": "william.santana@edu.sleppetorca.gob.cl", "telefono": 996321002, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Sin Categoría", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 74.4186, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 5, "asistencia_2022": 98.0, "asistencia_2023": 98.1, "asistencia_2024": 98.4, "asistencia_2025": 86.1, "trayectoria_interrumpida": null, "uni_bi_tri": "Sí", "intercultural": "No", "cp_atp": "Claudia Aguilera", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1157, "nombre": "ESCUELA BASICA LOS ALAMOS EL SOBRANTE", "nombre_corto": "1157 - ESCUELA BASICA LOS ALAMOS EL SOBRANTE", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 6° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.227631, "lng": -70.807617, "direccion": "Camino Público S/N, El Sobrante", "distancia_km": 66.3, "matricula_2025": 32, "matricula_2026": 33, "diff_matricula": 1, "director": "Rossana Jimena Castro Hidalgo", "cargo": "Profesora encargada", "correo": "rossana.castro@edu.sleppetorca.gob.cl", "telefono": 993357170, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Alto", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 78.7878, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 6, "asistencia_2022": 95.9, "asistencia_2023": 96.2, "asistencia_2024": 98.3, "asistencia_2025": 84.4, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Claudia Aguilera", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1152, "nombre": "ESCUELA EDUARDO FREI MONTALVA", "nombre_corto": "1152 - ESCUELA EDUARDO FREI MONTALVA", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 6° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.238201, "lng": -70.874077, "direccion": "KM 8 Camino Público", "distancia_km": 58.5, "matricula_2025": 79, "matricula_2026": 70, "diff_matricula": -9, "director": "Claudio Abelardo Pinilla Garay", "cargo": "Profesor encargado", "correo": "claudio.pinilla@edu.sleppetorca.gob.cl", "telefono": 989020737, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 85.069, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 10, "asistencia_2022": 93.8, "asistencia_2023": 89.2, "asistencia_2024": 97.1, "asistencia_2025": 93.1, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Claudia Aguilera", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1174, "nombre": "ESCUELA BASICA SAN LORENZO", "nombre_corto": "1174 - ESCUELA BASICA SAN LORENZO", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.434921, "lng": -70.983932, "direccion": "Camino Alicahue KM 9", "distancia_km": 30.1, "matricula_2025": 96, "matricula_2026": 91, "diff_matricula": -5, "director": "Sara Cristina de Lourdes Leiva López", "cargo": "Directora", "correo": "sara.leiva@edu.sleppetorca.gob.cl", "telefono": 994589092, "estado_cargo": "Vacante", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 73.6045, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 0, "asistencia_2022": 90.0, "asistencia_2023": 89.9, "asistencia_2024": 91.5, "asistencia_2025": 87.9, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Marjorie Gaete", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1173, "nombre": "ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO", "nombre_corto": "1173 - ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.3881, "lng": -70.853813, "direccion": "Camino Alicahue KM 31, Bartolillo", "distancia_km": 46.2, "matricula_2025": 120, "matricula_2026": 114, "diff_matricula": -6, "director": "Jorge Rafael Olivares Olivares", "cargo": "Director", "correo": "jorge.olivares@edu.sleppetorca.gob.cl", "telefono": 992656065, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 79.7725, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 21, "asistencia_2022": 82.3, "asistencia_2023": 96.2, "asistencia_2024": 97.0, "asistencia_2025": 93.7, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Marjorie Gaete", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1178, "nombre": "ESCUELA BASICA LA VIÑA", "nombre_corto": "1178 - ESCUELA BASICA LA VIÑA", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.42622, "lng": -70.920151, "direccion": "Camino Alicahue KM 18", "distancia_km": 41.1, "matricula_2025": 154, "matricula_2026": 158, "diff_matricula": 4, "director": "Jacqueline Magaly Fierro Acosta", "cargo": "Directora", "correo": "jacqueline.fierro@edu.sleppetorca.gob.cl", "telefono": 985182931, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 73.6679, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 15, "asistencia_2022": 87.4, "asistencia_2023": 88.6, "asistencia_2024": 91.4, "asistencia_2025": 85.9, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Marjorie Gaete", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1180, "nombre": "ESCUELA BASICA G-45", "nombre_corto": "1180 - ESCUELA BASICA G-45", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.44672, "lng": -70.947403, "direccion": "Camino Alicahue KM 13", "distancia_km": 34.2, "matricula_2025": 240, "matricula_2026": 232, "diff_matricula": -8, "director": "José Manuel López Silva", "cargo": "Director", "correo": "jose.lopez@edu.sleppetorca.gob.cl", "telefono": 953632189, "estado_cargo": "Vacante", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio bajo", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 0.6, "trayectoria_sned": "Mantiene", "pct_prioritarios": 64.0067, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 28, "asistencia_2022": 87.3, "asistencia_2023": 89.3, "asistencia_2024": 90.7, "asistencia_2025": 87.2, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Marjorie Gaete", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1132, "nombre": "ESCUELA BASICA POZA VERDE", "nombre_corto": "1132 - ESCUELA BASICA POZA VERDE", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "1° a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.39204, "lng": -71.376633, "direccion": "Las Parcelas KM 163, Longotoma", "distancia_km": 17.6, "matricula_2025": 153, "matricula_2026": 167, "diff_matricula": 14, "director": "Carolina Andrea Rosales Arancibia", "cargo": "Profesora encargada", "correo": "carolina.rosales@edu.sleppetorca.gob.cl", "telefono": 944319873, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 78.6366, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 16, "asistencia_2022": 85.7, "asistencia_2023": 86.0, "asistencia_2024": 89.7, "asistencia_2025": 83.4, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Paula Cataldo", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1128, "nombre": "ESCUELA COMUNIDADES DE VALLE HERMOSO", "nombre_corto": "1128 - ESCUELA COMUNIDADES DE VALLE HERMOSO", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.438622, "lng": -71.210793, "direccion": "Esmeralda 182", "distancia_km": 3.2, "matricula_2025": 288, "matricula_2026": 282, "diff_matricula": -6, "director": "Patricia del Carmen Astudillo Brito", "cargo": "Directora", "correo": "patricia.astudillo.brito@edu.sleppetorca.gob.cl", "telefono": 994146339, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": 0.6, "trayectoria_sned": "Obtiene", "pct_prioritarios": 76.2266, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 29, "asistencia_2022": 80.7, "asistencia_2023": 85.5, "asistencia_2024": 89.6, "asistencia_2025": 87.6, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Susan Ramírez", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1192, "nombre": "ESCUELA RURAL PULLALLY", "nombre_corto": "1192 - ESCUELA RURAL PULLALLY", "comuna": "Papudo", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.43726, "lng": -71.314987, "direccion": "Avenida Las Salinas S/N", "distancia_km": 12.1, "matricula_2025": 308, "matricula_2026": 289, "diff_matricula": -19, "director": "Josefa Amira Allendes Encina", "cargo": "Directora", "correo": "josefa.allendes@edu.sleppetorca.gob.cl", "telefono": 979714507, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 68.4419, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 30, "asistencia_2022": 86.8, "asistencia_2023": 82.9, "asistencia_2024": 92.9, "asistencia_2025": 80.7, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Paula Cataldo", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1147, "nombre": "ESCUELA FERNANDO GARCIA OLDINI", "nombre_corto": "1147 - ESCUELA FERNANDO GARCIA OLDINI", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.28054, "lng": -71.011673, "direccion": "Calle Comercio 36 Hierro Viejo", "distancia_km": 43.4, "matricula_2025": 89, "matricula_2026": 99, "diff_matricula": 10, "director": "Paulina Constanza Martínez Hidalgo", "cargo": "Directora", "correo": "paulina.martinez@edu.sleppetorca.gob.cl", "telefono": 974757426, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 69.7169, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 14, "asistencia_2022": 89.5, "asistencia_2023": 86.9, "asistencia_2024": 92.1, "asistencia_2025": 84.9, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Claudia Aguilera", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 1161, "nombre": "ESCUELA BASICA PEDEGUA", "nombre_corto": "1161 - ESCUELA BASICA PEDEGUA", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.357109, "lng": -71.069817, "direccion": "Calle Principal 261, Pedegua", "distancia_km": 32.6, "matricula_2025": 163, "matricula_2026": 174, "diff_matricula": 11, "director": "Maritza Angélica Leiva Olivares", "cargo": "Directora", "correo": "maritza.leiva@edu.sleppetorca.gob.cl", "telefono": 994268264, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 80.6783, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 18, "asistencia_2022": 83.1, "asistencia_2023": 83.9, "asistencia_2024": 87.6, "asistencia_2025": 87.8, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Susan Ramírez", "cp_apoyo_ee": "Ester Santana"}, {"rbd": 40242, "nombre": "COLEGIO BICENTENARIO", "nombre_corto": "40242 - COLEGIO BICENTENARIO", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela", "cobertura": "1° a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.43409, "lng": -71.079422, "direccion": " \tAvenida Humeres 1800", "distancia_km": 18.8, "matricula_2025": 243, "matricula_2026": 222, "diff_matricula": -21, "director": "Felipe Sebastián Román Román", "cargo": "Director", "correo": "felipe.roman@edu.sleppetorca.gob.cl", "telefono": 966277257, "estado_cargo": "Vacante", "categorias_ensenanza": ["Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 63.8253, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 0, "asistencia_2022": 86.4, "asistencia_2023": 87.9, "asistencia_2024": 88.6, "asistencia_2025": 86.6, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Leandro Ríos", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1170, "nombre": "ESCUELA BASICA VALLE DE ARTIFICIO", "nombre_corto": "1170 - ESCUELA BASICA VALLE DE ARTIFICIO", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.394451, "lng": -71.094757, "direccion": "Calle Manuel Montt S/N", "distancia_km": 28.9, "matricula_2025": 136, "matricula_2026": 128, "diff_matricula": -8, "director": "Milka Edith Lemus Reyes", "cargo": "Directora", "correo": "milka.lemus@edu.sleppetorca.gob.cl", "telefono": 976340219, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 72.7759, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 16, "asistencia_2022": 96.0, "asistencia_2023": 96.4, "asistencia_2024": 98.0, "asistencia_2025": 94.1, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Marjorie Gaete", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1168, "nombre": "ESCUELA HANS WENKE MENGERS", "nombre_corto": "1168 - ESCUELA HANS WENKE MENGERS", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.433739, "lng": -71.06971, "direccion": "La Quintrala 560", "distancia_km": 20, "matricula_2025": 337, "matricula_2026": 323, "diff_matricula": -14, "director": "Stefanie Lillo", "cargo": "Profesora encargada", "correo": "stefanie.lillo@edu.sleppetorca.gob.cl", "telefono": 9907266, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio bajo", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 0.6, "trayectoria_sned": "Mantiene", "pct_prioritarios": 75.8158, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "Sí", "adeco_2026": "Sí", "docentes": null, "aaee": 0, "asistencia_2022": 84.8, "asistencia_2023": 87.1, "asistencia_2024": 92.9, "asistencia_2025": 84.2, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Susan Ramírez", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 14479, "nombre": "ESCUELA BASICA MUNICIPAL ARAUCARIA", "nombre_corto": "14479 - ESCUELA BASICA MUNICIPAL ARAUCARIA", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.426559, "lng": -71.068977, "direccion": "Ferrocarril A Iquique 820", "distancia_km": 20.2, "matricula_2025": 351, "matricula_2026": 337, "diff_matricula": -14, "director": "Arturo Alejandro Valdebenito Torres", "cargo": "Director", "correo": "arturo.valdebenito@edu.sleppetorca.gob.cl", "telefono": 998711626, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio bajo", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 75.2838, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 0, "asistencia_2022": 84.6, "asistencia_2023": 89.8, "asistencia_2024": 92.2, "asistencia_2025": 86.5, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "Sí", "cp_atp": "Francisca Tapia", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1125, "nombre": "ESCUELA DIEGO PORTALES", "nombre_corto": "1125 - ESCUELA DIEGO PORTALES", "comuna": "La Ligua", "area": "Urbano", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.446461, "lng": -71.283279, "direccion": "Comercio Placilla 2362", "distancia_km": 5.1, "matricula_2025": 154, "matricula_2026": 129, "diff_matricula": -25, "director": "Ociel Díaz Pérez", "cargo": "Director", "correo": "ociel.diaz@edu.sleppetorca.gob.cl", "telefono": 963961288, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 0.6, "trayectoria_sned": "Mantiene", "pct_prioritarios": 80.9586, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 23, "asistencia_2022": 77.8, "asistencia_2023": 80.6, "asistencia_2024": 82.6, "asistencia_2025": 80.1, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Paula Cataldo", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1122, "nombre": "ESCUELA REPUBLICA DE VENEZUELA", "nombre_corto": "1122 - ESCUELA REPUBLICA DE VENEZUELA", "comuna": "La Ligua", "area": "Urbano", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.44978, "lng": -71.230087, "direccion": "Portales 394", "distancia_km": 0.75, "matricula_2025": 307, "matricula_2026": 312, "diff_matricula": 5, "director": "Jacqueline del Carmen Espinoza Barraza", "cargo": "Directora", "correo": "jacqueline.espinoza@edu.sleppetorca.gob.cl", "telefono": 998798786, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio bajo", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 77.2781, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "Sí", "adeco_2026": "Sí", "docentes": null, "aaee": 38, "asistencia_2022": 82.4, "asistencia_2023": 81.9, "asistencia_2024": 83.7, "asistencia_2025": 83.2, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Leandro Ríos", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1191, "nombre": "ESCUELA PAPUDO", "nombre_corto": "1191 - ESCUELA PAPUDO", "comuna": "Papudo", "area": "Urbano", "tipo": "Escuela", "cobertura": "NT1 a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.507349, "lng": -71.439671, "direccion": "Serrano 750", "distancia_km": 23.2, "matricula_2025": 317, "matricula_2026": 295, "diff_matricula": -22, "director": "Sabrina Estefanie Obregón Aguilera", "cargo": "Directora", "correo": "sabrina.obregon@edu.sleppetorca.gob.cl", "telefono": 99929594, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Educación Parvularia", "Enseñanza Básica"], "cat_desempeno_basica_2019": "Medio bajo", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 67.6296, "pie": "Con convenio", "pace": "Sin programa", "adeco_2025": "Sí", "adeco_2026": "Sí", "docentes": null, "aaee": 25, "asistencia_2022": 89.5, "asistencia_2023": 84.5, "asistencia_2024": 92.4, "asistencia_2025": 84.1, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Susan Ramírez", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1126, "nombre": "ESCUELA ESPECIAL SOL NACIENTE", "nombre_corto": "1126 - ESCUELA ESPECIAL SOL NACIENTE", "comuna": "La Ligua", "area": "Urbano", "tipo": "Escuela Especial", "cobertura": "1° a 8° Básico", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.44747, "lng": -71.23663, "direccion": "Goenechea 373", "distancia_km": 0.6, "matricula_2025": 35, "matricula_2026": 34, "diff_matricula": -1, "director": "Marcelo Isaías Matamala Ruz", "cargo": "Profesor encargado", "correo": "marcelo.matamala@edu.sleppetorca.gob.cl", "telefono": 974990610, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Educación Especial Discapacidad Intelectual"], "cat_desempeno_basica_2019": "No aplica", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 0, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 12, "asistencia_2022": 98.7, "asistencia_2023": 92.5, "asistencia_2024": 96.8, "asistencia_2025": 92.3, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Claudia Aguilera", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 11196, "nombre": "CTRO.REC.ATENC.DIVERS.CRAD PAUL PERCY HARRIS", "nombre_corto": "11196 - CTRO.REC.ATENC.DIVERS.CRAD PAUL PERCY HARRIS", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela Especial", "cobertura": "NT1 a Laboral 3", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.432453, "lng": -71.07298, "direccion": "Olivos 325", "distancia_km": 19.8, "matricula_2025": 35, "matricula_2026": 47, "diff_matricula": 12, "director": "Nicoley Andrea Bascuñán Guajardo", "cargo": "Directora", "correo": "nicoley.bascunan@edu.sleppetorca.gob.cl", "telefono": 986432072, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Educación Especial Discapacidad Intelectual"], "cat_desempeno_basica_2019": "No aplica", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": 1, "trayectoria_sned": "Mantiene", "pct_prioritarios": 0, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 0, "asistencia_2022": 82.0, "asistencia_2023": 80.1, "asistencia_2024": 82.1, "asistencia_2025": 87.2, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Claudia Aguilera", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 12336, "nombre": "LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA", "nombre_corto": "12336 - LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA", "comuna": "Cabildo", "area": "Urbano", "tipo": "Liceo", "cobertura": "1° a 4° Medio", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.43253, "lng": -71.07803, "direccion": "Avenida Humeres 1510", "distancia_km": 18.9, "matricula_2025": 472, "matricula_2026": 467, "diff_matricula": -5, "director": "Humberto Esteban Pino Arosteguy", "cargo": "Director", "correo": "humberto.pino@edu.sleppetorca.gob.cl", "telefono": 993591794, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Enseñanza Media H-C niños y jóvenes", "Enseñanza Media T-P Industrial Niños y Jóvenes"], "cat_desempeno_basica_2019": "No aplica", "cat_desempeno_media_2019": "Medio", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 71.9967, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "Sí", "adeco_2026": "No", "docentes": null, "aaee": 26, "asistencia_2022": 89.6, "asistencia_2023": 92.0, "asistencia_2024": 92.1, "asistencia_2025": 90.3, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Francisca Tapia", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1167, "nombre": "LICEO Y ESCUELA MUNICIPAL", "nombre_corto": "1167 - LICEO Y ESCUELA MUNICIPAL", "comuna": "Cabildo", "area": "Urbano", "tipo": "Liceo", "cobertura": "1° Medio a 2° Nivel ", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.42717, "lng": -71.066162, "direccion": "Zoila Gac 639", "distancia_km": 20.5, "matricula_2025": 588, "matricula_2026": 534, "diff_matricula": -54, "director": "Marcelo Patricio Lazcano Collao", "cargo": "Director", "correo": "marcelo.lazcano@edu.sleppetorca.gob.cl", "telefono": 976209688, "estado_cargo": "Nombramiento Vencido", "categorias_ensenanza": ["Enseñanza Media H-C niños y jóvenes", "Educación Media H-C Adultos (Decreto N°1000/2009)", "Enseñanza Media T-P Comercial Niños y Jóvenes", "Enseñanza Media T-P Industrial Niños y Jóvenes", "Enseñanza Media T-P Técnica Niños y Jóvenes"], "cat_desempeno_basica_2019": "No aplica", "cat_desempeno_media_2019": "Medio bajo", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 79.2507, "pie": "Con convenio", "pace": "Con programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 28, "asistencia_2022": 79.9, "asistencia_2023": 85.3, "asistencia_2024": 90.6, "asistencia_2025": 78.7, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Francisca Tapia", "cp_apoyo_ee": "Jorge Aranda"}, {"rbd": 1121, "nombre": "LICEO PULMAHUE DE LA LIGUA", "nombre_corto": "1121 - LICEO PULMAHUE DE LA LIGUA", "comuna": "La Ligua", "area": "Urbano", "tipo": "Liceo", "cobertura": "1° a 4° Medio", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.44585, "lng": -71.230652, "direccion": "Polanco 480", "distancia_km": 0.75, "matricula_2025": 564, "matricula_2026": 545, "diff_matricula": -19, "director": "Richard Vladimir Guzmán Rojas", "cargo": "Director", "correo": "richard.guzman@edu.sleppetorca.gob.cl", "telefono": 984014170, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Opción 4 Programa Integración Escolar", "Enseñanza Media H-C niños y jóvenes", "Enseñanza Media T-P Comercial Niños y Jóvenes", "Enseñanza Media T-P Industrial Niños y Jóvenes", "Enseñanza Media T-P Técnica Niños y Jóvenes"], "cat_desempeno_basica_2019": "No aplica", "cat_desempeno_media_2019": "Medio bajo", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": "Sí", "sned_2026_2027": null, "trayectoria_sned": "Pierde", "pct_prioritarios": 78.716, "pie": "Con convenio", "pace": "Con programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 25, "asistencia_2022": 83.2, "asistencia_2023": 79.7, "asistencia_2024": 87.0, "asistencia_2025": 78.3, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Paula Cataldo", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 1120, "nombre": "CENTRO DE EDUCACION DE ADULTOS LA LIGUA", "nombre_corto": "1120 - CENTRO DE EDUCACION DE ADULTOS LA LIGUA", "comuna": "La Ligua", "area": "Urbano", "tipo": "Liceo", "cobertura": "1er a 2do Nivel", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.44651794, "lng": -71.2309494, "direccion": "Polanco 480", "distancia_km": 0.65, "matricula_2025": 52, "matricula_2026": 55, "diff_matricula": 3, "director": "Milton Ernesto Astudillo Egaña", "cargo": "Profesor encargado", "correo": "milton.astudillo@edu.sleppetorca.gob.cl", "telefono": 985524973, "estado_cargo": "No se concursa", "categorias_ensenanza": ["Educación Media H-C Adultos (Decreto N°1000/2009)"], "cat_desempeno_basica_2019": "No aplica", "cat_desempeno_media_2019": "No aplica", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 0, "pie": "Sin convenio", "pace": "Sin programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 3, "asistencia_2022": 64.1, "asistencia_2023": 41.7, "asistencia_2024": 52.4, "asistencia_2025": null, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Paula Cataldo", "cp_apoyo_ee": "Claudio Roa"}, {"rbd": 40099, "nombre": "LICEO TECNICO PROFESIONAL PAPUDO", "nombre_corto": "40099 - LICEO TECNICO PROFESIONAL PAPUDO", "comuna": "Papudo", "area": "Urbano", "tipo": "Liceo", "cobertura": "1° a 4° Medio", "estado": "Abierto", "microcentro": "No aplica", "lat": -32.509251, "lng": -71.445961, "direccion": "Chorrillos 279", "distancia_km": 24, "matricula_2025": 218, "matricula_2026": 198, "diff_matricula": -20, "director": "Massiel Andrea Quiroga Valencia", "cargo": "Directora", "correo": "massiel.quiroga@edu.sleppetorca.gob.cl", "telefono": 971385671, "estado_cargo": "Nombramiento Vigente", "categorias_ensenanza": ["Opción 4 Programa Integración Escolar", "Enseñanza Media H-C niños y jóvenes", "Enseñanza Media T-P Técnica Niños y Jóvenes", "Enseñanza Media T-P Marítima Niños y Jóvenes"], "cat_desempeno_basica_2019": "No aplica", "cat_desempeno_media_2019": "Medio bajo", "cat_desempeno_basica_2025": null, "cat_desempeno_media_2025": null, "sned_2024_2025": null, "sned_2026_2027": null, "trayectoria_sned": null, "pct_prioritarios": 74.024, "pie": "Con convenio", "pace": "Con programa", "adeco_2025": "No", "adeco_2026": "No", "docentes": null, "aaee": 20, "asistencia_2022": 75.1, "asistencia_2023": 74.4, "asistencia_2024": 89.2, "asistencia_2025": null, "trayectoria_interrumpida": null, "uni_bi_tri": "No", "intercultural": "No", "cp_atp": "Paula Cataldo", "cp_apoyo_ee": "Jorge Aranda"}];
+var SIMCE = {"1140": {"4b": {"grado": "4° Básico", "n": 5, "nc": 0}}, "40099": {"2m": {"grado": "2° Medio", "n": 56, "nc": 33, "avg_lect2m": 209.3, "avg_mate2m": 219.6, "eda_lect2m": {"Insuficiente": 69.0, "Elemental": 27.6, "Adecuado": 3.4}, "eda_mate2m": {"Insuficiente": 76.2, "Elemental": 23.8}, "avg_lect2m_m": 215.3, "avg_mate2m_m": 237.4, "avg_lect2m_f": 200.8, "avg_mate2m_f": 195.9}}, "1135": {"4b": {"grado": "4° Básico", "n": 8, "nc": 7, "avg_mate4b": 246.7, "avg_lect4b": 272.7, "eda_mate4b": {"Elemental": 57.1, "Insuficiente": 42.9}, "eda_lect4b": {"Adecuado": 42.9, "Elemental": 42.9, "Insuficiente": 14.3}, "avg_mate4b_m": 255.4, "avg_lect4b_m": 294.5, "avg_mate4b_f": 235.1, "avg_lect4b_f": 243.5}}, "11199": {"4b": {"grado": "4° Básico", "n": 35, "nc": 28, "avg_mate4b": 248.3, "avg_lect4b": 275.4, "eda_mate4b": {"Elemental": 51.9, "Adecuado": 11.1, "Insuficiente": 37.0}, "eda_lect4b": {"Adecuado": 44.4, "Elemental": 44.4, "Insuficiente": 11.1}, "avg_mate4b_m": 267.5, "avg_lect4b_m": 284.7, "avg_mate4b_f": 230.5, "avg_lect4b_f": 266.7}, "8b": {"grado": "8° Básico", "n": 72, "nc": 50, "avg_mate8b": 240.9, "avg_lect8b": 237.0, "avg_hist8b": 251.6, "eda_mate8b": {"Elemental": 45.8, "Insuficiente": 52.1, "Adecuado": 2.1}, "eda_lect8b": {"Elemental": 45.8, "Insuficiente": 39.6, "Adecuado": 14.6}, "avg_mate8b_m": 256.2, "avg_lect8b_m": 238.9, "avg_hist8b_m": 261.4, "avg_mate8b_f": 222.9, "avg_lect8b_f": 234.3, "avg_hist8b_f": 237.9}, "2m": {"grado": "2° Medio", "n": 66, "nc": 52, "avg_mate2m": 262.9, "avg_lect2m": 240.1, "eda_mate2m": {"Insuficiente": 40.8, "Elemental": 49.0, "Adecuado": 10.2}, "eda_lect2m": {"Insuficiente": 57.1, "Elemental": 22.4, "Adecuado": 20.4}, "avg_mate2m_m": 271.5, "avg_lect2m_m": 228.1, "avg_mate2m_f": 252.3, "avg_lect2m_f": 254.8}}, "12336": {"2m": {"grado": "2° Medio", "n": 117, "nc": 106, "avg_mate2m": 253.0, "avg_lect2m": 250.5, "eda_mate2m": {"Insuficiente": 48.4, "Adecuado": 6.3, "Elemental": 45.3}, "eda_lect2m": {"Insuficiente": 47.1, "Adecuado": 14.7, "Elemental": 38.2}, "avg_mate2m_m": 256.3, "avg_lect2m_m": 251.1, "avg_mate2m_f": 248.5, "avg_lect2m_f": 249.8}}, "1173": {"4b": {"grado": "4° Básico", "n": 13, "nc": 9, "avg_mate4b": 313.1, "avg_lect4b": 306.4, "eda_mate4b": {"Adecuado": 66.7, "Elemental": 33.3}, "eda_lect4b": {"Adecuado": 77.8, "Insuficiente": 11.1, "Elemental": 11.1}, "avg_mate4b_m": 316.0, "avg_lect4b_m": 275.1, "avg_mate4b_f": 312.3, "avg_lect4b_f": 315.4}, "8b": {"grado": "8° Básico", "n": 15, "nc": 10, "avg_mate8b": 243.6, "avg_lect8b": 233.6, "avg_hist8b": 252.4, "eda_mate8b": {"Insuficiente": 60.0, "Elemental": 30.0, "Adecuado": 10.0}, "eda_lect8b": {"Elemental": 50.0, "Insuficiente": 50.0}, "avg_mate8b_m": 255.8, "avg_lect8b_m": 245.4, "avg_hist8b_m": 270.9, "avg_mate8b_f": 238.4, "avg_lect8b_f": 228.5, "avg_hist8b_f": 244.4}}, "1144": {"4b": {"grado": "4° Básico", "n": 10, "nc": 8, "avg_mate4b": 200.4, "avg_lect4b": 233.9, "eda_mate4b": {"Insuficiente": 75.0, "Elemental": 25.0}, "eda_lect4b": {"Insuficiente": 62.5, "Elemental": 37.5}, "avg_mate4b_m": 205.9, "avg_lect4b_m": 235.4, "avg_mate4b_f": 184.0, "avg_lect4b_f": 229.4}}, "1189": {"4b": {"grado": "4° Básico", "n": 32, "nc": 24, "avg_mate4b": 284.7, "avg_lect4b": 294.4, "eda_mate4b": {"Adecuado": 41.7, "Elemental": 41.7, "Insuficiente": 16.7}, "eda_lect4b": {"Adecuado": 58.3, "Insuficiente": 12.5, "Elemental": 29.2}, "avg_mate4b_m": 286.0, "avg_lect4b_m": 294.2, "avg_mate4b_f": 283.1, "avg_lect4b_f": 294.7}, "8b": {"grado": "8° Básico", "n": 27, "nc": 25, "avg_mate8b": 258.7, "avg_lect8b": 248.8, "avg_hist8b": 260.1, "eda_mate8b": {"Elemental": 58.3, "Insuficiente": 33.3, "Adecuado": 8.3}, "eda_lect8b": {"Adecuado": 29.2, "Insuficiente": 33.3, "Elemental": 37.5}, "avg_mate8b_m": 269.9, "avg_lect8b_m": 256.2, "avg_hist8b_m": 267.6, "avg_mate8b_f": 240.0, "avg_lect8b_f": 238.5, "avg_hist8b_f": 249.6}, "2m": {"grado": "2° Medio", "n": 24, "nc": 18, "avg_mate2m": 246.5, "avg_lect2m": 238.3, "eda_mate2m": {"Insuficiente": 44.4, "Elemental": 50.0, "Adecuado": 5.6}, "eda_lect2m": {"Insuficiente": 64.7, "Elemental": 17.6, "Adecuado": 17.6}, "avg_mate2m_m": 224.7, "avg_lect2m_m": 210.1, "avg_mate2m_f": 280.8, "avg_lect2m_f": 278.6}}, "1147": {"4b": {"grado": "4° Básico", "n": 16, "nc": 13, "avg_mate4b": 247.3, "avg_lect4b": 270.2, "eda_mate4b": {"Insuficiente": 46.2, "Elemental": 30.8, "Adecuado": 23.1}, "eda_lect4b": {"Insuficiente": 38.5, "Adecuado": 46.2, "Elemental": 15.4}, "avg_mate4b_m": 251.0, "avg_lect4b_m": 263.0, "avg_mate4b_f": 244.2, "avg_lect4b_f": 276.4}, "8b": {"grado": "8° Básico", "n": 9, "nc": 8, "avg_mate8b": 240.6, "avg_lect8b": 248.9, "avg_hist8b": 267.9, "eda_mate8b": {"Elemental": 12.5, "Insuficiente": 75.0, "Adecuado": 12.5}, "eda_lect8b": {"Elemental": 87.5, "Adecuado": 12.5}, "avg_mate8b_m": 255.9, "avg_lect8b_m": 259.4, "avg_hist8b_m": 282.9, "avg_mate8b_f": 225.4, "avg_lect8b_f": 238.3, "avg_hist8b_f": 252.9}}, "11206": {"4b": {"grado": "4° Básico", "n": 2, "nc": 0}}, "1150": {"4b": {"grado": "4° Básico", "n": 3, "nc": 2, "avg_mate4b": 221.6, "avg_lect4b": 301.6, "eda_mate4b": {"Insuficiente": 100.0}, "eda_lect4b": {"Adecuado": 100.0}, "avg_mate4b_m": 221.6, "avg_lect4b_m": 301.6}}, "1142": {"4b": {"grado": "4° Básico", "n": 8, "nc": 6, "avg_mate4b": 258.8, "avg_lect4b": 275.1, "eda_mate4b": {"Insuficiente": 50.0, "Elemental": 33.3, "Adecuado": 16.7}, "eda_lect4b": {"Insuficiente": 33.3, "Adecuado": 50.0, "Elemental": 16.7}, "avg_mate4b_f": 258.8, "avg_lect4b_f": 275.1}, "8b": {"grado": "8° Básico", "n": 11, "nc": 8, "avg_mate8b": 224.9, "avg_lect8b": 213.3, "avg_hist8b": 246.0, "eda_mate8b": {"Insuficiente": 87.5, "Elemental": 12.5}, "eda_lect8b": {"Insuficiente": 50.0, "Elemental": 50.0}, "avg_mate8b_m": 227.4, "avg_lect8b_m": 218.9, "avg_hist8b_m": 271.6, "avg_mate8b_f": 223.3, "avg_lect8b_f": 210.0, "avg_hist8b_f": 230.6}}, "1180": {"4b": {"grado": "4° Básico", "n": 24, "nc": 15, "avg_mate4b": 268.3, "avg_lect4b": 298.6, "eda_mate4b": {"Elemental": 33.3, "Insuficiente": 33.3, "Adecuado": 33.3}, "eda_lect4b": {"Elemental": 20.0, "Insuficiente": 20.0, "Adecuado": 60.0}, "avg_mate4b_m": 258.1, "avg_lect4b_m": 279.5, "avg_mate4b_f": 277.2, "avg_lect4b_f": 315.4}, "8b": {"grado": "8° Básico", "n": 27, "nc": 24, "avg_mate8b": 250.8, "avg_lect8b": 209.3, "avg_hist8b": 241.5, "eda_mate8b": {"Elemental": 54.2, "Insuficiente": 41.7, "Adecuado": 4.2}, "eda_lect8b": {"Insuficiente": 63.6, "Elemental": 36.4}, "avg_mate8b_m": 262.6, "avg_lect8b_m": 216.2, "avg_hist8b_m": 255.2, "avg_mate8b_f": 227.2, "avg_lect8b_f": 194.4, "avg_hist8b_f": 212.1}}, "1191": {"4b": {"grado": "4° Básico", "n": 40, "nc": 35, "avg_mate4b": 256.9, "avg_lect4b": 257.9, "eda_mate4b": {"Insuficiente": 31.4, "Elemental": 60.0, "Adecuado": 8.6}, "eda_lect4b": {"Insuficiente": 41.2, "Adecuado": 38.2, "Elemental": 20.6}, "avg_mate4b_m": 249.2, "avg_lect4b_m": 244.4, "avg_mate4b_f": 262.0, "avg_lect4b_f": 267.2}, "8b": {"grado": "8° Básico", "n": 40, "nc": 31, "avg_mate8b": 215.5, "avg_lect8b": 180.3, "avg_hist8b": 204.1, "eda_mate8b": {"Insuficiente": 83.3, "Elemental": 16.7}, "eda_lect8b": {"Insuficiente": 82.1, "Elemental": 17.9}, "avg_mate8b_m": 227.3, "avg_lect8b_m": 174.8, "avg_hist8b_m": 198.3, "avg_mate8b_f": 202.0, "avg_lect8b_f": 186.7, "avg_hist8b_f": 210.7}}, "1129": {"4b": {"grado": "4° Básico", "n": 1, "nc": 0}}, "1136": {"4b": {"grado": "4° Básico", "n": 11, "nc": 9, "avg_mate4b": 235.7, "avg_lect4b": 252.2, "eda_mate4b": {"Elemental": 33.3, "Insuficiente": 66.7}, "eda_lect4b": {"Elemental": 55.6, "Adecuado": 22.2, "Insuficiente": 22.2}, "avg_mate4b_m": 233.7, "avg_lect4b_m": 243.3, "avg_mate4b_f": 238.4, "avg_lect4b_f": 263.4}, "8b": {"grado": "8° Básico", "n": 9, "nc": 9, "avg_mate8b": 223.2, "avg_lect8b": 199.8, "avg_hist8b": 203.3, "eda_mate8b": {"Elemental": 33.3, "Insuficiente": 66.7}, "eda_lect8b": {"Insuficiente": 66.7, "Elemental": 33.3}, "avg_mate8b_m": 226.1, "avg_lect8b_m": 202.6, "avg_hist8b_m": 213.3, "avg_mate8b_f": 217.4, "avg_lect8b_f": 194.3, "avg_hist8b_f": 183.2}}, "1149": {"4b": {"grado": "4° Básico", "n": 5, "nc": 2, "avg_mate4b": 291.9, "avg_lect4b": 317.9, "eda_mate4b": {"Adecuado": 50.0, "Elemental": 50.0}, "eda_lect4b": {"Adecuado": 100.0}, "avg_mate4b_f": 291.9, "avg_lect4b_f": 317.9}, "8b": {"grado": "8° Básico", "n": 16, "nc": 12, "avg_mate8b": 249.5, "avg_lect8b": 242.9, "avg_hist8b": 257.9, "eda_mate8b": {"Insuficiente": 50.0, "Elemental": 50.0}, "eda_lect8b": {"Insuficiente": 41.7, "Adecuado": 33.3, "Elemental": 25.0}, "avg_mate8b_m": 256.0, "avg_lect8b_m": 245.8, "avg_hist8b_m": 257.8, "avg_mate8b_f": 244.9, "avg_lect8b_f": 240.8, "avg_hist8b_f": 258.1}, "2m": {"grado": "2° Medio", "n": 18, "nc": 14, "avg_mate2m": 228.0, "avg_lect2m": 233.4, "eda_mate2m": {"Insuficiente": 71.4, "Elemental": 28.6}, "eda_lect2m": {"Elemental": 15.4, "Insuficiente": 76.9, "Adecuado": 7.7}, "avg_mate2m_m": 231.4, "avg_lect2m_m": 219.4, "avg_mate2m_f": 221.8, "avg_lect2m_f": 255.8}}, "14479": {"4b": {"grado": "4° Básico", "n": 38, "nc": 26, "avg_mate4b": 230.5, "avg_lect4b": 251.2, "eda_mate4b": {"Elemental": 36.0, "Adecuado": 4.0, "Insuficiente": 60.0}, "eda_lect4b": {"Elemental": 28.0, "Adecuado": 24.0, "Insuficiente": 48.0}, "avg_mate4b_m": 254.3, "avg_lect4b_m": 249.3, "avg_mate4b_f": 214.6, "avg_lect4b_f": 252.3}, "8b": {"grado": "8° Básico", "n": 59, "nc": 50, "avg_mate8b": 254.8, "avg_lect8b": 227.5, "avg_hist8b": 241.7, "eda_mate8b": {"Elemental": 56.2, "Insuficiente": 35.4, "Adecuado": 8.3}, "eda_lect8b": {"Insuficiente": 58.7, "Adecuado": 10.9, "Elemental": 30.4}, "avg_mate8b_m": 262.0, "avg_lect8b_m": 221.7, "avg_hist8b_m": 244.5, "avg_mate8b_f": 247.6, "avg_lect8b_f": 234.4, "avg_hist8b_f": 238.6}}, "1130": {"4b": {"grado": "4° Básico", "n": 2, "nc": 2, "avg_mate4b": 225.6, "avg_lect4b": 255.9, "eda_mate4b": {"Insuficiente": 100.0}, "eda_lect4b": {"Insuficiente": 50.0, "Adecuado": 50.0}, "avg_mate4b_m": 225.6, "avg_lect4b_m": 255.9}}, "1183": {"4b": {"grado": "4° Básico", "n": 28, "nc": 23, "avg_mate4b": 257.0, "avg_lect4b": 288.0, "eda_mate4b": {"Adecuado": 18.2, "Elemental": 45.5, "Insuficiente": 36.4}, "eda_lect4b": {"Adecuado": 56.5, "Elemental": 30.4, "Insuficiente": 13.0}, "avg_mate4b_m": 277.0, "avg_lect4b_m": 292.9, "avg_mate4b_f": 233.0, "avg_lect4b_f": 281.6}, "8b": {"grado": "8° Básico", "n": 34, "nc": 32, "avg_mate8b": 274.5, "avg_lect8b": 246.7, "avg_hist8b": 251.0, "eda_mate8b": {"Adecuado": 19.4, "Insuficiente": 19.4, "Elemental": 61.3}, "eda_lect8b": {"Adecuado": 16.1, "Insuficiente": 29.0, "Elemental": 54.8}, "avg_mate8b_m": 285.9, "avg_lect8b_m": 245.1, "avg_hist8b_m": 262.6, "avg_mate8b_f": 268.2, "avg_lect8b_f": 247.7, "avg_hist8b_f": 244.6}, "2m": {"grado": "2° Medio", "n": 65, "nc": 59, "avg_mate2m": 267.3, "avg_lect2m": 252.3, "eda_mate2m": {"Elemental": 33.9, "Adecuado": 19.6, "Insuficiente": 46.4}, "eda_lect2m": {"Insuficiente": 44.4, "Adecuado": 22.2, "Elemental": 33.3}, "avg_mate2m_m": 274.1, "avg_lect2m_m": 252.4, "avg_mate2m_f": 262.9, "avg_lect2m_f": 252.3}}, "1174": {"4b": {"grado": "4° Básico", "n": 11, "nc": 10, "avg_mate4b": 243.1, "avg_lect4b": 243.5, "eda_mate4b": {"Insuficiente": 60.0, "Elemental": 20.0, "Adecuado": 20.0}, "eda_lect4b": {"Insuficiente": 40.0, "Adecuado": 40.0, "Elemental": 20.0}, "avg_mate4b_m": 216.9, "avg_lect4b_m": 250.6, "avg_mate4b_f": 249.7, "avg_lect4b_f": 241.7}, "8b": {"grado": "8° Básico", "n": 11, "nc": 7, "avg_mate8b": 248.6, "avg_lect8b": 227.8, "avg_hist8b": 231.0, "eda_mate8b": {"Elemental": 57.1, "Insuficiente": 28.6, "Adecuado": 14.3}, "eda_lect8b": {"Insuficiente": 50.0, "Elemental": 50.0}, "avg_mate8b_m": 256.2, "avg_lect8b_m": 232.5, "avg_hist8b_m": 236.2, "avg_mate8b_f": 229.6, "avg_lect8b_f": 218.4, "avg_hist8b_f": 220.6}}, "1122": {"4b": {"grado": "4° Básico", "n": 38, "nc": 28, "avg_mate4b": 224.1, "avg_lect4b": 246.8, "eda_mate4b": {"Insuficiente": 60.7, "Elemental": 28.6, "Adecuado": 10.7}, "eda_lect4b": {"Adecuado": 28.6, "Insuficiente": 46.4, "Elemental": 25.0}, "avg_mate4b_m": 239.6, "avg_lect4b_m": 257.9, "avg_mate4b_f": 196.2, "avg_lect4b_f": 226.7}, "8b": {"grado": "8° Básico", "n": 36, "nc": 34, "avg_mate8b": 240.2, "avg_lect8b": 215.3, "avg_hist8b": 235.4, "eda_mate8b": {"Insuficiente": 63.6, "Elemental": 30.3, "Adecuado": 6.1}, "eda_lect8b": {"Insuficiente": 59.4, "Elemental": 31.2, "Adecuado": 9.4}, "avg_mate8b_m": 240.2, "avg_lect8b_m": 207.9, "avg_hist8b_m": 231.9, "avg_mate8b_f": 239.8, "avg_lect8b_f": 247.1, "avg_hist8b_f": 250.4}}, "1178": {"4b": {"grado": "4° Básico", "n": 24, "nc": 21, "avg_mate4b": 272.5, "avg_lect4b": 306.1, "eda_mate4b": {"Elemental": 47.6, "Insuficiente": 23.8, "Adecuado": 28.6}, "eda_lect4b": {"Adecuado": 71.4, "Insuficiente": 14.3, "Elemental": 14.3}, "avg_mate4b_m": 290.2, "avg_lect4b_m": 309.9, "avg_mate4b_f": 248.8, "avg_lect4b_f": 301.1}, "8b": {"grado": "8° Básico", "n": 11, "nc": 10, "avg_mate8b": 260.6, "avg_lect8b": 219.9, "avg_hist8b": 218.3, "eda_mate8b": {"Elemental": 70.0, "Insuficiente": 20.0, "Adecuado": 10.0}, "eda_lect8b": {"Insuficiente": 55.6, "Elemental": 33.3, "Adecuado": 11.1}, "avg_mate8b_m": 268.2, "avg_lect8b_m": 201.0, "avg_hist8b_m": 217.6, "avg_mate8b_f": 255.5, "avg_lect8b_f": 235.0, "avg_hist8b_f": 218.8}}, "1148": {"4b": {"grado": "4° Básico", "n": 15, "nc": 13, "avg_mate4b": 241.9, "avg_lect4b": 262.9, "eda_mate4b": {"Insuficiente": 53.8, "Elemental": 38.5, "Adecuado": 7.7}, "eda_lect4b": {"Adecuado": 46.2, "Insuficiente": 46.2, "Elemental": 7.7}, "avg_mate4b_m": 244.1, "avg_lect4b_m": 270.4, "avg_mate4b_f": 240.6, "avg_lect4b_f": 258.1}, "8b": {"grado": "8° Básico", "n": 42, "nc": 36, "avg_mate8b": 228.8, "avg_lect8b": 218.8, "avg_hist8b": 224.6, "eda_mate8b": {"Insuficiente": 66.7, "Elemental": 30.6, "Adecuado": 2.8}, "eda_lect8b": {"Insuficiente": 62.9, "Elemental": 25.7, "Adecuado": 11.4}, "avg_mate8b_m": 231.7, "avg_lect8b_m": 198.1, "avg_hist8b_m": 224.5, "avg_mate8b_f": 227.3, "avg_lect8b_f": 228.3, "avg_hist8b_f": 224.6}, "2m": {"grado": "2° Medio", "n": 53, "nc": 46, "avg_mate2m": 236.8, "avg_lect2m": 234.6, "eda_mate2m": {"Insuficiente": 64.4, "Adecuado": 6.7, "Elemental": 28.9}, "eda_lect2m": {"Insuficiente": 61.9, "Elemental": 31.0, "Adecuado": 7.1}, "avg_mate2m_m": 233.9, "avg_lect2m_m": 223.1, "avg_mate2m_f": 239.3, "avg_lect2m_f": 246.1}}, "1133": {"4b": {"grado": "4° Básico", "n": 16, "nc": 12, "avg_mate4b": 214.7, "avg_lect4b": 240.0, "eda_mate4b": {"Insuficiente": 58.3, "Elemental": 41.7}, "eda_lect4b": {"Insuficiente": 54.5, "Adecuado": 27.3, "Elemental": 18.2}, "avg_mate4b_m": 226.9, "avg_lect4b_m": 269.3, "avg_mate4b_f": 208.6, "avg_lect4b_f": 229.0}}, "1168": {"4b": {"grado": "4° Básico", "n": 41, "nc": 36, "avg_mate4b": 222.8, "avg_lect4b": 244.3, "eda_mate4b": {"Elemental": 31.4, "Insuficiente": 65.7, "Adecuado": 2.9}, "eda_lect4b": {"Insuficiente": 43.8, "Elemental": 28.1, "Adecuado": 28.1}, "avg_mate4b_m": 236.1, "avg_lect4b_m": 249.9, "avg_mate4b_f": 200.3, "avg_lect4b_f": 235.1}, "8b": {"grado": "8° Básico", "n": 48, "nc": 40, "avg_mate8b": 218.2, "avg_lect8b": 202.6, "avg_hist8b": 208.5, "eda_mate8b": {"Insuficiente": 82.1, "Elemental": 17.9}, "eda_lect8b": {"Elemental": 21.6, "Insuficiente": 70.3, "Adecuado": 8.1}, "avg_mate8b_m": 216.8, "avg_lect8b_m": 194.1, "avg_hist8b_m": 200.9, "avg_mate8b_f": 219.3, "avg_lect8b_f": 209.7, "avg_hist8b_f": 215.0}}, "1156": {"4b": {"grado": "4° Básico", "n": 5, "nc": 3, "avg_mate4b": 243.1, "avg_lect4b": 291.3, "eda_mate4b": {"Elemental": 33.3, "Insuficiente": 66.7}, "eda_lect4b": {"Adecuado": 66.7, "Insuficiente": 33.3}, "avg_mate4b_m": 243.1, "avg_lect4b_m": 291.3}, "8b": {"grado": "8° Básico", "n": 6, "nc": 5, "avg_mate8b": 231.9, "avg_lect8b": 215.7, "avg_hist8b": 205.9, "eda_mate8b": {"Elemental": 40.0, "Insuficiente": 60.0}, "eda_lect8b": {"Elemental": 20.0, "Insuficiente": 60.0, "Adecuado": 20.0}, "avg_mate8b_f": 231.9, "avg_lect8b_f": 215.7, "avg_hist8b_f": 205.9}}, "1121": {"2m": {"grado": "2° Medio", "n": 155, "nc": 95, "avg_lect2m": 233.5, "avg_mate2m": 225.0, "eda_lect2m": {"Elemental": 29.1, "Insuficiente": 57.0, "Adecuado": 14.0}, "eda_mate2m": {"Insuficiente": 71.7, "Elemental": 20.7, "Adecuado": 7.6}, "avg_lect2m_m": 228.3, "avg_mate2m_m": 228.3, "avg_mate2m_f": 218.4, "avg_lect2m_f": 243.3}}, "1131": {"4b": {"grado": "4° Básico", "n": 2, "nc": 0}}, "1158": {"4b": {"grado": "4° Básico", "n": 1, "nc": 0}}, "1161": {"4b": {"grado": "4° Básico", "n": 14, "nc": 12, "avg_mate4b": 260.0, "avg_lect4b": 249.0, "eda_mate4b": {"Elemental": 50.0, "Insuficiente": 25.0, "Adecuado": 25.0}, "eda_lect4b": {"Insuficiente": 41.7, "Adecuado": 25.0, "Elemental": 33.3}, "avg_mate4b_m": 258.9, "avg_lect4b_m": 256.1, "avg_mate4b_f": 261.1, "avg_lect4b_f": 241.9}, "8b": {"grado": "8° Básico", "n": 22, "nc": 19, "avg_mate8b": 248.5, "avg_lect8b": 242.3, "avg_hist8b": 245.5, "eda_mate8b": {"Elemental": 42.1, "Insuficiente": 52.6, "Adecuado": 5.3}, "eda_lect8b": {"Adecuado": 21.1, "Elemental": 52.6, "Insuficiente": 26.3}, "avg_mate8b_m": 234.4, "avg_lect8b_m": 238.8, "avg_hist8b_m": 241.8, "avg_mate8b_f": 261.1, "avg_lect8b_f": 245.4, "avg_hist8b_f": 248.8}}, "1132": {"4b": {"grado": "4° Básico", "n": 22, "nc": 19, "avg_mate4b": 267.5, "avg_lect4b": 283.8, "eda_mate4b": {"Insuficiente": 31.6, "Elemental": 42.1, "Adecuado": 26.3}, "eda_lect4b": {"Insuficiente": 15.8, "Adecuado": 57.9, "Elemental": 26.3}, "avg_mate4b_m": 281.3, "avg_lect4b_m": 289.0, "avg_mate4b_f": 252.1, "avg_lect4b_f": 278.0}, "8b": {"grado": "8° Básico", "n": 13, "nc": 11, "avg_mate8b": 222.9, "avg_lect8b": 225.6, "avg_hist8b": 238.1, "eda_mate8b": {"Insuficiente": 81.8, "Elemental": 18.2}, "eda_lect8b": {"Insuficiente": 63.6, "Elemental": 18.2, "Adecuado": 18.2}, "avg_mate8b_m": 224.1, "avg_lect8b_m": 233.9, "avg_hist8b_m": 242.2, "avg_mate8b_f": 219.7, "avg_lect8b_f": 203.3, "avg_hist8b_f": 227.3}}, "1125": {"4b": {"grado": "4° Básico", "n": 20, "nc": 11, "avg_mate4b": 232.7, "avg_lect4b": 257.6, "eda_mate4b": {"Insuficiente": 45.5, "Elemental": 54.5}, "eda_lect4b": {"Elemental": 36.4, "Adecuado": 36.4, "Insuficiente": 27.3}, "avg_mate4b_m": 243.4, "avg_lect4b_m": 260.5, "avg_mate4b_f": 228.6, "avg_lect4b_f": 256.6}, "8b": {"grado": "8° Básico", "n": 17, "nc": 9, "avg_mate8b": 269.9, "avg_lect8b": 236.3, "avg_hist8b": 243.3, "eda_mate8b": {"Elemental": 42.9, "Adecuado": 28.6, "Insuficiente": 28.6}, "eda_lect8b": {"Adecuado": 33.3, "Elemental": 16.7, "Insuficiente": 50.0}, "avg_mate8b_m": 269.9, "avg_lect8b_m": 236.3, "avg_hist8b_m": 257.6, "avg_hist8b_f": 200.4}}, "1157": {"4b": {"grado": "4° Básico", "n": 5, "nc": 4, "avg_mate4b": 281.1, "avg_lect4b": 302.5, "eda_mate4b": {"Elemental": 75.0, "Adecuado": 25.0}, "eda_lect4b": {"Adecuado": 75.0, "Elemental": 25.0}, "avg_mate4b_m": 273.0, "avg_lect4b_m": 287.3, "avg_mate4b_f": 289.1, "avg_lect4b_f": 317.7}}, "1171": {"4b": {"grado": "4° Básico", "n": 3, "nc": 2, "avg_mate4b": 236.2, "avg_lect4b": 243.4, "eda_mate4b": {"Insuficiente": 50.0, "Elemental": 50.0}, "eda_lect4b": {"Insuficiente": 50.0, "Adecuado": 50.0}, "avg_mate4b_m": 236.2, "avg_lect4b_m": 243.4}}, "1182": {"4b": {"grado": "4° Básico", "n": 5, "nc": 3, "avg_mate4b": 234.6, "avg_lect4b": 286.4, "eda_mate4b": {"Insuficiente": 66.7, "Elemental": 33.3}, "eda_lect4b": {"Adecuado": 66.7, "Elemental": 33.3}, "avg_mate4b_f": 234.6, "avg_lect4b_f": 286.4}}, "1137": {"4b": {"grado": "4° Básico", "n": 1, "nc": 0}}, "1143": {"4b": {"grado": "4° Básico", "n": 9, "nc": 8, "avg_mate4b": 244.2, "avg_lect4b": 266.0, "eda_mate4b": {"Insuficiente": 62.5, "Adecuado": 12.5, "Elemental": 25.0}, "eda_lect4b": {"Elemental": 25.0, "Adecuado": 37.5, "Insuficiente": 37.5}, "avg_mate4b_m": 246.4, "avg_lect4b_m": 275.3, "avg_mate4b_f": 242.1, "avg_lect4b_f": 256.7}}, "1176": {"4b": {"grado": "4° Básico", "n": 1, "nc": 0}}, "1134": {"4b": {"grado": "4° Básico", "n": 5, "nc": 4, "avg_mate4b": 207.4, "avg_lect4b": 284.3, "eda_mate4b": {"Insuficiente": 100.0}, "eda_lect4b": {"Adecuado": 50.0, "Elemental": 50.0}, "avg_mate4b_m": 207.4, "avg_lect4b_m": 290.9, "avg_lect4b_f": 277.8}}, "1145": {"4b": {"grado": "4° Básico", "n": 5, "nc": 3, "avg_mate4b": 233.9, "avg_lect4b": 296.7, "eda_mate4b": {"Insuficiente": 66.7, "Elemental": 33.3}, "eda_lect4b": {"Adecuado": 66.7, "Insuficiente": 33.3}, "avg_mate4b_m": 233.9, "avg_lect4b_m": 296.7}, "8b": {"grado": "8° Básico", "n": 4, "nc": 3, "avg_mate8b": 223.0, "avg_lect8b": 225.7, "avg_hist8b": 216.8, "eda_mate8b": {"Insuficiente": 66.7, "Elemental": 33.3}, "eda_lect8b": {"Insuficiente": 66.7, "Adecuado": 33.3}, "avg_mate8b_m": 223.0, "avg_lect8b_m": 225.7, "avg_hist8b_m": 216.8}}, "1185": {"4b": {"grado": "4° Básico", "n": 23, "nc": 18, "avg_mate4b": 282.6, "avg_lect4b": 291.7, "eda_mate4b": {"Adecuado": 41.2, "Elemental": 47.1, "Insuficiente": 11.8}, "eda_lect4b": {"Adecuado": 61.1, "Elemental": 22.2, "Insuficiente": 16.7}, "avg_mate4b_m": 287.5, "avg_lect4b_m": 277.4, "avg_mate4b_f": 279.9, "avg_lect4b_f": 300.7}, "8b": {"grado": "8° Básico", "n": 22, "nc": 18, "avg_mate8b": 262.1, "avg_lect8b": 242.9, "avg_hist8b": 250.5, "eda_mate8b": {"Insuficiente": 35.3, "Elemental": 41.2, "Adecuado": 23.5}, "eda_lect8b": {"Insuficiente": 38.9, "Elemental": 38.9, "Adecuado": 22.2}, "avg_mate8b_m": 273.9, "avg_lect8b_m": 240.0, "avg_hist8b_m": 242.6, "avg_mate8b_f": 245.4, "avg_lect8b_f": 247.4, "avg_hist8b_f": 262.9}}, "1181": {"4b": {"grado": "4° Básico", "n": 1, "nc": 0}}, "1170": {"4b": {"grado": "4° Básico", "n": 21, "nc": 18, "avg_mate4b": 226.2, "avg_lect4b": 245.0, "eda_mate4b": {"Elemental": 33.3, "Insuficiente": 66.7}, "eda_lect4b": {"Adecuado": 22.2, "Elemental": 33.3, "Insuficiente": 44.4}, "avg_mate4b_m": 253.9, "avg_lect4b_m": 253.4, "avg_mate4b_f": 198.5, "avg_lect4b_f": 236.6}, "8b": {"grado": "8° Básico", "n": 13, "nc": 10, "avg_mate8b": 235.3, "avg_lect8b": 237.4, "avg_hist8b": 260.2, "eda_mate8b": {"Insuficiente": 70.0, "Elemental": 20.0, "Adecuado": 10.0}, "eda_lect8b": {"Insuficiente": 40.0, "Adecuado": 30.0, "Elemental": 30.0}, "avg_mate8b_m": 245.7, "avg_lect8b_m": 237.5, "avg_hist8b_m": 271.9, "avg_mate8b_f": 224.9, "avg_lect8b_f": 237.4, "avg_hist8b_f": 248.4}}, "1192": {"4b": {"grado": "4° Básico", "n": 37, "nc": 33, "avg_mate4b": 262.7, "avg_lect4b": 273.3, "eda_mate4b": {"Elemental": 48.5, "Insuficiente": 33.3, "Adecuado": 18.2}, "eda_lect4b": {"Adecuado": 39.4, "Elemental": 42.4, "Insuficiente": 18.2}, "avg_mate4b_m": 272.7, "avg_lect4b_m": 277.3, "avg_mate4b_f": 249.1, "avg_lect4b_f": 268.0}, "8b": {"grado": "8° Básico", "n": 30, "nc": 26, "avg_mate8b": 228.4, "avg_lect8b": 200.3, "avg_hist8b": 217.1, "eda_mate8b": {"Elemental": 23.1, "Insuficiente": 73.1, "Adecuado": 3.8}, "eda_lect8b": {"Insuficiente": 73.9, "Elemental": 17.4, "Adecuado": 8.7}, "avg_mate8b_m": 235.9, "avg_lect8b_m": 191.7, "avg_hist8b_m": 217.1, "avg_mate8b_f": 218.2, "avg_lect8b_f": 216.5, "avg_hist8b_f": 217.2}}, "1184": {"4b": {"grado": "4° Básico", "n": 39, "nc": 26, "avg_mate4b": 241.8, "avg_lect4b": 263.6, "eda_mate4b": {"Insuficiente": 48.0, "Elemental": 36.0, "Adecuado": 16.0}, "eda_lect4b": {"Insuficiente": 30.8, "Adecuado": 42.3, "Elemental": 26.9}, "avg_mate4b_m": 259.9, "avg_lect4b_m": 268.0, "avg_mate4b_f": 225.2, "avg_lect4b_f": 259.2}, "8b": {"grado": "8° Básico", "n": 33, "nc": 30, "avg_mate8b": 243.6, "avg_lect8b": 228.0, "avg_hist8b": 234.0, "eda_mate8b": {"Elemental": 33.3, "Insuficiente": 53.3, "Adecuado": 13.3}, "eda_lect8b": {"Insuficiente": 56.7, "Adecuado": 13.3, "Elemental": 30.0}, "avg_mate8b_m": 248.5, "avg_lect8b_m": 232.8, "avg_hist8b_m": 240.4, "avg_mate8b_f": 239.7, "avg_lect8b_f": 224.2, "avg_hist8b_f": 229.2}, "2m": {"grado": "2° Medio", "n": 40, "nc": 32, "avg_mate2m": 234.3, "avg_lect2m": 227.4, "eda_mate2m": {"Elemental": 31.2, "Insuficiente": 62.5, "Adecuado": 6.2}, "eda_lect2m": {"Adecuado": 6.9, "Insuficiente": 72.4, "Elemental": 20.7}, "avg_mate2m_m": 245.7, "avg_lect2m_m": 214.6, "avg_mate2m_f": 221.3, "avg_lect2m_f": 241.1}}, "40242": {"4b": {"grado": "4° Básico", "n": 26, "nc": 21, "avg_mate4b": 231.5, "avg_lect4b": 280.5, "eda_mate4b": {"Elemental": 42.9, "Insuficiente": 52.4, "Adecuado": 4.8}, "eda_lect4b": {"Adecuado": 57.1, "Elemental": 23.8, "Insuficiente": 19.0}, "avg_mate4b_m": 241.6, "avg_lect4b_m": 277.2, "avg_mate4b_f": 211.4, "avg_lect4b_f": 287.3}, "8b": {"grado": "8° Básico", "n": 31, "nc": 30, "avg_mate8b": 234.6, "avg_lect8b": 247.9, "avg_hist8b": 272.9, "eda_mate8b": {"Insuficiente": 65.5, "Elemental": 31.0, "Adecuado": 3.4}, "eda_lect8b": {"Elemental": 53.3, "Insuficiente": 26.7, "Adecuado": 20.0}, "avg_mate8b_m": 231.2, "avg_lect8b_m": 231.5, "avg_hist8b_m": 271.8, "avg_mate8b_f": 238.8, "avg_lect8b_f": 269.3, "avg_hist8b_f": 274.3}}, "1128": {"4b": {"grado": "4° Básico", "n": 34, "nc": 29, "avg_mate4b": 268.2, "avg_lect4b": 284.8, "eda_mate4b": {"Elemental": 50.0, "Adecuado": 28.6, "Insuficiente": 21.4}, "eda_lect4b": {"Insuficiente": 13.8, "Adecuado": 48.3, "Elemental": 37.9}, "avg_mate4b_m": 270.9, "avg_lect4b_m": 278.7, "avg_mate4b_f": 265.1, "avg_lect4b_f": 291.3}, "8b": {"grado": "8° Básico", "n": 30, "nc": 24, "avg_mate8b": 241.0, "avg_lect8b": 227.1, "avg_hist8b": 241.8, "eda_mate8b": {"Elemental": 50.0, "Insuficiente": 45.8, "Adecuado": 4.2}, "eda_lect8b": {"Elemental": 45.8, "Insuficiente": 50.0, "Adecuado": 4.2}, "avg_mate8b_m": 255.4, "avg_lect8b_m": 229.7, "avg_hist8b_m": 252.5, "avg_mate8b_f": 217.1, "avg_lect8b_f": 222.8, "avg_hist8b_f": 223.9}}, "1167": {"2m": {"grado": "2° Medio", "n": 118, "nc": 84, "avg_mate2m": 220.4, "avg_lect2m": 213.2, "eda_mate2m": {"Insuficiente": 77.1, "Elemental": 21.7, "Adecuado": 1.2}, "eda_lect2m": {"Adecuado": 8.3, "Insuficiente": 75.0, "Elemental": 16.7}, "avg_mate2m_m": 221.7, "avg_lect2m_m": 206.4, "avg_mate2m_f": 219.0, "avg_lect2m_f": 220.4}}, "1139": {"4b": {"grado": "4° Básico", "n": 4, "nc": 0}}, "1123": {"4b": {"grado": "4° Básico", "n": 70, "nc": 49, "avg_mate4b": 250.0, "avg_lect4b": 259.8, "eda_mate4b": {"Insuficiente": 38.3, "Elemental": 53.2, "Adecuado": 8.5}, "eda_lect4b": {"Elemental": 31.2, "Insuficiente": 31.2, "Adecuado": 37.5}, "avg_mate4b_m": 253.7, "avg_lect4b_m": 259.0, "avg_mate4b_f": 237.7, "avg_lect4b_f": 261.9}, "8b": {"grado": "8° Básico", "n": 73, "nc": 60, "avg_lect8b": 219.1, "avg_mate8b": 240.6, "avg_hist8b": 236.9, "eda_lect8b": {"Insuficiente": 58.6, "Elemental": 34.5, "Adecuado": 6.9}, "eda_mate8b": {"Insuficiente": 53.7, "Elemental": 35.2, "Adecuado": 11.1}, "avg_mate8b_m": 257.1, "avg_lect8b_m": 220.9, "avg_hist8b_m": 242.2, "avg_mate8b_f": 220.0, "avg_lect8b_f": 215.3, "avg_hist8b_f": 230.3}, "2m": {"grado": "2° Medio", "n": 71, "nc": 46, "avg_mate2m": 208.6, "avg_lect2m": 218.0, "eda_mate2m": {"Insuficiente": 86.7, "Elemental": 13.3}, "eda_lect2m": {"Elemental": 11.6, "Insuficiente": 74.4, "Adecuado": 14.0}, "avg_mate2m_m": 217.3, "avg_lect2m_m": 209.4, "avg_mate2m_f": 196.7, "avg_lect2m_f": 229.9}}, "1153": {"4b": {"grado": "4° Básico", "n": 1, "nc": 0}}, "1152": {"4b": {"grado": "4° Básico", "n": 12, "nc": 9, "avg_mate4b": 282.1, "avg_lect4b": 303.1, "eda_mate4b": {"Elemental": 50.0, "Adecuado": 37.5, "Insuficiente": 12.5}, "eda_lect4b": {"Adecuado": 75.0, "Insuficiente": 12.5, "Elemental": 12.5}, "avg_mate4b_m": 291.0, "avg_lect4b_m": 321.5, "avg_mate4b_f": 267.4, "avg_lect4b_f": 284.8}}};
+
+var CM = {
+  desemp: {
+    title: 'Categoría Desempeño 2019',
+    fn: function(d){ return d.cat_desempeno_basica_2019 || d.cat_desempeno_media_2019 || 'No aplica'; },
+    colors: {'Alto':'#22c55e','Medio':'#3b82f6','Medio bajo':'#f59e0b','Sin Categoría':'#94a3b8','No aplica':'#475569'}
+  },
+  simce4b: {
+    title: 'SIMCE Lectura 4°B',
+    fn: function(d){ return simceBand(d.rbd,'4b','avg_lect4b',[[280,'≥280'],[260,'260–279'],[240,'240–259'],[0,'<240']]); },
+    colors: {'≥280':'#22c55e','260–279':'#3b82f6','240–259':'#f59e0b','<240':'#ef4444','Sin datos':'#475569'}
+  },
+  simce8b: {
+    title: 'SIMCE Lectura 8°B',
+    fn: function(d){ return simceBand(d.rbd,'8b','avg_lect8b',[[265,'≥265'],[245,'245–264'],[225,'225–244'],[0,'<225']]); },
+    colors: {'≥265':'#22c55e','245–264':'#3b82f6','225–244':'#f59e0b','<225':'#ef4444','Sin datos':'#475569'}
+  },
+  simce2m: {
+    title: 'SIMCE Lectura 2°M',
+    fn: function(d){ return simceBand(d.rbd,'2m','avg_lect2m',[[255,'≥255'],[235,'235–254'],[215,'215–234'],[0,'<215']]); },
+    colors: {'≥255':'#22c55e','235–254':'#3b82f6','215–234':'#f59e0b','<215':'#ef4444','Sin datos':'#475569'}
+  },
+  tipo: {
+    title: 'Tipo EE',
+    fn: function(d){ return d.tipo; },
+    colors: {'Colegio':'#8b5cf6','Liceo':'#ec4899','Escuela':'#3b82f6','Escuela Especial':'#f59e0b'}
+  },
+  area: {
+    title: 'Área',
+    fn: function(d){ return d.area; },
+    colors: {'Urbano':'#3b82f6','Rural':'#22c55e'}
+  },
+  micro: {
+    title: 'Microcentro',
+    fn: function(d){ return d.microcentro||'No aplica'; },
+    colors: {'Incakán':'#f59e0b','Sembrando Futuro':'#22c55e','Valles de Cabildo':'#8b5cf6','No aplica':'#475569'}
+  }
+};
+
+function simceBand(rbd, grado, field, bands) {
+  var s = SIMCE[String(rbd)];
+  if (!s || !s[grado]) return 'Sin datos';
+  var v = s[grado][field];
+  if (!v) return 'Sin datos';
+  for (var i=0; i<bands.length; i++) {
+    if (v >= bands[i][0]) return bands[i][1];
+  }
+  return 'Sin datos';
+}
+
+var colorMode = 'desemp';
+var filtered  = DATA.slice();
+var markers   = {};
+var compareSet = {};   // rbd -> true for EE in comparativo
+var cmpMateria = 'lect';   // 'lect' | 'mate' | 'hist'
+var cmpVista   = 'puntaje'; // 'puntaje' | 'niveles'
+var cmpGenero  = 'total';   // 'total' | 'm' | 'f'
+var activeRbd  = null;
+var chartInst  = null;
+var rsChartInst = null;
+var currentView = 'detalle';
+
+// ── MAP ──────────────────────────────────────────────────────────────────────
+var map = L.map('map', {zoomControl:true}).setView([-32.45,-71.05], 10);
+var tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '©OpenStreetMap ©CartoDB', maxZoom: 18
+}).addTo(map);
+
+function getColor(d) {
+  var sc = CM[colorMode];
+  var key = sc.fn(d);
+  return sc.colors[key] || '#475569';
+}
+
+function mkIcon(color, size) {
+  size = size || 11;
+  return L.divIcon({
+    className: '',
+    html: '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+color+';border:2px solid rgba(255,255,255,.65);box-shadow:0 1px 4px rgba(0,0,0,.5);"></div>',
+    iconSize:[size,size], iconAnchor:[size/2,size/2]
+  });
+}
+
+DATA.forEach(function(d) {
+  if (!d.lat || !d.lng) return;
+  var color = getColor(d);
+  var marker = L.marker([d.lat, d.lng], {icon: mkIcon(color)})
+    .addTo(map)
+    .on('click', function(){ selectSchool(d.rbd); });
+  var s = SIMCE[String(d.rbd)];
+  var pts = [];
+  if (s && s['4b'] && s['4b'].avg_lect4b) pts.push('L4B:'+s['4b'].avg_lect4b);
+  if (s && s['8b'] && s['8b'].avg_lect8b) pts.push('L8B:'+s['8b'].avg_lect8b);
+  if (s && s['2m'] && s['2m'].avg_lect2m) pts.push('L2M:'+s['2m'].avg_lect2m);
+  var ptStr = pts.length ? '<div class="lp-meta" style="color:#60a5fa;margin-top:2px;">'+pts.join(' · ')+'</div>' : '';
+  marker.bindPopup(
+    '<div class="lp-title">'+d.nombre+'</div>'+
+    '<div class="lp-meta">'+d.tipo+' · '+d.area+' · '+d.comuna+'</div>'+
+    '<div class="lp-meta">Matrícula: <b>'+(d.matricula_2025||'—')+'</b></div>'+ptStr,
+    {maxWidth:260}
+  );
+  markers[d.rbd] = {m: marker, d: d};
+});
+
+function updateColors() {
+  DATA.forEach(function(d) {
+    if (!markers[d.rbd]) return;
+    var color = getColor(d);
+    var isActive = d.rbd === activeRbd;
+    markers[d.rbd].m.setIcon(mkIcon(color, isActive ? 17 : 11));
+  });
+}
+
+// ── FILTERS ──────────────────────────────────────────────────────────────────
+function applyFilters() {
+  var comuna = document.getElementById('f-comuna').value;
+  var area   = document.getElementById('f-area').value;
+  var tipo   = document.getElementById('f-tipo').value;
+  var micro  = document.getElementById('f-micro').value;
+  var fatp   = document.getElementById('f-atp') ? document.getElementById('f-atp').value : '';
+  var fapoyo = document.getElementById('f-apoyo') ? document.getElementById('f-apoyo').value : '';
+  var ensenanza = document.getElementById('f-ensenanza') ? document.getElementById('f-ensenanza').value : '';
+  var desemp = document.getElementById('f-desemp').value;
+  var sned   = document.getElementById('f-sned').value;
+  var search = document.getElementById('search-inp').value.toLowerCase();
+
+  filtered = DATA.filter(function(d) {
+    if (comuna && d.comuna !== comuna) return false;
+    if (area   && d.area !== area)     return false;
+    if (tipo   && d.tipo !== tipo)     return false;
+    if (ensenanza && !(d.categorias_ensenanza||[]).some(function(c){ return c.indexOf(ensenanza) !== -1; })) return false;
+    if (micro  && (d.microcentro||'') !== micro) return false;
+    if (fatp   && d.cp_atp !== fatp)             return false;
+    if (fapoyo && d.cp_apoyo_ee !== fapoyo)      return false;
+    if (desemp) {
+      var dv = d.cat_desempeno_basica_2019 || d.cat_desempeno_media_2019 || 'No aplica';
+      if (dv !== desemp) return false;
+    }
+    if (sned === 'si' && !d.sned_2026_2027) return false;
+    if (sned === 'no' &&  d.sned_2026_2027) return false;
+    if (search && d.nombre.toLowerCase().indexOf(search) === -1) return false;
+    return true;
+  });
+
+  var fset = {};
+  filtered.forEach(function(d){ fset[d.rbd] = true; });
+  DATA.forEach(function(d) {
+    if (!markers[d.rbd]) return;
+    if (fset[d.rbd]) markers[d.rbd].m.addTo(map);
+    else             markers[d.rbd].m.remove();
+  });
+
+  renderList();
+  updateStats();
+  if (currentView === 'resumen') renderResumen();
+  if (currentView === 'graficos') renderGraficos();
+}
+
+// ── SIDEBAR LIST ─────────────────────────────────────────────────────────────
+function renderList() {
+  var el = document.getElementById('school-list');
+  var cmpCount = Object.keys(compareSet).length;
+  document.getElementById('count-info').innerHTML =
+    filtered.length + ' establecimiento' + (filtered.length !== 1 ? 's' : '') +
+    (cmpCount ? ' &nbsp;<button class="cmp-clear" onclick="clearCompare()">✕ Limpiar comparativo ('+cmpCount+')</button>' : '');
+
+  el.innerHTML = filtered.map(function(d) {
+    var color  = getColor(d);
+    var isA    = d.rbd === activeRbd;
+    var inCmp  = compareSet[d.rbd];
+    var s      = SIMCE[String(d.rbd)];
+    var lects  = [];
+    if (s && s['4b'] && s['4b'].avg_lect4b) lects.push(s['4b'].avg_lect4b);
+    if (s && s['8b'] && s['8b'].avg_lect8b) lects.push(s['8b'].avg_lect8b);
+    if (s && s['2m'] && s['2m'].avg_lect2m) lects.push(s['2m'].avg_lect2m);
+    var sStr = lects.length ? ' L:'+lects.join('/') : '';
+    var mcStr = (d.microcentro && d.microcentro !== 'No aplica') ?
+      '<span class="si-badge">'+d.microcentro+'</span>' : '';
+    return '<div class="si'+(isA?' active':'')+(inCmp?' in-cmp':'')+'" id="li-'+d.rbd+'">' +
+      '<div class="si-check'+(inCmp?' checked':'')+'" onclick="toggleCompare('+d.rbd+',event)">'+(inCmp?'✓':'')+'</div>'+
+      '<div class="si-dot" style="background:'+color+'"></div>'+
+      '<div class="si-body" onclick="selectSchool('+d.rbd+')">' +
+        '<div class="si-name">'+d.nombre+'</div>'+
+        '<div class="si-meta">'+d.tipo+' · '+d.comuna+' · Mat.'+(d.matricula_2025||'—')+sStr+'</div>'+
+        mcStr+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function toggleCompare(rbd, ev) {
+  ev.stopPropagation();
+  if (compareSet[rbd]) delete compareSet[rbd];
+  else compareSet[rbd] = true;
+  renderList();
+  if (currentView === 'cmp') renderComparativo();
+}
+
+function clearCompare() {
+  compareSet = {};
+  renderList();
+  if (currentView === 'cmp') renderComparativo();
+}
+
+// ── STATS BAR ────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('st-total').textContent = filtered.length;
+  var mat = 0;
+  filtered.forEach(function(d){ if (d.matricula_2025) mat += d.matricula_2025; });
+  document.getElementById('st-mat').textContent = mat.toLocaleString('es-CL');
+  function avgF(grado, field) {
+    var vals = filtered.map(function(d){
+      var s = SIMCE[String(d.rbd)];
+      return (s && s[grado]) ? s[grado][field] : null;
+    }).filter(Boolean);
+    return vals.length ? (vals.reduce(function(a,b){return a+b;},0)/vals.length).toFixed(0) : '—';
+  }
+  document.getElementById('st-4b').textContent   = avgF('4b','avg_lect4b');
+  document.getElementById('st-4b-m').textContent = avgF('4b','avg_mate4b');
+  document.getElementById('st-8b').textContent   = avgF('8b','avg_lect8b');
+  document.getElementById('st-8b-m').textContent = avgF('8b','avg_mate8b');
+  document.getElementById('st-2m').textContent   = avgF('2m','avg_lect2m');
+  document.getElementById('st-2m-m').textContent = avgF('2m','avg_mate2m');
+  var asists = filtered.filter(function(d){ return d.asistencia_2025!=null||d.asistencia_2024!=null; });
+  document.getElementById('st-asist').textContent = asists.length ?
+    (asists.reduce(function(s,d){ return s+(d.asistencia_2025!=null?d.asistencia_2025:d.asistencia_2024); },0)/asists.length).toFixed(1)+'%' : '—';
+}
+
+// ── LEGEND ───────────────────────────────────────────────────────────────────
+function updateLegend() {
+  var sc = CM[colorMode];
+  var items = Object.keys(sc.colors).map(function(k) {
+    return '<div class="leg-item"><div class="leg-dot" style="background:'+sc.colors[k]+'"></div>'+k+'</div>';
+  }).join('');
+  document.getElementById('legend-box').innerHTML = '<div class="leg-title">'+sc.title+'</div>'+items;
+}
+
+function setCM(mode, btn) {
+  colorMode = mode;
+  document.querySelectorAll('.cm-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  updateColors(); updateLegend(); renderList();
+}
+
+function toggleFilters(btn) {
+  btn.classList.toggle('open');
+  document.getElementById('filter-body').classList.toggle('open');
+}
+
+// ── RIGHT PANEL TABS ─────────────────────────────────────────────────────────
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.rptab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.rp-view').forEach(function(v){ v.classList.remove('active'); v.style.display='none'; });
+  document.getElementById('tab-'+view).classList.add('active');
+  var activeV = document.getElementById('view-'+view);
+  activeV.classList.add('active');
+  activeV.style.display = 'flex';
+  document.getElementById('right-panel').classList.remove('collapsed');
+  if (view === 'resumen') renderResumen();
+  if (view === 'cmp') renderComparativo();
+  if (view === 'graficos') renderGraficos();
+}
+
+// ── DETALLE ──────────────────────────────────────────────────────────────────
+function edaColor(nivel) {
+  var c = {'Insuficiente':'#ef4444','Elemental':'#f59e0b','Adecuado':'#22c55e','Avanzado':'#8b5cf6'};
+  return c[nivel] || '#475569';
+}
+
+function badgeDesemp(cat) {
+  if (!cat) return '<span class="badge b-na">—</span>';
+  var m = {'Alto':'b-alto','Medio':'b-medio','Medio bajo':'b-mb','Sin Categoría':'b-sc','No aplica':'b-na'};
+  return '<span class="badge '+(m[cat]||'b-sc')+'">'+cat+'</span>';
+}
+
+// ── SIMCE CHARTS (colapsables + columnas apiladas) ────────────────────────────
+var simceCharts = {};
+
+function renderSimce(rbd) {
+  var s = SIMCE[String(rbd)];
+  if (!s || Object.keys(s).length === 0)
+    return '<div class="no-simce">Sin datos SIMCE para este establecimiento</div>';
+  var gradeOrder = ['4b','8b','2m'];
+  var grades = gradeOrder.filter(function(g){ return s[g]; });
+  var glbl = {'4b':'4° Básico','8b':'8° Básico','2m':'2° Medio'};
+  var html = '<div class="simce-tabs">';
+  grades.forEach(function(g, i) {
+    html += '<button class="stab'+(i===0?' active':'')+'" onclick="switchSimceTab(\''+g+'\',this)">'+(glbl[g]||g)+'</button>';
+  });
+  html += '</div>';
+  grades.forEach(function(g, i) {
+    var d = s[g];
+    html += '<div class="simce-block'+(i===0?' active':'')+'" id="stab-'+g+'">';
+    html += '<div style="font-size:.7rem;color:#64748b;margin-bottom:10px;">N='+d.n+' inscritos · '+d.nc+' con puntaje</div>';
+    // Score cards
+    var ptjeCols = Object.keys(d).filter(function(k){
+      return k.indexOf('avg_')===0 && k.slice(-2)!=='_m' && k.slice(-2)!=='_f';
+    });
+    if (ptjeCols.length) {
+      html += '<div style="display:flex;gap:8px;margin-bottom:14px;">';
+      ptjeCols.forEach(function(k){
+        var v = d[k]; if (!v) return;
+        var raw = k.replace('avg_','').replace(/\d+[bm]/g,'').replace(/_/g,'');
+        var lbl = raw.replace('mate','Matemática').replace('lect','Lectura').replace('hist','Historia');
+        lbl = lbl.charAt(0).toUpperCase()+lbl.slice(1);
+        var cardColor = lbl.indexOf('Lect')!==-1 ? 'linear-gradient(135deg,#1d4ed8,#60a5fa)'
+                       : lbl.indexOf('Mat') !==-1 ? 'linear-gradient(135deg,#ef4444,#fca5a5)'
+                       : 'linear-gradient(135deg,#b45309,#f59e0b)';
+        html += '<div style="flex:1;background:'+cardColor+';border-radius:6px;padding:8px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25);">'+
+          '<div style="font-size:1.5rem;font-weight:700;color:#fff;">'+v+'</div>'+
+          '<div style="font-size:.65rem;color:rgba(255,255,255,.8);margin-top:2px;">'+lbl+'</div></div>';
+      });
+      html += '</div>';
+    }
+    // CSS stacked bars per subject
+    var edaCols = Object.keys(d).filter(function(k){ return k.indexOf('eda_')===0; });
+    if (edaCols.length) {
+      html += '<div style="font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Distribución niveles de logro</div>';
+      // Legend
+      html += '<div style="display:flex;gap:10px;margin-bottom:10px;">';
+      [['#ef4444','Insuficiente'],['#f59e0b','Elemental'],['#22c55e','Adecuado']].forEach(function(l){
+        html += '<span style="display:flex;align-items:center;gap:4px;font-size:.68rem;color:#94a3b8;">'+
+          '<span style="width:10px;height:10px;border-radius:2px;background:'+l[0]+';flex-shrink:0;"></span>'+l[1]+'</span>';
+      });
+      html += '</div>';
+      edaCols.forEach(function(k) {
+        var eda = d[k]; if (!eda || !Object.keys(eda).length) return;
+        var raw = k.replace('eda_','').replace(/\d+[bm]/g,'').replace(/_/g,'');
+        var lbl = raw.replace('mate','Matemática').replace('lect','Lectura').replace('hist','Historia');
+        lbl = lbl.charAt(0).toUpperCase()+lbl.slice(1);
+        var ins = eda['Insuficiente'] || 0;
+        var ele = eda['Elemental']    || 0;
+        var ade = eda['Adecuado']     || 0;
+        html += '<div style="margin-bottom:12px;">';
+        html += '<div style="font-size:.78rem;font-weight:700;color:'+(lbl.indexOf('Lect')!==-1?'#1d4ed8':lbl.indexOf('Mat')!==-1?'#991b1b':'#92400e')+';margin-bottom:4px;letter-spacing:.2px;">'+lbl+'</div>';
+        html += '<div style="display:flex;height:46px;border-radius:5px;overflow:hidden;border:1px solid #1e3a5f;">';
+        if (ins > 0) html += '<div style="flex:'+ins+';background:#ef4444;display:flex;align-items:center;justify-content:center;color:#fff;font-size:'+(ins>10?'12':'0')+'px;font-weight:700;" title="Insuficiente '+ins.toFixed(1)+'%">'+Math.round(ins)+'%</div>';
+        if (ele > 0) html += '<div style="flex:'+ele+';background:#f59e0b;display:flex;align-items:center;justify-content:center;color:#fff;font-size:'+(ele>10?'12':'0')+'px;font-weight:700;" title="Elemental '+ele.toFixed(1)+'%">'+Math.round(ele)+'%</div>';
+        if (ade > 0) html += '<div style="flex:'+ade+';background:#22c55e;display:flex;align-items:center;justify-content:center;color:#fff;font-size:'+(ade>10?'12':'0')+'px;font-weight:700;" title="Adecuado '+ade.toFixed(1)+'%">'+Math.round(ade)+'%</div>';
+        html += '</div>';
+        html += '</div>';
+      });
+    }
+    // Gender breakdown
+    var mCols = Object.keys(d).filter(function(k){ return k.slice(-2)==='_m'&&d[k]; });
+    var fCols = Object.keys(d).filter(function(k){ return k.slice(-2)==='_f'&&d[k]; });
+    if (mCols.length && fCols.length) {
+      html += '<div class="sexo-row">';
+      [{label:'♂ Hombres',cols:mCols},{label:'♀ Mujeres',cols:fCols}].forEach(function(sx){
+        html += '<div class="sexo-card"><div class="sc-lbl">'+sx.label+'</div>';
+        sx.cols.forEach(function(k){
+          var raw = k.replace('avg_','').replace(/_[mf]$/,'').replace(/\d+[bm]/g,'').replace(/_/g,'');
+          var lbl = raw.replace('mate','Mat').replace('lect','Lec').replace('hist','His');
+          html += '<div style="font-size:.7rem;color:#94a3b8;">'+lbl+': <span class="sc-val">'+d[k]+'</span></div>';
+        });
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  return html;
+}
+
+
+function initCollapsible() {
+  var titles = document.querySelectorAll('#det-content .ds-title');
+  titles.forEach(function(title) {
+    if (title._colInited) return;
+    title._colInited = true;
+    var ds = title.parentElement;
+    var isSimce = title.textContent.indexOf('SIMCE') !== -1;
+    // Wrap content after title in a body div
+    var body = document.createElement('div');
+    body.className = 'ds-body';
+    var sibs = [];
+    var node = title.nextSibling;
+    while (node) { sibs.push(node); node = node.nextSibling; }
+    sibs.forEach(function(n){ body.appendChild(n); });
+    ds.appendChild(body);
+    // Add arrow indicator
+    var ind = document.createElement('span');
+    ind.textContent = isSimce ? ' ▼' : ' ▶';
+    ind.style.cssText = 'float:right;font-size:.65rem;opacity:.7;';
+    title.appendChild(ind);
+    // Collapse non-SIMCE by default
+    if (!isSimce) { body.style.display = 'none'; }
+    title.style.cursor = 'pointer';
+    title.onclick = function() {
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      ind.textContent = open ? ' ▶' : ' ▼';
+    };
+  });
+}
+
+
+function switchSimceTab(g, btn) {
+  var ds = btn.closest('.ds');
+  ds.querySelectorAll('.stab').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  ds.querySelectorAll('.simce-block').forEach(function(b){ b.classList.remove('active'); });
+  var tb = document.getElementById('stab-'+g);
+  if (tb) tb.classList.add('active');
+}
+
+function selectSchool(rbd) {
+  activeRbd = rbd;
+  var d = null;
+  DATA.forEach(function(x){ if(x.rbd===rbd) d=x; });
+  if (!d) return;
+
+  document.querySelectorAll('.si').forEach(function(el){ el.classList.remove('active'); });
+  var li = document.getElementById('li-'+rbd);
+  if (li){ li.classList.add('active'); li.scrollIntoView({block:'nearest'}); }
+  updateColors();
+  if (markers[rbd]) map.panTo([d.lat, d.lng]);
+
+  switchView('detalle');
+
+  document.getElementById('det-title').textContent = d.nombre;
+  var diffMat = d.diff_matricula!=null?(d.diff_matricula>0?'+'+d.diff_matricula:''+d.diff_matricula):'—';
+  var diffC   = d.diff_matricula>0?'#22c55e':d.diff_matricula<0?'#ef4444':'#94a3b8';
+  var cats    = d.categorias_ensenanza.map(function(c){
+    return '<div style="font-size:.7rem;color:#94a3b8;padding:1px 0;">• '+c+'</div>';
+  }).join('');
+  var sned26  = d.sned_2026_2027 ?
+    '<span class="badge b-si">Sí ('+(d.sned_2026_2027===1?'100%':'60%')+')</span>' :
+    '<span class="badge b-no">No</span>';
+
+  document.getElementById('det-content').innerHTML =
+    '<div class="ds">'+
+      '<div class="ds-title">📍 Identificación</div>'+
+      '<div class="dr"><span class="dk">RBD</span><span class="dv">'+d.rbd+'</span></div>'+
+      '<div class="dr"><span class="dk">Tipo</span><span class="dv">'+d.tipo+'</span></div>'+
+      '<div class="dr"><span class="dk">Área / Microcentro</span><span class="dv">'+d.area+
+        (d.microcentro&&d.microcentro!=='No aplica'?' · '+d.microcentro:'')+'</span></div>'+
+      '<div class="dr"><span class="dk">Cobertura</span><span class="dv">'+(d.cobertura||'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">Dirección</span><span class="dv">'+(d.direccion||'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">Distancia oficina</span><span class="dv">'+(d.distancia_km||'—')+' km</span></div>'+
+      '<div style="margin-top:4px;">'+cats+'</div>'+
+    '</div>'+
+    '<div class="ds">'+
+      '<div class="ds-title">🏆 Resultados SIMCE 2025</div>'+
+      (d.tipo === 'Escuela Especial'
+        ? '<div class="no-simce" style="padding:14px 0;">⚠️ Educación Especial no rinde SIMCE</div>'
+        : renderSimce(rbd))+
+    '</div>'+
+    '<div class="ds">'+
+      '<div class="ds-title">📊 Categoría Desempeño 2019</div>'+
+      '<div class="dr"><span class="dk">E. Básica</span><span class="dv">'+badgeDesemp(d.cat_desempeno_basica_2019)+'</span></div>'+
+      '<div class="dr"><span class="dk">E. Media</span><span class="dv">'+badgeDesemp(d.cat_desempeno_media_2019)+'</span></div>'+
+    '</div>'+
+    '<div class="ds">'+
+      '<div class="ds-title">📈 Matrícula y Asistencia</div>'+
+      '<div class="dr"><span class="dk">Matrícula 2025</span><span class="dv">'+(d.matricula_2025||'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">Matrícula 2026</span><span class="dv">'+(d.matricula_2026||'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">Variación</span><span class="dv" style="color:'+diffC+';font-weight:700;">'+diffMat+'</span></div>'+
+      '<div class="dr"><span class="dk">Asist. 2022</span><span class="dv">'+(d.asistencia_2022!=null?d.asistencia_2022+'%':'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">Asist. 2023</span><span class="dv">'+(d.asistencia_2023!=null?d.asistencia_2023+'%':'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">Asist. 2025</span><span class="dv">'+(d.asistencia_2024!=null?d.asistencia_2024+'%':'—')+'</span></div>'+
+    '</div>'+
+    '<div class="ds">'+
+      '<div class="ds-title">👤 Directivo</div>'+
+      '<div class="dr"><span class="dk">'+(d.cargo||'Cargo')+'</span><span class="dv">'+(d.director||'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">Estado</span><span class="dv" style="font-size:.7rem;">'+(d.estado_cargo||'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">Correo</span><span class="dv" style="font-size:.66rem;">'+(d.correo||'—')+'</span></div>'+
+    '</div>'+
+    '<div class="ds">'+
+      '<div class="ds-title">⭐ Programas</div>'+
+      '<div class="dr"><span class="dk">SNED 2026–27</span><span class="dv">'+sned26+'</span></div>'+
+      '<div class="dr"><span class="dk">Trayectoria SNED</span><span class="dv">'+(d.trayectoria_sned||'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">PIE</span><span class="dv">'+(d.pie||'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">PACE</span><span class="dv">'+(d.pace||'—')+'</span></div>'+
+      '<div class="dr"><span class="dk">% Prioritarios</span><span class="dv">'+(d.pct_prioritarios?d.pct_prioritarios.toFixed(1)+'%':'—')+'</span></div>'+
+    '</div>'+
+    '<div style="margin-top:8px;text-align:center;">'+
+      '<a href="https://www.google.com/maps?q='+d.lat+','+d.lng+'" target="_blank" '+
+         'style="display:inline-block;background:#1e3a5f;color:#93c5fd;padding:5px 12px;border-radius:5px;font-size:.74rem;text-decoration:none;">'+
+        '📍 Ver en Google Maps</a>'+
+    '</div>';
+
+  // Asistencia chart
+  if (chartInst) chartInst.destroy();
+  var av = [d.asistencia_2022, d.asistencia_2023, d.asistencia_2024, d.asistencia_2025].map(function(v){ return v!=null?v:null; });
+  var hasA = av.some(function(v){ return v!==null; });
+  document.getElementById('chart-area').style.display = hasA ? 'block' : 'none';
+  if (hasA) {
+    var ctx = document.getElementById('chart-main').getContext('2d');
+    chartInst = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['2022','2023','2024','2025'],
+        datasets: [{label:'Asistencia %', data:av, borderColor:'#3b82f6',
+          backgroundColor:'rgba(59,130,246,.15)', borderWidth:2,
+          pointBackgroundColor:'#3b82f6', pointRadius:4, tension:0.3, spanGaps:true}]
+      },
+      options: {responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false},
+          datalabels:{anchor:'center',align:'top',offset:6,color:'#1e3a5f',
+            font:{size:10,weight:'bold'},
+            formatter:function(v){return v!=null?v.toFixed(1)+'%':'';}}
+        },
+        scales:{
+          y:{min:Math.max(0,Math.min.apply(null,av.filter(function(v){return v!==null;}))-5),max:100,
+            ticks:{color:'#64748b',font:{size:10},callback:function(v){return v+'%';}},
+            grid:{display:false}},
+          x:{ticks:{color:'#64748b',font:{size:10}},grid:{display:false}}
+        }
+      }
+    });
+  }
+  setTimeout(function(){ initCollapsible(); }, 30);
+}
+
+function closeDetail() {
+  document.getElementById('right-panel').classList.add('collapsed');
+  activeRbd = null; updateColors();
+  document.querySelectorAll('.si').forEach(function(el){ el.classList.remove('active'); });
+}
+
+// ── RESUMEN ───────────────────────────────────────────────────────────────────
+function renderResumen() {
+  var el = document.getElementById('view-resumen');
+  var n  = filtered.length;
+  var mat = 0, asistSum = 0, asistN = 0;
+  filtered.forEach(function(d){
+    if (d.matricula_2025) mat += d.matricula_2025;
+    if (d.asistencia_2024!=null){ asistSum+=d.asistencia_2024; asistN++; }
+  });
+
+  function avgField(grado,field){
+    var vals=filtered.map(function(d){var s=SIMCE[String(d.rbd)];return s&&s[grado]?s[grado][field]:null;}).filter(Boolean);
+    return vals.length?(vals.reduce(function(a,b){return a+b;},0)/vals.length).toFixed(1):null;
+  }
+  var l4b=avgField('4b','avg_lect4b'), m4b=avgField('4b','avg_mate4b');
+  var l8b=avgField('8b','avg_lect8b'), m8b=avgField('8b','avg_mate8b'), h8b=avgField('8b','avg_hist8b');
+  var l2m=avgField('2m','avg_lect2m'), m2m=avgField('2m','avg_mate2m');
+
+  // Distribución desempeño
+  var desCounts = {'Alto':0,'Medio':0,'Medio bajo':0,'Sin Categoría':0,'No aplica':0};
+  filtered.forEach(function(d){
+    var cat = d.cat_desempeno_basica_2019||d.cat_desempeno_media_2019||'No aplica';
+    if (desCounts[cat]!==undefined) desCounts[cat]++;
+    else desCounts['No aplica']++;
+  });
+
+  // Distribución SNED
+  var snedSi=filtered.filter(function(d){return d.sned_2026_2027;}).length;
+
+  // Top EE por SIMCE Lectura 4B
+  var sorted4b = filtered.filter(function(d){
+    var s=SIMCE[String(d.rbd)]; return s&&s['4b']&&s['4b'].avg_lect4b;
+  }).sort(function(a,b){
+    return SIMCE[String(b.rbd)]['4b'].avg_lect4b - SIMCE[String(a.rbd)]['4b'].avg_lect4b;
+  });
+
+  var html =
+    '<div class="rs-section">'+
+    '<div class="rs-title">📊 Conjunto filtrado: '+n+' establecimientos</div>'+
+    '<div class="rs-cards">'+
+      '<div class="rs-card"><div class="rc-val">'+mat.toLocaleString('es-CL')+'</div><div class="rc-lbl">Matrícula total 2025</div></div>'+
+      '<div class="rs-card"><div class="rc-val">'+(asistN?(asistSum/asistN).toFixed(1)+'%':'—')+'</div><div class="rc-lbl">Asistencia prom. 2024</div></div>'+
+      '<div class="rs-card"><div class="rc-val">'+snedSi+'</div><div class="rc-lbl">Con SNED 2026–27</div></div>'+
+      '<div class="rs-card"><div class="rc-val">'+(n-snedSi)+'</div><div class="rc-lbl">Sin SNED 2026–27</div></div>'+
+    '</div>'+
+    '</div>'+
+
+    '<div class="rs-section">'+
+    '<div class="rs-title">🏆 Promedios SIMCE 2025</div>'+
+    '<div class="rs-chart-wrap"><canvas id="rs-chart"></canvas></div>'+
+    '</div>'+
+
+    '<div class="rs-section">'+
+    '<div class="rs-title">📂 Categoría Desempeño 2019</div>'+
+    '<table class="rs-table">'+
+      '<tr><th>Categoría</th><th>N°</th><th>%</th></tr>'+
+      Object.keys(desCounts).map(function(k){
+        var cnt=desCounts[k]; if(!cnt) return '';
+        return '<tr><td>'+k+'</td><td>'+cnt+'</td><td>'+(cnt/n*100).toFixed(0)+'%</td></tr>';
+      }).join('')+
+    '</table>'+
+    '</div>'+
+
+    '<div class="rs-section">'+
+    '<div class="rs-title">📋 Ranking Lectura 4°B (EE con datos)</div>'+
+    '<table class="rs-table">'+
+      '<tr><th>Establecimiento</th><th>Comuna</th><th>Lectura 4° Básico</th><th>Matemática 4° Básico</th></tr>'+
+      sorted4b.slice(0,15).map(function(d){
+        var s=SIMCE[String(d.rbd)]['4b'];
+        var lbl=s.avg_lect4b||'—', mlbl=s.avg_mate4b||'—';
+        return '<tr><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+d.nombre+'">'+d.nombre+'</td>'+
+          '<td>'+d.comuna+'</td>'+
+          '<td style="color:#60a5fa;font-weight:600;">'+lbl+'</td>'+
+          '<td style="color:#a78bfa;">'+mlbl+'</td></tr>';
+      }).join('')+
+    '</table>'+
+    '</div>';
+
+  el.innerHTML = html;
+
+  // Renderizar gráfico SIMCE
+  var rsCtx = document.getElementById('rs-chart');
+  if (!rsCtx) return;
+  if (rsChartInst) rsChartInst.destroy();
+  rsChartInst = new Chart(rsCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Lect. 4°B','Mate. 4°B','Lect. 8°B','Mate. 8°B','Hist. 8°B','Lect. 2°M','Mate. 2°M'],
+      datasets: [{
+        label: 'Puntaje promedio',
+        data: [l4b,m4b,l8b,m8b,h8b,l2m,m2m].map(function(v){return v?parseFloat(v):null;}),
+        backgroundColor: ['#3b82f6','#6366f1','#3b82f6','#6366f1','#8b5cf6','#3b82f6','#6366f1'],
+        borderRadius: 4, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{min:180,max:320,ticks:{color:'#64748b',font:{size:10}},grid:{display:false}},
+        x:{ticks:{color:'#64748b',font:{size:9},maxRotation:30},grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ── COMPARATIVO ────────────────────────────────────────────────────────────────
+function renderComparativo() {
+  var el = document.getElementById('view-cmp');
+  var keys = Object.keys(compareSet);
+  if (keys.length === 0) {
+    el.innerHTML = '<div class="cmp-hint">'+
+      'Marca el cuadrito ✓ junto a cada establecimiento en el listado de la izquierda para agregarlos aquí y comparar sus indicadores lado a lado.</div>';
+    return;
+  }
+
+  var items = keys.map(function(rbd){
+    var d = null; DATA.forEach(function(x){ if(String(x.rbd)===String(rbd)) d=x; });
+    return d;
+  }).filter(Boolean);
+
+  // Controles de materia y vista
+  var ctrl = '<div class="gf-controls" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid #334155;">'+
+    '<span style="color:#94a3b8;font-size:.7rem;font-weight:600;">MATERIA:</span>'+
+    '<button class="gf-btn'+(cmpMateria==='lect'?' active':'')+'" onclick="cmpMateria=\'lect\';renderComparativo()">📖 Lectura</button>'+
+    '<button class="gf-btn'+(cmpMateria==='mate'?' active':'')+'" onclick="cmpMateria=\'mate\';renderComparativo()">📐 Matemática</button>'+
+    '<button class="gf-btn'+(cmpMateria==='hist'?' active':'')+'" onclick="cmpMateria=\'hist\';renderComparativo()">📜 Historia</button>'+
+    '<span style="color:#334155;margin:0 4px;">│</span>'+
+    '<span style="color:#94a3b8;font-size:.7rem;font-weight:600;">VER:</span>'+
+    '<button class="gf-btn'+(cmpVista==='puntaje'?' active':'')+'" onclick="cmpVista=\'puntaje\';renderComparativo()">📊 Puntaje</button>'+
+    '<button class="gf-btn'+(cmpVista==='niveles'?' active':'')+'" onclick="cmpVista=\'niveles\';renderComparativo()">🎯 Niv. Logro</button>'+
+    '<span style="color:#334155;margin:0 4px;">│</span>'+
+    '<span style="color:#94a3b8;font-size:.7rem;font-weight:600;">GÉNERO:</span>'+
+    '<button class="gf-btn'+(cmpGenero==='total'?' active':'')+'" onclick="cmpGenero=\'total\';renderComparativo()">👥 Total</button>'+
+    '<button class="gf-btn'+(cmpGenero==='m'?' active':'')+'" onclick="cmpGenero=\'m\';renderComparativo()">👦 Hombres</button>'+
+    '<button class="gf-btn'+(cmpGenero==='f'?' active':'')+'" onclick="cmpGenero=\'f\';renderComparativo()">👧 Mujeres</button>'+
+    '</div>';
+
+  // Tabla de resumen
+  var desColors = {'Alto':'pill-alto','Medio':'pill-medio','Medio bajo':'pill-mb','Sin Categoría':'pill-sc','No aplica':'pill-na'};
+
+  var html = ctrl + '<div id="cmp-table-wrap"><table class="cmp-table"><thead><tr>'+
+    '<th>Establecimiento</th><th>Comuna</th><th>Tipo</th><th>Mat.25</th>'+
+    '<th>As.25</th><th>Lect. 4°B</th><th>Lect. 8°B</th><th>Lect. 2°M</th><th>Mate. 4°B</th><th>Mate. 8°B</th>'+
+    '<th>Cat.Des.</th><th></th>'+
+  '</tr></thead><tbody>';
+
+  items.forEach(function(d){
+    var s = SIMCE[String(d.rbd)]||{};
+    var l4  = s['4b']&&s['4b'].avg_lect4b  ? s['4b'].avg_lect4b  : '—';
+    var l8  = s['8b']&&s['8b'].avg_lect8b  ? s['8b'].avg_lect8b  : '—';
+    var l2  = s['2m']&&s['2m'].avg_lect2m  ? s['2m'].avg_lect2m  : '—';
+    var m4  = s['4b']&&s['4b'].avg_mate4b  ? s['4b'].avg_mate4b  : '—';
+    var m8  = s['8b']&&s['8b'].avg_mate8b  ? s['8b'].avg_mate8b  : '—';
+    var cat = d.cat_desempeno_basica_2019||d.cat_desempeno_media_2019||'No aplica';
+    var pc  = desColors[cat]||'pill-na';
+    var asist = d.asistencia_2025!=null ? d.asistencia_2025+'%' : (d.asistencia_2024!=null ? d.asistencia_2024+'%' : '—');
+
+    function colorPtje(v) {
+      if (v==='—') return '#64748b';
+      var n=parseFloat(v); return n>=270?'#22c55e':n>=240?'#60a5fa':n>=210?'#f59e0b':'#ef4444';
+    }
+
+    html += '<tr>'+
+      '<td style="font-size:.72rem;" title="'+d.nombre+'">'+d.nombre.slice(0,25)+(d.nombre.length>25?'…':'')+'</td>'+
+      '<td>'+d.comuna.slice(0,3)+'</td>'+
+      '<td style="font-size:.64rem;color:#94a3b8;">'+d.tipo.replace('Escuela','Esc').replace('Especial','Esp')+'</td>'+
+      '<td>'+(d.matricula_2025||'—')+'</td>'+
+      '<td>'+asist+'</td>'+
+      '<td style="color:'+colorPtje(l4)+';font-weight:600;">'+l4+'</td>'+
+      '<td style="color:'+colorPtje(l8)+';font-weight:600;">'+l8+'</td>'+
+      '<td style="color:'+colorPtje(l2)+';font-weight:600;">'+l2+'</td>'+
+      '<td style="color:'+colorPtje(m4)+';font-weight:600;">'+m4+'</td>'+
+      '<td style="color:'+colorPtje(m8)+';font-weight:600;">'+m8+'</td>'+
+      '<td><span class="pill '+pc+'">'+cat.slice(0,8)+'</span></td>'+
+      '<td><button class="cmp-remove" onclick="toggleCompare('+d.rbd+',event)">✕</button></td>'+
+    '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+
+  var mat = cmpMateria;
+  var matLabel = mat==='lect' ? 'Lectura' : 'Matemática';
+
+  // Definir grados y sus campos según materia
+  // Historia only has 8b; gender suffix for puntaje
+  var genSuffix = (cmpGenero==='total') ? '' : '_'+cmpGenero;
+  var allGrados = mat==='hist'
+    ? [{key:'8b', field:'avg_hist8b'+genSuffix, eda:'eda_hist8b', label:'8° Básico — Historia', color:'rgba(251,146,60,.85)'}]
+    : [
+        {key:'4b', field:'avg_'+mat+'4b'+genSuffix, eda:'eda_'+mat+'4b', label:'4° Básico', color:'rgba(34,197,94,.85)'},
+        {key:'8b', field:'avg_'+mat+'8b'+genSuffix, eda:'eda_'+mat+'8b', label:'8° Básico', color:'rgba(245,158,11,.85)'},
+        {key:'2m', field:'avg_'+mat+'2m'+genSuffix, eda:'eda_'+mat+'2m', label:'2° Medio',  color:'rgba(236,72,153,.85)'}
+      ];
+  var gradosCfg = allGrados;
+  var gradosActivos = gradosCfg.filter(function(g){
+    return items.some(function(d){
+      var s=SIMCE[String(d.rbd)]; return s&&s[g.key]&&s[g.key][g.field]!=null;
+    });
+  });
+
+  if (cmpVista === 'puntaje') {
+    // Gráfico de barras agrupadas por grado — colores distintos
+    html += '<div style="margin-top:14px;">'+
+      '<div class="rs-title">📊 '+matLabel+(cmpGenero==='m'?' · Hombres':cmpGenero==='f'?' · Mujeres':'')+' — Puntaje promedio por grado</div>'+
+      '<div style="height:240px;margin-top:8px;"><canvas id="cmp-chart"></canvas></div></div>';
+
+    el.innerHTML = html;
+
+    var cmpCtx = document.getElementById('cmp-chart');
+    if (!cmpCtx) return;
+
+    var labels = items.map(function(d){ return d.nombre.slice(0,16)+(d.nombre.length>16?'…':''); });
+    var datasets = gradosActivos.map(function(g){
+      return {
+        label: g.label,
+        data: items.map(function(d){
+          var s=SIMCE[String(d.rbd)]; return (s&&s[g.key]&&s[g.key][g.field])?s[g.key][g.field]:null;
+        }),
+        backgroundColor: g.color,
+        borderRadius: 4,
+        borderSkipped: false
+      };
+    });
+
+    new Chart(cmpCtx, {
+      type: 'bar',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:'#94a3b8',font:{size:11}}},
+          datalabels:{
+            anchor:'end', align:'top', offset:3,
+            color:'#e2e8f0', font:{size:9,weight:'bold'},
+            formatter:function(v){ return v!=null?v:''; }
+          }
+        },
+        scales:{
+          y:{min:150,max:330,
+            ticks:{color:'#64748b',font:{size:9}},
+            grid:{display:false}},
+          x:{ticks:{color:'#94a3b8',font:{size:8},maxRotation:25},
+            grid:{display:false}}
+        },
+        layout:{padding:{top:22}}
+      }
+    });
+
+  } else {
+    // Vista Niveles de Logro: barras CSS apiladas por grado
+    html += '<div style="margin-top:14px;">'+
+      '<div class="rs-title">🎯 '+matLabel+' — Distribución de Niveles de Logro</div>';
+
+    if (cmpGenero!=='total') {
+      html += '<div style="background:#1e3a5f;border:1px solid #2563eb;border-radius:6px;padding:6px 10px;font-size:.72rem;color:#93c5fd;margin-bottom:8px;">'+
+        'ℹ️ Filtro de género sólo aplica a Puntaje. Niveles de Logro muestra distribución total.</div>';
+    }
+    html += '<div style="display:flex;gap:14px;margin:8px 0 10px;flex-wrap:wrap;">'+ 
+      '<span style="display:flex;align-items:center;gap:4px;font-size:.72rem;color:#e2e8f0;">'+
+        '<span style="width:12px;height:12px;background:#ef4444;border-radius:2px;display:inline-block;"></span>Insuficiente</span>'+
+      '<span style="display:flex;align-items:center;gap:4px;font-size:.72rem;color:#e2e8f0;">'+
+        '<span style="width:12px;height:12px;background:#f59e0b;border-radius:2px;display:inline-block;"></span>Elemental</span>'+
+      '<span style="display:flex;align-items:center;gap:4px;font-size:.72rem;color:#e2e8f0;">'+
+        '<span style="width:12px;height:12px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Adecuado</span>'+
+      '</div>';
+
+    gradosActivos.forEach(function(g){
+      html += '<div style="margin-bottom:12px;">'+
+        '<div style="font-size:.72rem;color:#93c5fd;font-weight:600;margin-bottom:6px;border-bottom:1px solid #1e3a5f;padding-bottom:4px;">'+g.label+'</div>';
+
+      items.forEach(function(d){
+        var s=SIMCE[String(d.rbd)];
+        if(!s||!s[g.key]||!s[g.key][g.eda]) {
+          html += '<div style="font-size:.68rem;color:#64748b;margin-bottom:6px;padding-left:4px;">'+
+            d.nombre.slice(0,30)+': sin dato</div>';
+          return;
+        }
+        var eda = s[g.key][g.eda];
+        var ins = eda['Insuficiente']||0;
+        var ele = eda['Elemental']||0;
+        var ade = eda['Adecuado']||0;
+
+        html += '<div style="margin-bottom:8px;">'+
+          '<div style="font-size:.7rem;color:#94a3b8;margin-bottom:3px;">'+
+            d.nombre.slice(0,32)+(d.nombre.length>32?'…':'')+
+          '</div>'+
+          '<div style="display:flex;height:30px;border-radius:4px;overflow:hidden;border:1px solid #1e3a5f;">';
+        if(ins>0) html += '<div style="flex:'+ins+';background:#ef4444;display:flex;align-items:center;justify-content:center;'+
+          'color:#fff;font-size:'+(ins>8?'10':'0')+'px;font-weight:700;" title="Insuficiente '+ins.toFixed(1)+'%">'+Math.round(ins)+'%</div>';
+        if(ele>0) html += '<div style="flex:'+ele+';background:#f59e0b;display:flex;align-items:center;justify-content:center;'+
+          'color:#fff;font-size:'+(ele>8?'10':'0')+'px;font-weight:700;" title="Elemental '+ele.toFixed(1)+'%">'+Math.round(ele)+'%</div>';
+        if(ade>0) html += '<div style="flex:'+ade+';background:#22c55e;display:flex;align-items:center;justify-content:center;'+
+          'color:#fff;font-size:'+(ade>8?'10':'0')+'px;font-weight:700;" title="Adecuado '+ade.toFixed(1)+'%">'+Math.round(ade)+'%</div>';
+        html += '</div></div>';
+      });
+
+      html += '</div>';
+    });
+
+    html += '</div>';
+    el.innerHTML = html;
+  }
+}
+
+
+
+
+
+// ── THEME TOGGLE ──────────────────────────────────────────────────────────────
+var currentTheme = localStorage.getItem('slep-theme') || 'dark';
+function applyTheme(t) {
+  currentTheme = t;
+  localStorage.setItem('slep-theme', t);
+  var btn = document.getElementById('theme-btn');
+  if (t === 'light') {
+    document.body.classList.add('theme-light');
+    if (btn) btn.textContent = '🌙 Oscuro';
+    if (tileLayer) { tileLayer.setUrl('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'); }
+  } else {
+    document.body.classList.remove('theme-light');
+    if (btn) btn.textContent = '☀️ Claro';
+    if (tileLayer) { tileLayer.setUrl('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'); }
+  }
+}
+function toggleTheme() {
+  applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+}
+
+// ── MAP TOGGLE ────────────────────────────────────────────────────────────────
+function toggleMap() {
+  var mc  = document.getElementById('map-container');
+  var btn = document.getElementById('map-toggle-btn');
+  var rp  = document.getElementById('right-panel');
+  if (mc.classList.contains('hidden')) {
+    mc.classList.remove('hidden');
+    rp.classList.remove('map-hidden');
+    btn.textContent = '🗺️ Ocultar mapa';
+  } else {
+    mc.classList.add('hidden');
+    rp.classList.add('map-hidden');
+    rp.classList.remove('collapsed');
+    btn.textContent = '🗺️ Mostrar mapa';
+  }
+}
+
+// ── GRÁFICOS EDA ─────────────────────────────────────────────────────────────
+var gfGrado = '4b';
+var gfMode = 'simce';
+var gfMateria = 'lect';
+var gfSort = 'adec';
+var gfChart = null;
+
+function renderGraficos() {
+  var el = document.getElementById('view-graficos');
+  if (gfMode === 'desemp') { renderGraficosDesemp(); return; }
+
+  var materias = (gfGrado === '8b')
+    ? [['lect','Lectura'],['mate','Matemática'],['hist','Historia']]
+    : [['lect','Lectura'],['mate','Matemática']];
+
+  var ctrlHtml = '<div class="gf-controls">';
+  ctrlHtml += '<span style="font-size:.68rem;color:#64748b;font-weight:600;">VISTA:</span>';
+  ctrlHtml += '<button class="gf-btn'+(gfMode==="simce"?' active':'')+"' onclick=\"setGfMode('simce')\">📊 Estándares de Aprendizaje</button>";
+  ctrlHtml += '<button class="gf-btn'+(gfMode==="desemp"?' active':'')+"' onclick=\"setGfMode('desemp')\">🏅 Cat. Desempeño</button>";
+  ctrlHtml += '<div style="width:1px;background:#334155;margin:0 4px;"></div>';
+  ctrlHtml += '<span style="font-size:.68rem;color:#64748b;font-weight:600;">GRADO:</span>';
+  var gradoOpts = [['4b','4°B'],['8b','8°B'],['2m','2°M']];
+  for (var gi = 0; gi < gradoOpts.length; gi++) {
+    var go = gradoOpts[gi];
+    var gact = (gfGrado === go[0]) ? ' active' : '';
+    ctrlHtml += '<button class="gf-btn' + gact + '" onclick="setGfGrado(\'' + go[0] + '\')">' + go[1] + '</button>';
+  }
+  ctrlHtml += '<span style="font-size:.68rem;color:#64748b;font-weight:600;margin-left:8px;">ASIGNATURA:</span>';
+  for (var mi = 0; mi < materias.length; mi++) {
+    var mo = materias[mi];
+    var mact = (gfMateria === mo[0]) ? ' active' : '';
+    ctrlHtml += '<button class="gf-btn' + mact + '" onclick="setGfMateria(\'' + mo[0] + '\')">' + mo[1] + '</button>';
+  }
+  ctrlHtml += '<div class="gf-sort"><span>Orden:</span><select onchange="setGfSort(this.value)">';
+  var sorts = [['adec','% Adecuado↓'],['nombre','Nombre'],['prom','Promedio↓']];
+  for (var si = 0; si < sorts.length; si++) {
+    var so = sorts[si];
+    var sel = (gfSort === so[0]) ? ' selected' : '';
+    ctrlHtml += '<option value="' + so[0] + '"' + sel + '>' + so[1] + '</option>';
+  }
+  ctrlHtml += '</select></div></div>';
+
+  var edaKey = 'eda_' + gfMateria + gfGrado;
+  var avgKey = 'avg_' + gfMateria + gfGrado;
+  var rows = [];
+  for (var fi = 0; fi < filtered.length; fi++) {
+    var d = filtered[fi];
+    var s = SIMCE[String(d.rbd)];
+    if (!s || !s[gfGrado]) continue;
+    var g = s[gfGrado];
+    if (!g[edaKey] || !Object.keys(g[edaKey]).length) continue;
+    var eda = g[edaKey];
+    rows.push({
+      nombre: d.nombre_corto || d.nombre,
+      rbd: d.rbd,
+      ins: eda['Insuficiente'] || 0,
+      ele: eda['Elemental']    || 0,
+      ade: eda['Adecuado']     || 0,
+
+      avg: g[avgKey] || 0,
+      n: g.nc || 0
+    });
+  }
+
+  if (!rows.length) {
+    el.innerHTML = ctrlHtml + '<div class="gf-no-data">Sin datos para este nivel y asignatura en los establecimientos filtrados.</div>';
+    return;
+  }
+
+  if (gfSort === 'adec') {
+    rows.sort(function(a,b){ return b.ade - a.ade; });
+  } else if (gfSort === 'prom') {
+    rows.sort(function(a,b){ return b.avg - a.avg; });
+  } else {
+    rows.sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
+  }
+
+  var chartH = Math.max(220, rows.length * 40 + 80);
+  var chartWrap = '<div class="gf-chart-wrap"><canvas id="gf-canvas" style="display:block;"></canvas></div>';
+  el.innerHTML = ctrlHtml + chartWrap;
+
+  var canvas = document.getElementById('gf-canvas');
+  canvas.width  = canvas.parentElement.clientWidth - 4;
+  canvas.height = chartH;
+  canvas.style.width  = (canvas.parentElement.clientWidth - 4) + 'px';
+  canvas.style.height = chartH + 'px';
+
+  if (gfChart) { try { gfChart.destroy(); } catch(e){} gfChart = null; }
+
+  gfChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: rows.map(function(r){ return r.nombre + ' (n=' + r.n + ')'; }),
+      datasets: [
+        { label: 'Insuficiente', data: rows.map(function(r){ return r.ins; }), backgroundColor: '#ef4444',
+          datalabels: { color: '#1a1a1a', font: { size: 9, weight: 'bold' }, formatter: function(v){ return v >= 8 ? v.toFixed(0)+'%' : ''; }, anchor: 'center', align: 'center' } },
+        { label: 'Elemental',    data: rows.map(function(r){ return r.ele; }), backgroundColor: '#f59e0b',
+          datalabels: { color: '#1a1a1a', font: { size: 9, weight: 'bold' }, formatter: function(v){ return v >= 8 ? v.toFixed(0)+'%' : ''; }, anchor: 'center', align: 'center' } },
+        { label: 'Adecuado',     data: rows.map(function(r){ return r.ade; }), backgroundColor: '#22c55e',
+          datalabels: { color: '#1a1a1a', font: { size: 9, weight: 'bold' }, formatter: function(v){ return v >= 8 ? v.toFixed(0)+'%' : ''; }, anchor: 'center', align: 'center' } }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: false,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, padding: 10, boxWidth: 12 } },
+        datalabels: { display: true },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.x.toFixed(1) + '%'; }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          min: 0,
+          max: 100,
+          ticks: { color: '#64748b', font: { size: 9 }, callback: function(v){ return v + '%'; } },
+          grid: { display: false }
+        },
+        y: {
+          stacked: true,
+          ticks: { color: '#111827', font: { size: 9 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function setGfGrado(g) {
+  gfGrado = g;
+  if (g !== '8b' && gfMateria === 'hist') { gfMateria = 'lect'; }
+  renderGraficos();
+}
+function setGfMateria(m) { gfMateria = m; renderGraficos(); }
+function setGfSort(s) { gfSort = s; renderGraficos(); }
+function setGfMode(m) { gfMode = m; renderGraficos(); }
+
+// ── GRÁFICOS CATEGORÍA DESEMPEÑO ─────────────────────────────────────────────
+function renderGraficosDesemp() {
+  var el = document.getElementById('view-graficos');
+  var ctrlHtml = '<div class="gf-controls">';
+  ctrlHtml += '<span style="font-size:.68rem;color:#64748b;font-weight:600;">VISTA:</span>';
+  ctrlHtml += '<button class="gf-btn" onclick="setGfMode(\'simce\')">📊 Estándares de Aprendizaje</button>';
+  ctrlHtml += '<button class="gf-btn active" onclick="setGfMode(\'desemp\')">🏅 Cat. Desempeño</button>';
+  ctrlHtml += '</div>';
+
+  var cats = ['Alto','Medio','Medio bajo','Sin Categoría','No aplica'];
+  var cats = ['Alto','Medio','Medio bajo','Sin Categoría','No aplica'];
+  var catColors = {'Alto':'#166534','Medio':'#1d4ed8','Medio bajo':'#92400e','Sin Categoría':'#374151','No aplica':'#1f2937'};
+  var catText   = {'Alto':'#bbf7d0','Medio':'#bfdbfe','Medio bajo':'#fde68a','Sin Categoría':'#9ca3af','No aplica':'#6b7280'};
+
+  var counts = {};
+  cats.forEach(function(c){ counts[c] = 0; });
+  var bycat = {};
+  cats.forEach(function(c){ bycat[c] = []; });
+
+  filtered.forEach(function(d) {
+    var cb = d.cat_desempeno_basica_2019 || '';
+    var cm = d.cat_desempeno_media_2019  || '';
+    var cat = cb || cm || 'No aplica';
+    if (counts[cat] === undefined) { counts[cat] = 0; bycat[cat] = []; }
+    counts[cat]++;
+    bycat[cat].push(d);
+  });
+
+  // Donut chart + table
+  var chartId = 'gf-desemp-chart';
+  var html = ctrlHtml;
+  html += '<div class="gf-chart-wrap" style="overflow-y:auto;">';
+  html += '<div style="height:220px;position:relative;margin-bottom:14px;"><canvas id="' + chartId + '"></canvas></div>';
+
+  cats.forEach(function(cat) {
+    var ees = bycat[cat];
+    if (!ees || !ees.length) return;
+    html += '<div style="margin-bottom:10px;">';
+    html += '<div style="background:' + catColors[cat] + ';color:' + catText[cat] + ';padding:4px 10px;border-radius:4px;font-size:.72rem;font-weight:700;margin-bottom:4px;">';
+    html += cat + ' · ' + ees.length + ' establecimiento' + (ees.length > 1 ? 's' : '') + '</div>';
+    ees.forEach(function(d) {
+      html += '<div style="padding:4px 10px;font-size:.72rem;color:#cbd5e1;border-left:3px solid ' + catColors[cat] + ';margin-bottom:2px;cursor:pointer;" onclick="selectSchool(' + d.rbd + ')">';
+      html += d.nombre_corto || d.nombre;
+      html += '<span style="float:right;color:#64748b;">' + (d.comuna||'') + '</span></div>';
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+
+  // Draw donut
+  var canvas = document.getElementById(chartId);
+  if (!canvas) return;
+  if (window.ChartDataLabels) { Chart.register(window.ChartDataLabels); }
+  if (gfChart) { try { gfChart.destroy(); } catch(e){} gfChart = null; }
+  var dLabels = [], dData = [], dColors = [];
+  cats.forEach(function(cat) {
+    var n = bycat[cat] ? bycat[cat].length : 0;
+    if (!n) return;
+    dLabels.push(cat + ' (' + n + ')');
+    dData.push(n);
+    dColors.push(catColors[cat]);
+  });
+  gfChart = new Chart(canvas, {
+    type: 'doughnut',
+    data: { labels: dLabels, datasets: [{ data: dData, backgroundColor: dColors, borderWidth: 2, borderColor: '#0f172a' }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, padding: 8, boxWidth: 12 } },
+        datalabels: { color: '#fff', font: { size: 10, weight: 'bold' }, formatter: function(v, ctx) { return v > 0 ? v : ''; } },
+        tooltip: { callbacks: { label: function(ctx){ return ' ' + ctx.label; } } }
+      }
+    }
+  });
+}
+
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+try { if (window.ChartDataLabels) { Chart.register(window.ChartDataLabels); } } catch(e){}
+
+updateLegend();
+applyFilters();
+applyTheme(currentTheme);
+switchView('detalle');
+
+</script>
+</body>
+</html>
