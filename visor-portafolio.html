@@ -89,6 +89,19 @@
   /* table */
   .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
   .filters .lbl{font-size:12px;color:var(--muted);font-weight:600;margin-right:2px}
+  .filterbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .filter-toggle{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-primary);font-size:13px;font-weight:650;padding:7px 13px;border-radius:9px;cursor:pointer}
+  .filter-toggle:hover{border-color:var(--accent)}
+  .filter-toggle .chev{display:inline-block;transition:transform .18s ease;font-size:11px;color:var(--muted)}
+  .filter-toggle[aria-expanded="true"] .chev{transform:rotate(90deg)}
+  .filter-toggle .fcount{display:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px;line-height:1.5}
+  .filter-toggle .fcount.on{display:inline-block}
+  .filters-wrap{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+  .filters-wrap[hidden]{display:none}
+  .reset-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-secondary);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer}
+  .reset-btn:hover{border-color:var(--accent);color:var(--text-primary)}
+  .reset-btn:disabled{opacity:.4;cursor:default}
+  .reset-btn:disabled:hover{border-color:var(--border);color:var(--text-secondary)}
   .chip{border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:12px;font-weight:600;padding:5px 11px;border-radius:20px;cursor:pointer}
   .chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   table.dt{width:100%;border-collapse:collapse;font-size:13px}
@@ -104,6 +117,8 @@
   .acard .al{font-size:12.5px;font-weight:650;color:var(--text-secondary);display:flex;align-items:center;gap:7px;margin-bottom:9px}
   .acard .av{font-size:27px;font-weight:730;letter-spacing:-.02em;line-height:1}
   .acard .an{font-size:12px;color:var(--muted);margin-top:6px}
+  .acard .ee-line{margin-top:4px;color:var(--text-secondary)}
+  .acard .ee-line b{color:var(--text-primary);font-weight:700}
   .acard .track{height:7px;border-radius:6px;background:var(--border);margin-top:11px;overflow:hidden}
   .acard .fill{height:100%;border-radius:6px}
   .dl-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-secondary);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer}
@@ -219,13 +234,24 @@
   <section id="tabla">
     <div class="sec-head">
       <h2>Establecimientos en detalle</h2>
-      <p class="sec-desc">Filtra por comuna, área, microcentro o grupo. Haz clic en un encabezado para ordenar. Descarga la vista con los botones de CSV.</p>
+      <p class="sec-desc">Filtra por comuna, área, tipo de establecimiento, nivel de enseñanza, modalidad (T-P / H-C), microcentro o grupo. Haz clic en un encabezado para ordenar. Descarga la vista con los botones de CSV.</p>
     </div>
     <div class="panel">
-      <div class="filters" id="filtComuna"></div>
-      <div class="filters" id="filtArea"></div>
-      <div class="filters" id="filtMicro"></div>
-      <div class="filters" id="filtGrupo"></div>
+      <div class="filterbar">
+        <button class="filter-toggle" id="filterToggle" aria-expanded="false" aria-controls="filtersWrap">
+          <span class="chev">▸</span> Filtros <span class="fcount" id="fcount">0</span>
+        </button>
+        <button class="reset-btn" id="resetFilt" disabled>↺ Restablecer</button>
+      </div>
+      <div class="filters-wrap" id="filtersWrap" hidden>
+        <div class="filters" id="filtComuna"></div>
+        <div class="filters" id="filtArea"></div>
+        <div class="filters" id="filtTipo"></div>
+        <div class="filters" id="filtNivel"></div>
+        <div class="filters" id="filtModal"></div>
+        <div class="filters" id="filtMicro"></div>
+        <div class="filters" id="filtGrupo"></div>
+      </div>
       <div class="ctl-row" style="margin:4px 0 12px">
         <span class="mini" id="rowCount"></span>
         <div style="display:flex;gap:8px">
@@ -256,6 +282,8 @@
 
 <script>
 const DATA = {"meta":{"ee":42,"inscritos":248,"portafolio":106,"cobertura":42.7,"logradoSost":65.1,"porLograrSost":34.9},"tareas":[{"tarea":"T1","nombre":"Planificación de la enseñanza","gapNac":-1.2,"gapSost":-1.2},{"tarea":"T2","nombre":"Evaluación Formativa","gapNac":4.5,"gapSost":-1.2},{"tarea":"T3","nombre":"Reflexión Pedagógica","gapNac":9.5,"gapSost":3.2},{"tarea":"T4","nombre":"Clase Grabada","gapNac":-1.8,"gapSost":0.0},{"tarea":"T5","nombre":"Trabajo Colaborativo","gapNac":-24.7,"gapSost":-22.9}],"comunas":[{"comuna":"CABILDO","ee":12,"inscritos":71,"portafolio":21,"cobertura":29.6},{"comuna":"LA LIGUA","ee":17,"inscritos":98,"portafolio":39,"cobertura":39.8},{"comuna":"PAPUDO","ee":3,"inscritos":17,"portafolio":10,"cobertura":58.8},{"comuna":"PETORCA","ee":11,"inscritos":62,"portafolio":36,"cobertura":58.1}],"heat":[{"comuna":"CABILDO","T1":-4.4,"T2":-6.4,"T3":22.7,"T4":0.9,"T5":-29.9},{"comuna":"LA LIGUA","T1":-1.9,"T2":4.3,"T3":-2.5,"T4":-5.3,"T5":-26.4},{"comuna":"PAPUDO","T1":3.4,"T2":9.6,"T3":23.9,"T4":11.9,"T5":-19.2},{"comuna":"PETORCA","T1":0.8,"T2":12.1,"T3":10.4,"T4":-4.1,"T5":-19.9}],"areas":[{"area":"Urbano","inscritos":151,"portafolio":49,"cobertura":32.5},{"area":"Rural","inscritos":97,"portafolio":57,"cobertura":58.8}],"microcentro":{"n":5,"nombres":["Incakán","Valles de Cabildo"],"inscritos":6,"portafolio":5,"cobertura":83.3},"glosario":[{"title":"SISTEMA DE EVALUACIÓN","items":[{"code":"SR","name":"Sistema de Reconocimiento y Promoción","desc":"Sistema evaluativo del desarrollo profesional docente en Chile (DocenteMÁS – CPEIP)"},{"code":"Portafolio","name":"Instrumento Portafolio","desc":"Evalúa práctica pedagógica: 3 módulos, 5 tareas basadas en evidencia"}]},{"title":"AGRUPACIONES DE PORTAFOLIO (taxonomía 2025)","items":[{"code":"EB","name":"Educación Básica (1° a 6°)","desc":"Docentes que enseñan de primero a sexto básico"},{"code":"EM","name":"Educación Básica (7°-8°) y Educación Media","desc":"Docentes de séptimo básico a cuarto medio"},{"code":"EA","name":"Educación de Adultos","desc":"Docentes de educación de personas jóvenes y adultas"},{"code":"PC","name":"Educación Básica Generalista (1° a 4°)","desc":"Profesores generalistas de primero a cuarto básico"},{"code":"EP","name":"Educación Parvularia","desc":"Educadoras/es de párvulos"},{"code":"EE-EE","name":"Educación Especial – Escuela Especial","desc":"Docentes de educación especial en escuelas especiales (reemplaza NEEP de 2024)"},{"code":"EE-ER","name":"Educación Especial – Escuela Regular","desc":"Docentes de educación especial en escuelas regulares / PIE (reemplaza NEET de 2024)"},{"code":"EMTP","name":"Educación Media Técnico Profesional","desc":"Docentes de especialidades técnico-profesionales"},{"code":"PCG-EB-EM-EA","name":"Agrupación de Currículum General","desc":"Super-agrupación (tabla 'por tarea') que reúne EB + EM + EA + PC"}]},{"title":"CATEGORÍAS DE LOGRO","items":[{"code":"A","name":"Categoría A – Puntaje más alto","desc":"Nivel de logro más alto del Portafolio"},{"code":"B","name":"Categoría B","desc":""},{"code":"C","name":"Categoría C","desc":""},{"code":"D","name":"Categoría D","desc":""},{"code":"E","name":"Categoría E – Puntaje más bajo","desc":"Nivel de logro más bajo del Portafolio"}]},{"title":"TAREAS DEL PORTAFOLIO","items":[{"code":"T1","name":"Planificación de la enseñanza","desc":"Módulo 1"},{"code":"T2","name":"Evaluación Formativa","desc":"Módulo 1"},{"code":"T3","name":"Reflexión Pedagógica","desc":"Módulo 1"},{"code":"T4","name":"Clase Grabada","desc":"Módulo 2"},{"code":"T5","name":"Trabajo Colaborativo","desc":"Módulo 3"}]},{"title":"INDICADORES","items":[{"code":"Inscritos","name":"Total inscritos en el proceso","desc":"Docentes inscritos en el proceso de reconocimiento 2025"},{"code":"Con Portafolio","name":"Elaboraron el instrumento","desc":"Docentes que efectivamente elaboraron y entregaron el Portafolio"},{"code":"Dif.","name":"Diferencia Sostenedor – Nacional","desc":"Negativo = bajo la media nacional; Positivo = sobre la media nacional (en % de logro por tarea)"},{"code":"% Por Lograr","name":"Categorías C + D + E","desc":"Docentes en los niveles más bajos (no alcanzan el logro esperado)"},{"code":"% Logrado","name":"Categorías A + B","desc":"Docentes en los niveles más altos (alcanzan o superan el logro esperado)"}]},{"title":"NOTAS METODOLÓGICAS","items":[{"code":"Fuente","name":"DocenteMÁS – MINEDUC","desc":"44 informes 'Informe Resultados 2025' (43 establecimientos + 1 Sostenedor SLEP Petorca). PDF escaneados; datos extraídos por OCR y validados por la huella de valores 'Nacional'."},{"code":"Sostenedor 2025","name":"SLEP Petorca (único)","desc":"A diferencia de 2024 (sostenedores municipales por comuna), en 2025 el sostenedor es el SLEP Petorca para las 4 comunas. Inscritos 248 / Con Portafolio 106."},{"code":"Resumen Comunal (hoja 3)","name":"Agregado de establecimientos","desc":"Las cifras comunales se calcularon sumando los establecimientos de cada comuna (la suma coincide con el total oficial SLEP)."},{"code":"Comunal vs Nacional (hoja 4)","name":"Sostenedor comunal = promedio de establecimientos","desc":"El '% logro por tarea' comunal es el promedio simple (no ponderado) de los establecimientos de la comuna. Las filas 'SLEP PETORCA' son el dato oficial del informe del sostenedor."},{"code":"% Por Lograr / Logrado","name":"Interpretación validada con SLEP Petorca","desc":"A y B son las categorías MÁS ALTAS (logro alcanzado); C, D y E las más bajas (por lograr). Por lo tanto: % Logrado = A + B y % Por Lograr = C + D + E. (El workbook original traía la escala invertida; corregido aquí.)"},{"code":"Verificar: Sostenedor","name":"Portada del PDF","desc":"El PDF del sostenedor (2025_SLEP_Petorca_61981270) muestra en portada 'Ilustre Municipalidad de Ninhue'. Revisar en el origen."},{"code":"JI Lamparita (RBD 33548)","name":"Sin Portafolio","desc":"3 inscritos, 0 con Portafolio; tabla de resultados vacía en el informe."}]}],"establecimientos":[{"rbd":1171,"nombre":"Escuela Basica La Frontera de Alicachue","comuna":"CABILDO","inscritos":1,"portafolio":1,"catA":0,"catB":0,"catC":100,"catD":0,"catE":0,"logrado":0,"porLograr":100,"area":"Rural","micro":"Valles de Cabildo","tipo":"Escuela","ive":92.9,"tareaGap":{"1":3.1,"2":9.7,"3":25.8,"4":-15.6,"5":-41.6},"brechaMedia":-3.7,"cobertura":100.0,"grupo":"G3"},{"rbd":1176,"nombre":"Escuela Pablo Neruda","comuna":"CABILDO","inscritos":1,"portafolio":1,"catA":0,"catB":0,"catC":100,"catD":0,"catE":0,"logrado":0,"porLograr":100,"area":"Rural","micro":"Valles de Cabildo","tipo":"Escuela","ive":89.3,"tareaGap":{"1":-30.3,"2":-57.0,"3":25.8,"4":12.9,"5":-41.6},"brechaMedia":-18.0,"cobertura":100.0,"grupo":"G3"},{"rbd":11196,"nombre":"Ctro.Rec.Aten.Diver. Paul Percy Harris","comuna":"CABILDO","inscritos":3,"portafolio":3,"catA":0,"catB":33.3,"catC":66.7,"catD":0,"catE":0,"logrado":33.3,"porLograr":66.7,"area":"Urbano","micro":null,"tipo":"Escuela Especial","ive":null,"tareaGap":{"1":2.4,"2":0.5,"3":25.9,"4":8.1,"5":-48.1},"brechaMedia":-2.2,"cobertura":100.0,"grupo":"G3"},{"rbd":1180,"nombre":"Escuela Básica G-45","comuna":"CABILDO","inscritos":5,"portafolio":3,"catA":0,"catB":33.3,"catC":33.3,"catD":33.3,"catE":0,"logrado":33.3,"porLograr":66.6,"area":"Rural","micro":null,"tipo":"Escuela","ive":79.2,"tareaGap":{"1":-4.7,"2":-31.0,"3":-30.6,"4":-3.0,"5":-1.2},"brechaMedia":-14.1,"cobertura":60.0,"grupo":"G3"},{"rbd":1170,"nombre":"Escuela Básica Valle de Artificio","comuna":"CABILDO","inscritos":6,"portafolio":2,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Urbano","micro":null,"tipo":"Escuela","ive":86.9,"tareaGap":{"1":-12.2,"2":4.9,"3":60.4,"4":20.2,"5":-44.9},"brechaMedia":5.7,"cobertura":33.3,"grupo":"G2"},{"rbd":1173,"nombre":"Escuela Ester Silva Somarriva Bartolillo","comuna":"CABILDO","inscritos":3,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Rural","micro":null,"tipo":"Escuela","ive":85.9,"tareaGap":{"1":3.1,"2":9.7,"3":25.8,"4":-1.3,"5":15.5},"brechaMedia":10.6,"cobertura":33.3,"grupo":"G2"},{"rbd":40242,"nombre":"Colegio Bicentenario","comuna":"CABILDO","inscritos":3,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Urbano","micro":null,"tipo":"Escuela","ive":70.2,"tareaGap":{"1":3.1,"2":43.0,"3":25.8,"4":12.9,"5":-41.6},"brechaMedia":8.6,"cobertura":33.3,"grupo":"G2"},{"rbd":1168,"nombre":"Escuela Hans Wenke Mengers","comuna":"CABILDO","inscritos":9,"portafolio":2,"catA":0,"catB":50,"catC":50,"catD":0,"catE":0,"logrado":50,"porLograr":50,"area":"Urbano","micro":null,"tipo":"Escuela","ive":86.9,"tareaGap":{"1":19.7,"2":26.3,"3":25.8,"4":-22.8,"5":-41.6},"brechaMedia":1.5,"cobertura":22.2,"grupo":"G2"},{"rbd":1167,"nombre":"Liceo y Escuela Municipal","comuna":"CABILDO","inscritos":20,"portafolio":4,"catA":0,"catB":50,"catC":50,"catD":0,"catE":0,"logrado":50,"porLograr":50,"area":"Urbano","micro":null,"tipo":"Liceo","ive":91.9,"tareaGap":{"1":-5.3,"2":1.3,"3":25.8,"4":-12.1,"5":11.9},"brechaMedia":4.3,"cobertura":20.0,"grupo":"G2"},{"rbd":1174,"nombre":"Escuela Básica San Lorenzo","comuna":"CABILDO","inscritos":5,"portafolio":1,"catA":0,"catB":0,"catC":100,"catD":0,"catE":0,"logrado":0,"porLograr":100,"area":"Rural","micro":null,"tipo":"Escuela","ive":88.0,"tareaGap":{"1":3.1,"2":-23.7,"3":25.8,"4":-15.6,"5":-55.9},"brechaMedia":-13.3,"cobertura":20.0,"grupo":"G4"},{"rbd":14479,"nombre":"Esc Bas Municipal Araucaria","comuna":"CABILDO","inscritos":5,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Urbano","micro":null,"tipo":"Escuela","ive":90.6,"tareaGap":{"1":-30.3,"2":-23.7,"3":25.8,"4":-15.6,"5":-55.9},"brechaMedia":-19.9,"cobertura":20.0,"grupo":"G4"},{"rbd":12336,"nombre":"Lic Tec Prof de Minería","comuna":"CABILDO","inscritos":10,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Urbano","micro":null,"tipo":"Liceo","ive":86.4,"tareaGap":{"1":3.1,"2":-23.7,"3":25.8,"4":27.2,"5":-27.3},"brechaMedia":1.0,"cobertura":10.0,"grupo":"G2"},{"rbd":1132,"nombre":"Escuela Básica de Poza Verde","comuna":"LA LIGUA","inscritos":4,"portafolio":4,"catA":25,"catB":25,"catC":25,"catD":0,"catE":25,"logrado":50,"porLograr":50,"area":"Rural","micro":null,"tipo":"Escuela","ive":95.6,"tareaGap":{"1":-1.2,"2":-21.1,"3":4.2,"4":0.4,"5":-46.1},"brechaMedia":-12.8,"cobertura":100.0,"grupo":"G3"},{"rbd":1142,"nombre":"Escuela La  Canela","comuna":"LA LIGUA","inscritos":2,"portafolio":2,"catA":0,"catB":50,"catC":0,"catD":0,"catE":50,"logrado":50,"porLograr":50,"area":"Rural","micro":null,"tipo":"Escuela","ive":91.8,"tareaGap":{"1":-19.9,"2":-4.4,"3":-8.3,"4":-32.7,"5":-42.5},"brechaMedia":-21.6,"cobertura":100.0,"grupo":"G3"},{"rbd":33526,"nombre":"Jardín Santa Teresa","comuna":"LA LIGUA","inscritos":3,"portafolio":3,"catA":0,"catB":0,"catC":100,"catD":0,"catE":0,"logrado":0,"porLograr":100,"area":"Urbano","micro":null,"tipo":"Jardín Infantil","ive":null,"tareaGap":{"1":-3.0,"2":-4.9,"3":-36.9,"4":-5.2,"5":-46.5},"brechaMedia":-19.3,"cobertura":100.0,"grupo":"G3"},{"rbd":33528,"nombre":"Manitos de Colores","comuna":"LA LIGUA","inscritos":1,"portafolio":1,"catA":0,"catB":0,"catC":0,"catD":100,"catE":0,"logrado":0,"porLograr":100,"area":"Urbano","micro":null,"tipo":"Jardín Infantil","ive":null,"tareaGap":{"1":-12.5,"2":11.7,"3":63.1,"4":-38.5,"5":-46.5},"brechaMedia":-4.5,"cobertura":100.0,"grupo":"G3"},{"rbd":33530,"nombre":"JI SC VTF Cuncunita","comuna":"LA LIGUA","inscritos":2,"portafolio":2,"catA":0,"catB":50,"catC":0,"catD":50,"catE":0,"logrado":50,"porLograr":50,"area":"Urbano","micro":null,"tipo":"Jardín Infantil","ive":null,"tareaGap":{"1":-5.4,"2":-13.3,"3":-36.9,"4":-7.2,"5":-39.4},"brechaMedia":-20.4,"cobertura":100.0,"grupo":"G3"},{"rbd":1144,"nombre":"Escuela Básica Pichicuy","comuna":"LA LIGUA","inscritos":4,"portafolio":3,"catA":0,"catB":66.7,"catC":0,"catD":0,"catE":33.3,"logrado":66.7,"porLograr":33.3,"area":"Rural","micro":null,"tipo":"Escuela","ive":94.9,"tareaGap":{"1":-7.4,"2":-29.4,"3":-8.3,"4":-0.5,"5":-6.8},"brechaMedia":-10.5,"cobertura":75.0,"grupo":"G3"},{"rbd":1178,"nombre":"Escuela Básica la Viña","comuna":"LA LIGUA","inscritos":3,"portafolio":2,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Rural","micro":null,"tipo":"Escuela","ive":86.8,"tareaGap":{"1":-11.6,"2":45.5,"3":41.7,"4":6.6,"5":28.9},"brechaMedia":22.2,"cobertura":66.7,"grupo":"G1"},{"rbd":1139,"nombre":"Escuela Ministro Gómez Milla","comuna":"LA LIGUA","inscritos":2,"portafolio":1,"catA":0,"catB":0,"catC":100,"catD":0,"catE":0,"logrado":0,"porLograr":100,"area":"Rural","micro":null,"tipo":"Escuela","ive":80.0,"tareaGap":{"1":-51.3,"2":-51.9,"3":-42.4,"4":-8.6,"5":-29.0},"brechaMedia":-36.6,"cobertura":50.0,"grupo":"G3"},{"rbd":11199,"nombre":"Colegio Luis Cruz Martínez","comuna":"LA LIGUA","inscritos":8,"portafolio":4,"catA":25,"catB":25,"catC":50,"catD":0,"catE":0,"logrado":50,"porLograr":50,"area":"Urbano","micro":null,"tipo":"Colegio","ive":88.9,"tareaGap":{"1":-20.0,"2":-1.9,"3":-4.9,"4":13.3,"5":6.7},"brechaMedia":-1.4,"cobertura":50.0,"grupo":"G3"},{"rbd":1123,"nombre":"Escuela Gabriela Mistral","comuna":"LA LIGUA","inscritos":21,"portafolio":8,"catA":0,"catB":75,"catC":12.5,"catD":12.5,"catE":0,"logrado":75,"porLograr":25.0,"area":"Urbano","micro":null,"tipo":"Colegio","ive":91.9,"tareaGap":{"1":25.6,"2":21.3,"3":21.1,"4":9.1,"5":-6.9},"brechaMedia":14.0,"cobertura":38.1,"grupo":"G2"},{"rbd":1128,"nombre":"Comunidades de Valle Hermoso","comuna":"LA LIGUA","inscritos":8,"portafolio":3,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Rural","micro":null,"tipo":"Escuela","ive":85.7,"tareaGap":{"1":26.2,"2":44.0,"3":-5.6,"4":-14.6,"5":-29.8},"brechaMedia":4.1,"cobertura":37.5,"grupo":"G2"},{"rbd":1143,"nombre":"Escuela Básica Quebradilla","comuna":"LA LIGUA","inscritos":3,"portafolio":1,"catA":0,"catB":0,"catC":100,"catD":0,"catE":0,"logrado":0,"porLograr":100,"area":"Rural","micro":null,"tipo":"Escuela","ive":52.9,"tareaGap":{"1":-30.3,"2":9.7,"3":-74.2,"4":-15.6,"5":-55.9},"brechaMedia":-33.3,"cobertura":33.3,"grupo":"G4"},{"rbd":1135,"nombre":"Escuela Básica Los Molles","comuna":"LA LIGUA","inscritos":4,"portafolio":1,"catA":0,"catB":0,"catC":100,"catD":0,"catE":0,"logrado":0,"porLograr":100,"area":"Rural","micro":null,"tipo":"Escuela","ive":81.8,"tareaGap":{"1":-30.3,"2":-23.7,"3":-74.2,"4":-1.3,"5":-70.2},"brechaMedia":-39.9,"cobertura":25.0,"grupo":"G4"},{"rbd":1140,"nombre":"Escuela Básica Carolos Aristía Ruiz","comuna":"LA LIGUA","inscritos":4,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Rural","micro":null,"tipo":"Escuela","ive":88.0,"tareaGap":{"1":48.7,"2":48.1,"3":57.6,"4":-33.6,"5":13.8},"brechaMedia":26.9,"cobertura":25.0,"grupo":"G2"},{"rbd":1122,"nombre":"Escuela República de Venezuela","comuna":"LA LIGUA","inscritos":6,"portafolio":1,"catA":0,"catB":0,"catC":100,"catD":0,"catE":0,"logrado":0,"porLograr":100,"area":"Urbano","micro":null,"tipo":"Escuela","ive":92.9,"tareaGap":{"1":3.1,"2":-57.0,"3":-74.2,"4":12.9,"5":-27.3},"brechaMedia":-28.5,"cobertura":16.7,"grupo":"G4"},{"rbd":1125,"nombre":"Escuela Diego Portales","comuna":"LA LIGUA","inscritos":8,"portafolio":1,"catA":0,"catB":0,"catC":100,"catD":0,"catE":0,"logrado":0,"porLograr":100,"area":"Urbano","micro":null,"tipo":"Escuela","ive":88.4,"tareaGap":{"1":-30.3,"2":9.7,"3":25.8,"4":-15.6,"5":-70.2},"brechaMedia":-16.1,"cobertura":12.5,"grupo":"G4"},{"rbd":1121,"nombre":"Liceo Pulmahue","comuna":"LA LIGUA","inscritos":15,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Urbano","micro":null,"tipo":"Liceo","ive":92.7,"tareaGap":{"1":36.4,"2":43.0,"3":25.8,"4":27.2,"5":-55.9},"brechaMedia":15.3,"cobertura":6.7,"grupo":"G2"},{"rbd":40099,"nombre":"Lic Tec Pro Papudo","comuna":"PAPUDO","inscritos":3,"portafolio":3,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Urbano","micro":null,"tipo":"Liceo","ive":94.8,"tareaGap":{"1":2.5,"2":-11.6,"3":19.8,"4":25.2,"5":-18.8},"brechaMedia":3.4,"cobertura":100.0,"grupo":"G1"},{"rbd":1192,"nombre":"Escuela Rural Pullaly","comuna":"PAPUDO","inscritos":6,"portafolio":4,"catA":25,"catB":50,"catC":0,"catD":25,"catE":0,"logrado":75,"porLograr":25,"area":"Rural","micro":null,"tipo":"Escuela","ive":82.4,"tareaGap":{"1":-5.3,"2":1.3,"3":0.8,"4":12.9,"5":-45.2},"brechaMedia":-7.1,"cobertura":66.7,"grupo":"G3"},{"rbd":1191,"nombre":"Escuela Papudo","comuna":"PAPUDO","inscritos":8,"portafolio":3,"catA":33.3,"catB":66.7,"catC":0,"catD":0,"catE":0,"logrado":100.0,"porLograr":0,"area":"Urbano","micro":null,"tipo":"Escuela","ive":69.6,"tareaGap":{"1":9.2,"2":45.5,"3":41.7,"4":-8.6,"5":-6.8},"brechaMedia":16.2,"cobertura":37.5,"grupo":"G2"},{"rbd":1147,"nombre":"Escuela Fernando García Oldini","comuna":"PETORCA","inscritos":5,"portafolio":5,"catA":20,"catB":40,"catC":20,"catD":20,"catE":0,"logrado":60,"porLograr":40,"area":"Rural","micro":null,"tipo":"Escuela","ive":77.0,"tareaGap":{"1":-12.3,"2":-7.4,"3":-1.2,"4":-13.8,"5":-5.7},"brechaMedia":-8.1,"cobertura":100.0,"grupo":"G3"},{"rbd":1150,"nombre":"Escuela Básica Neftali Reyes","comuna":"PETORCA","inscritos":1,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Rural","micro":"Incakán","tipo":"Escuela","ive":57.1,"tareaGap":{"1":-63.6,"2":9.7,"3":25.8,"4":-29.9,"5":-27.3},"brechaMedia":-17.1,"cobertura":100.0,"grupo":"G3"},{"rbd":1158,"nombre":"Escuela Básica Benancio Pérez","comuna":"PETORCA","inscritos":1,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Rural","micro":"Incakán","tipo":"Escuela","ive":80.0,"tareaGap":{"1":3.1,"2":43.0,"3":25.8,"4":-15.6,"5":15.5},"brechaMedia":14.4,"cobertura":100.0,"grupo":"G1"},{"rbd":1149,"nombre":"Liceo Cordillera","comuna":"PETORCA","inscritos":11,"portafolio":8,"catA":0,"catB":75,"catC":12.5,"catD":12.5,"catE":0,"logrado":75,"porLograr":25.0,"area":"Rural","micro":null,"tipo":"Colegio","ive":92.2,"tareaGap":{"1":-3.1,"2":27.3,"3":19.8,"4":7.4,"5":-48.6},"brechaMedia":0.6,"cobertura":72.7,"grupo":"G1"},{"rbd":1161,"nombre":"Escuela Básica Pedegua","comuna":"PETORCA","inscritos":8,"portafolio":5,"catA":0,"catB":80,"catC":20,"catD":0,"catE":0,"logrado":80,"porLograr":20,"area":"Rural","micro":null,"tipo":"Escuela","ive":90.3,"tareaGap":{"1":18.9,"2":-1.6,"3":-12.4,"4":2.7,"5":-31.8},"brechaMedia":-4.8,"cobertura":62.5,"grupo":"G3"},{"rbd":1152,"nombre":"Escuela Eduardo Frei Montalva","comuna":"PETORCA","inscritos":7,"portafolio":4,"catA":25,"catB":75,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Rural","micro":null,"tipo":"Escuela","ive":82.3,"tareaGap":{"1":23.2,"2":12.0,"3":48.8,"4":-0.1,"5":3.8},"brechaMedia":17.6,"cobertura":57.1,"grupo":"G1"},{"rbd":1151,"nombre":"Escuela Básica Villa Santa Ana","comuna":"PETORCA","inscritos":2,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Rural","micro":"Incakán","tipo":"Escuela","ive":100.0,"tareaGap":{"1":3.1,"2":9.7,"3":25.8,"4":-15.6,"5":1.2},"brechaMedia":4.8,"cobertura":50.0,"grupo":"G1"},{"rbd":1157,"nombre":"Escuela Básica Los Alamos El Sobrante","comuna":"PETORCA","inscritos":2,"portafolio":1,"catA":0,"catB":100,"catC":0,"catD":0,"catE":0,"logrado":100,"porLograr":0,"area":"Rural","micro":null,"tipo":"Escuela","ive":83.3,"tareaGap":{"1":23.7,"2":48.1,"3":-42.4,"4":16.4,"5":-29.0},"brechaMedia":3.4,"cobertura":50.0,"grupo":"G1"},{"rbd":1148,"nombre":"Liceo José Manuel Borgoño Nuñez","comuna":"PETORCA","inscritos":17,"portafolio":8,"catA":0,"catB":75,"catC":12.5,"catD":12.5,"catE":0,"logrado":75,"porLograr":25.0,"area":"Urbano","micro":null,"tipo":"Colegio","ive":88.9,"tareaGap":{"1":-1.1,"2":9.7,"3":-11.7,"4":-3.1,"5":-41.6},"brechaMedia":-9.6,"cobertura":47.1,"grupo":"G3"},{"rbd":1156,"nombre":"Escuela Básica G-24","comuna":"PETORCA","inscritos":5,"portafolio":2,"catA":0,"catB":50,"catC":0,"catD":50,"catE":0,"logrado":50,"porLograr":50,"area":"Rural","micro":null,"tipo":"Escuela","ive":97.4,"tareaGap":{"1":-13.6,"2":-7.0,"3":-24.2,"4":-8.5,"5":-41.6},"brechaMedia":-19.0,"cobertura":40.0,"grupo":"G4"},{"rbd":33548,"nombre":"JI Lamparita","comuna":"PETORCA","inscritos":3,"portafolio":0,"catA":0,"catB":0,"catC":0,"catD":0,"catE":0,"logrado":0,"porLograr":0,"area":"Urbano","micro":null,"tipo":"Jardín Infantil","ive":null,"tareaGap":{"1":null,"2":null,"3":null,"4":null,"5":null},"brechaMedia":null,"cobertura":0.0,"grupo":"SD"}]};
+const CLASIF={1171:{n:["Básica"],m:"—",t:[],c:"1° a 6° Básico"},1176:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 6° Básico"},11196:{n:["Especial"],m:"—",t:[],c:"NT1 a Laboral 3"},1180:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1170:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1173:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},40242:{n:["Básica"],m:"—",t:[],c:"1° a 8° Básico"},1168:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1167:{n:["Media"],m:"Polivalente (H-C + T-P)",t:["HC","TP"],c:"1° Medio a 2° Nivel "},1174:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},14479:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},12336:{n:["Media"],m:"Polivalente (H-C + T-P)",t:["HC","TP"],c:"1° a 4° Medio"},1132:{n:["Básica"],m:"—",t:[],c:"1° a 8° Básico"},1142:{n:["Básica"],m:"—",t:[],c:"1° a 8° Básico"},33526:{n:["Parvularia"],m:"—",t:[],c:"Educación Parvularia"},33528:{n:["Parvularia"],m:"—",t:[],c:"Educación Parvularia"},33530:{n:["Parvularia"],m:"—",t:[],c:"Educación Parvularia"},1144:{n:["Básica"],m:"—",t:[],c:"1° a 6° Básico"},1178:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1139:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 6° Básico"},11199:{n:["Parvularia","Básica","Media"],m:"Científico-Humanista",t:["HC"],c:"NT1 a 4° Medio"},1123:{n:["Parvularia","Básica","Media"],m:"Científico-Humanista",t:["HC"],c:"NT1 a 4° Medio"},1128:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1143:{n:["Básica"],m:"—",t:[],c:"1° a 6° Básico"},1135:{n:["Básica"],m:"—",t:[],c:"1° a 6° Básico"},1140:{n:["Básica"],m:"—",t:[],c:"1° a 8° Básico"},1122:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1125:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1121:{n:["Media"],m:"Polivalente (H-C + T-P)",t:["HC","TP"],c:"1° a 4° Medio"},40099:{n:["Media"],m:"Polivalente (H-C + T-P)",t:["HC","TP"],c:"1° a 4° Medio"},1192:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1191:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1147:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1150:{n:["Básica"],m:"—",t:[],c:"1° a 6° Básico"},1158:{n:["Básica"],m:"—",t:[],c:"1° a 6° Básico"},1149:{n:["Parvularia","Básica","Media"],m:"Técnico-Profesional",t:["TP"],c:"NT1 a 4° Medio"},1161:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 8° Básico"},1152:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 6° Básico"},1151:{n:["Básica"],m:"—",t:[],c:"1° a 6° Básico"},1157:{n:["Parvularia","Básica"],m:"—",t:[],c:"NT1 a 6° Básico"},1148:{n:["Parvularia","Básica","Media"],m:"Polivalente (H-C + T-P)",t:["HC","TP"],c:"NT1 a 2° Nivel"},1156:{n:["Básica"],m:"—",t:[],c:"1° a 8° Básico"},33548:{n:["Parvularia"],m:"—",t:[],c:"Educación Parvularia"}};
+DATA.establecimientos.forEach(e=>{const c=CLASIF[e.rbd]||{n:[],m:"—",t:[],c:""};e.niveles=c.n;e.nivel=c.n.join(" + ")||"–";e.mod=c.m;e.modTags=c.t;e.cobDetalle=c.c;});
 </script>
 <script>
 /* ================= helpers ================= */
@@ -466,12 +494,20 @@ function renderScatter(){
 }
 
 /* ================= table ================= */
-let fComuna="Todas",fGrupo="Todos",fArea="Todas",fMicro="Todos",sortKey="cobertura",sortDir=-1;
+let fComuna="Todas",fGrupo="Todos",fArea="Todas",fMicro="Todos",fTipo="Todos",fNivel="Todos",fModal="Todas",sortKey="cobertura",sortDir=-1;
 function mkChips(host,label,opts,cur,setter){
   host.innerHTML=`<span class="lbl">${label}</span>`;
   opts.forEach(o=>{const b=document.createElement("button");b.className="chip"+(o.v===cur?" on":"");
     b.textContent=o.t;b.onclick=()=>{setter(o.v);renderFilters();renderTable();};host.appendChild(b);});
 }
+function filtersActive(){let n=0;
+  if(fComuna!=="Todas")n++;if(fArea!=="Todas")n++;if(fTipo!=="Todos")n++;
+  if(fNivel!=="Todos")n++;if(fModal!=="Todas")n++;if(fMicro!=="Todos")n++;if(fGrupo!=="Todos")n++;
+  return n;}
+function updateFilterUI(){const n=filtersActive();const fc=$("#fcount");
+  if(fc){fc.textContent=n;fc.classList.toggle("on",n>0);}
+  const rb=$("#resetFilt");if(rb)rb.disabled=(n===0);}
+function resetFilters(){fComuna="Todas";fArea="Todas";fTipo="Todos";fNivel="Todos";fModal="Todas";fMicro="Todos";fGrupo="Todos";renderFilters();renderTable();}
 function renderFilters(){
   mkChips($("#filtComuna"),"Comuna:",
     ["Todas",...new Set(DATA.establecimientos.map(e=>e.comuna))].map(c=>({v:c,t:c==="Todas"?"Todas":c.charAt(0)+c.slice(1).toLowerCase()})),
@@ -482,12 +518,23 @@ function renderFilters(){
     [{v:"Todos",t:"Todos"},{v:"si",t:"Solo microcentro"},{v:"no",t:"Sin microcentro"}],fMicro,v=>fMicro=v);
   mkChips($("#filtGrupo"),"Grupo:",
     [{v:"Todos",t:"Todos"},...["G1","G2","G3","G4","SD"].map(g=>({v:g,t:g+" · "+GNAME[g].t}))],fGrupo,v=>fGrupo=v);
+  mkChips($("#filtTipo"),"Tipo EE:",
+    [{v:"Todos",t:"Todos"},...["Escuela","Liceo","Colegio","Escuela Especial","Jardín Infantil"].filter(t=>DATA.establecimientos.some(e=>e.tipo===t)).map(t=>({v:t,t:t}))],
+    fTipo,v=>fTipo=v);
+  mkChips($("#filtNivel"),"Nivel:",
+    [{v:"Todos",t:"Todos"},...["Parvularia","Básica","Media","Especial"].filter(n=>DATA.establecimientos.some(e=>e.niveles&&e.niveles.includes(n))).map(n=>({v:n,t:n}))],
+    fNivel,v=>fNivel=v);
+  mkChips($("#filtModal"),"Modalidad:",
+    [{v:"Todas",t:"Todas"},{v:"TP",t:"Técnico-Profesional"},{v:"HC",t:"Científico-Humanista"},{v:"sin",t:"Sin ed. media"}],
+    fModal,v=>fModal=v);
 }
 const COLS=[
-  {k:"nombre",t:"Establecimiento",num:false},
+  {k:"nombre",t:"RBD · Establecimiento",num:false},
   {k:"comuna",t:"Comuna",num:false},
   {k:"area",t:"Área",num:false},
   {k:"tipo",t:"Tipo",num:false},
+  {k:"nivel",t:"Nivel",num:false},
+  {k:"mod",t:"Modalidad",num:false},
   {k:"micro",t:"Microcentro",num:false},
   {k:"grupo",t:"Grupo",num:false},
   {k:"inscritos",t:"Insc.",num:true},
@@ -503,6 +550,9 @@ function tableRows(){
     (fComuna==="Todas"||e.comuna===fComuna)&&
     (fGrupo==="Todos"||e.grupo===fGrupo)&&
     (fArea==="Todas"||e.area===fArea)&&
+    (fTipo==="Todos"||e.tipo===fTipo)&&
+    (fNivel==="Todos"||(e.niveles&&e.niveles.includes(fNivel)))&&
+    (fModal==="Todas"||(fModal==="sin"?(!e.modTags||e.modTags.length===0):(e.modTags&&e.modTags.includes(fModal))))&&
     (fMicro==="Todos"||(fMicro==="si"?!!e.micro:!e.micro)));
 }
 function renderTable(){
@@ -514,16 +564,18 @@ function renderTable(){
   const th=$("#dtable thead");th.innerHTML="<tr>"+COLS.map(c=>
     `<th class="${c.num?'num':''}" data-k="${c.k}">${c.t}${sortKey===c.k?(sortDir<0?" ▾":" ▴"):""}</th>`).join("")+"</tr>";
   th.querySelectorAll("th").forEach(h=>h.onclick=()=>{const k=h.dataset.k;
-    if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==="nombre"||k==="comuna")?1:-1;}renderTable();});
+    if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==="nombre"||k==="comuna"||k==="tipo"||k==="nivel"||k==="mod")?1:-1;}renderTable();});
   const tb=$("#dtable tbody");
   tb.innerHTML=rows.map(e=>{
     const cn=e.comuna.charAt(0)+e.comuna.slice(1).toLowerCase();
     const bm=e.brechaMedia;
     return `<tr>
-      <td>${e.nombre}</td>
+      <td><b>${e.rbd}</b> - ${e.nombre}</td>
       <td>${cn}</td>
       <td>${e.area||'–'}</td>
       <td>${e.tipo||'–'}</td>
+      <td>${e.nivel&&e.nivel!=='–'?e.nivel:'<span style=\"color:var(--muted)\">–</span>'}</td>
+      <td>${e.mod&&e.mod!=='—'?e.mod:'<span style=\"color:var(--muted)\">—</span>'}</td>
       <td>${e.micro?'● '+e.micro:'<span style="color:var(--muted)">–</span>'}</td>
       <td><span class="gdot" style="background:var(${GCOL[e.grupo]})"></span>${e.grupo}</td>
       <td class="num">${e.inscritos}</td>
@@ -535,20 +587,23 @@ function renderTable(){
       <td class="num">${e.portafolio?e.porLograr.toFixed(0)+'%':'–'}</td>
     </tr>`;}).join("");
   const rc=$("#rowCount");if(rc)rc.textContent=rows.length+" establecimiento(s) en la vista";
+  updateFilterUI();
 }
 
 /* ================= área / microcentro ================= */
 function renderArea(){
   const wrap=$("#areaWrap");
+  const est=DATA.establecimientos;
   const cards=[
-    {l:"Urbano",icon:"◧",d:DATA.areas.find(a=>a.area==="Urbano"),col:"--g3"},
-    {l:"Rural",icon:"◱",d:DATA.areas.find(a=>a.area==="Rural"),col:"--g1"},
-    {l:"En microcentro",icon:"◈",d:{cobertura:DATA.microcentro.cobertura,portafolio:DATA.microcentro.portafolio,inscritos:DATA.microcentro.inscritos},col:"--g2"},
+    {l:"Urbano",icon:"◧",d:DATA.areas.find(a=>a.area==="Urbano"),col:"--g3",inc:est.filter(e=>e.area==="Urbano").length,uni:25},
+    {l:"Rural",icon:"◱",d:DATA.areas.find(a=>a.area==="Rural"),col:"--g1",inc:est.filter(e=>e.area==="Rural").length,uni:43},
+    {l:"En microcentro",icon:"◈",d:{cobertura:DATA.microcentro.cobertura,portafolio:DATA.microcentro.portafolio,inscritos:DATA.microcentro.inscritos},col:"--g2",inc:est.filter(e=>e.micro).length,uni:16},
   ];
   wrap.innerHTML=cards.map(c=>`<div class="acard">
     <div class="al"><span style="color:var(${c.col})">${c.icon}</span> ${c.l}</div>
     <div class="av">${c.d.cobertura.toFixed(1)}%</div>
-    <div class="an">${c.d.portafolio} de ${c.d.inscritos} inscritos entregaron</div>
+    <div class="an">${c.d.portafolio} de ${c.d.inscritos} docentes inscritos entregaron</div>
+    <div class="an ee-line"><b>${c.inc}</b> de <b>${c.uni}</b> establecimientos del SLEP</div>
     <div class="track"><div class="fill" style="width:${c.d.cobertura}%;background:var(${c.col})"></div></div>
   </div>`).join("");
   $("#microNote").innerHTML=`Los <b>${DATA.microcentro.n} establecimientos</b> de la muestra que integran microcentros (${DATA.microcentro.nombres.join(" y ")}) alcanzan una cobertura de <b>${DATA.microcentro.cobertura.toFixed(1)}%</b>, muy por sobre el promedio del SLEP (${DATA.meta.cobertura.toFixed(1)}%). Referencia SLEP marcada como línea punteada en el gráfico comunal.`;
@@ -570,7 +625,7 @@ function renderGlossary(){
 /* ================= export CSV ================= */
 function toCSV(rows){
   const cols=[["rbd","RBD"],["nombre","Establecimiento"],["comuna","Comuna"],["area","Área"],
-    ["tipo","Tipo"],["micro","Microcentro"],["grupo","Grupo"],["inscritos","Inscritos"],
+    ["tipo","Tipo"],["nivel","Nivel_Ensenanza"],["mod","Modalidad_Media"],["cobDetalle","Cobertura_Niveles"],["micro","Microcentro"],["grupo","Grupo"],["inscritos","Inscritos"],
     ["portafolio","Con_Portafolio"],["cobertura","Cobertura_%"],["brechaMedia","Desempeno_vs_Nacional_pts"],
     ["ive","IVE"],["logrado","Logrado_AB_%"],["porLograr","PorLograr_CDE_%"],
     ["catA","Cat_A_%"],["catB","Cat_B_%"],["catC","Cat_C_%"],["catD","Cat_D_%"],["catE","Cat_E_%"]];
@@ -592,7 +647,7 @@ function download(name,text){
 
 /* ================= foot ================= */
 $("#foot").innerHTML=`<b>Fuente:</b> Sistematización de 44 informes «Informe Resultados 2025» (DocenteMÁS–CPEIP / MINEDUC), Proceso 2025 · Carrera Docente — 43 establecimientos del SLEP Petorca + informe del Sostenedor. Valores en % de logro (0–100). Las brechas por tarea son el promedio simple de la diferencia establecimiento−referencia. <br><br>
-<b>Clasificación urbano/rural, tipo, microcentro e IVE:</b> Directorio SLEP Petorca 2025 (hoja «Directorio General»), unido por RBD. Los 4 jardines infantiles se resolvieron por nombre vía la hoja «Listado corto».<br><br>
+<b>Clasificación urbano/rural, tipo, microcentro e IVE:</b> Directorio SLEP Petorca 2025 (hoja «Directorio General»), unido por RBD. Los 4 jardines infantiles (VTF) se clasifican como Educación Parvularia. <b>Nivel de enseñanza y modalidad (T-P / H-C):</b> derivados de la «Cobertura», «Modalidades Enseñanza Media» y «Categoría de Enseñanza 1–5» del mismo directorio, unidos por RBD. Un establecimiento «Polivalente» ofrece a la vez H-C y T-P, por lo que aparece bajo ambos filtros. <b>Universo por área y microcentro (cuadros «Cobertura por área»):</b> N total de establecimientos del SLEP según el Directorio SLEP Petorca 2025 (Urbano 25 · Rural 43 · Microcentro 16, en 3 microcentros); «incluidos» = establecimientos con docentes inscritos en el proceso (Urbano 19 · Rural 24 · Microcentro 5).<br><br>
 <b>Notas de calidad:</b> los PDF originales son escaneados; los datos se extrajeron por OCR y se validaron contra la huella de los valores «Nacional». N por establecimiento pequeño (1–3 docentes en muchos casos) → priorizar patrones agregados por sobre cifras individuales. JI Lamparita (RBD 33548): 3 inscritos, 0 portafolios. El PDF del Sostenedor muestra en portada «I. Municipalidad de Ninhue» → verificar en origen. Tipología de grupos construida con umbral de cobertura del SLEP (${DATA.meta.cobertura.toFixed(1)}%) y desempeño = 0 pts vs. Nacional. Documento de trabajo.`;
 
 /* ================= init ================= */
@@ -600,6 +655,10 @@ function renderAll(){renderKPI();renderTarea();renderCov();renderHeat();renderAr
 renderAll();
 $("#dlFilt").onclick=()=>download("Establecimientos_SLEP_Petorca_filtrado.csv",toCSV(tableRows()));
 $("#dlAll").onclick=()=>download("Establecimientos_SLEP_Petorca_completo.csv",toCSV(DATA.establecimientos));
+$("#filterToggle").onclick=()=>{const w=$("#filtersWrap"),b=$("#filterToggle");
+  if(w.hasAttribute("hidden")){w.removeAttribute("hidden");b.setAttribute("aria-expanded","true");}
+  else{w.setAttribute("hidden","");b.setAttribute("aria-expanded","false");}};
+$("#resetFilt").onclick=resetFilters;
 $("#refToggle").querySelectorAll("button").forEach(b=>b.onclick=()=>{
   curRef=b.dataset.ref;$("#refToggle").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
   b.classList.add("on");$("#refCaption").textContent=curRef==="Nac"?"Brecha promedio de logro vs. referente Nacional":"Brecha promedio de logro vs. Sostenedor (SLEP Petorca)";renderTarea();});
