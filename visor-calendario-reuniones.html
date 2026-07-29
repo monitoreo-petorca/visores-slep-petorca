@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendario Reuniones de Dotación 2026 · SLEP Petorca</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --ink:#1f2933; --muted:#69707d;
+    --line:#e3e8ee; --brand:#0f5c6b; --brand2:#127d90;
+    --chip:#eef3f6; --shadow:0 1px 2px rgba(16,42,67,.06),0 4px 14px rgba(16,42,67,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased}
+  header.top{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:22px 20px 18px}
+  header.top .wrap{max-width:1180px;margin:0 auto}
+  header.top h1{margin:0 0 4px;font-size:1.35rem;font-weight:700;letter-spacing:.2px}
+  header.top p{margin:0;font-size:.86rem;opacity:.92}
+  .note{max-width:1180px;margin:12px auto 0;padding:0 20px}
+  .note .box{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:9px 13px;font-size:.82rem}
+  .controls{max-width:1180px;margin:16px auto 0;padding:0 20px}
+  .grid-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  .field label{display:block;font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:0 0 4px}
+  select,input[type=text]{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:.9rem;color:var(--ink);appearance:none}
+  select:focus,input:focus{outline:2px solid var(--brand2);outline-offset:-1px;border-color:var(--brand2)}
+  .row2{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .count{font-size:.9rem;color:var(--muted)}.count b{color:var(--ink)}
+  .spacer{margin-left:auto}
+  .toggle{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+  .toggle button{border:0;background:#fff;padding:8px 15px;font-size:.85rem;cursor:pointer;color:var(--muted);font-weight:600}
+  .toggle button.on{background:var(--brand);color:#fff}
+  button.clear{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:.85rem;cursor:pointer;color:var(--brand);font-weight:600}
+  button.clear:hover{background:var(--chip)}
+  main{max-width:1180px;margin:8px auto 60px;padding:0 20px}
+  /* list */
+  .day{margin-top:22px}
+  .day h2{position:sticky;top:0;background:var(--bg);z-index:1;margin:0 0 10px;padding:8px 0;font-size:.98rem;font-weight:700;color:var(--brand);border-bottom:2px solid var(--line);display:flex;align-items:baseline;gap:10px}
+  .day h2 .d{color:var(--muted);font-weight:500;font-size:.82rem;text-transform:capitalize}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 15px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px}
+  .card .est{font-weight:700;font-size:.98rem;line-height:1.25}
+  .card .code{color:var(--muted);font-weight:500;font-size:.8rem}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:.73rem;padding:3px 9px;border-radius:999px;background:var(--chip);color:#334155;border:1px solid var(--line);white-space:nowrap}
+  .chip.hora{background:#ecfeff;border-color:#a5f3fc;color:#0e7490;font-weight:600}
+  .chip.tbd{background:#f8fafc;border-color:#e2e8f0;color:#64748b;font-style:italic}
+  .chip.lugar{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+  .chip.lugar.pet{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+  .chip.comuna{font-weight:600}
+  .chip.c-laligua{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}
+  .chip.c-cabildo{background:#fdf4ff;border-color:#f5d0fe;color:#a21caf}
+  .chip.c-petorca{background:#fffbeb;border-color:#fde68a;color:#b45309}
+  .chip.c-papudo{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
+  .meta{display:flex;flex-direction:column;gap:3px;font-size:.82rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:9px}
+  .meta .prof{color:var(--ink)}.meta .prof b{color:var(--brand2)}
+  .addbtn{margin-top:2px;display:inline-flex;align-items:center;gap:6px;font-size:.78rem;text-decoration:none;color:var(--brand);font-weight:600;align-self:flex-start;border:1px solid var(--line);padding:5px 10px;border-radius:8px;background:#fff}
+  .addbtn:hover{background:var(--chip)}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:.95rem}
+  /* calendar */
+  .month{margin-top:26px}
+  .month h3{margin:0 0 8px;font-size:1rem;color:var(--brand);text-transform:capitalize}
+  .cal{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .cal .hd{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:center;padding:4px 0;letter-spacing:.4px}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:9px;min-height:96px;padding:6px;display:flex;flex-direction:column;gap:4px}
+  .cell.empty{background:transparent;border:1px dashed #e8edf2}
+  .cell .num{font-size:.78rem;font-weight:700;color:var(--muted)}
+  .cell.today .num{color:#fff;background:var(--brand2);border-radius:6px;padding:0 6px;align-self:flex-start}
+  .evc{text-align:left;border:0;border-left:3px solid #94a3b8;background:#f8fafc;border-radius:5px;padding:3px 6px;font-size:.72rem;cursor:pointer;color:var(--ink);line-height:1.2;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .evc:hover{filter:brightness(.97)}
+  .evc.l-laligua{border-left-color:#6366f1;background:#eef2ff}
+  .evc.l-cabildo{border-left-color:#c026d3;background:#fdf4ff}
+  .evc.l-petorca{border-left-color:#d97706;background:#fffbeb}
+  .evc.l-papudo{border-left-color:#059669;background:#ecfdf5}
+  .evc .t{font-weight:700}
+  .cal-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:.75rem;color:var(--muted)}
+  .cal-legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .hidden{display:none}
+  footer{max-width:1180px;margin:0 auto;padding:20px;color:var(--muted);font-size:.76rem;text-align:center}
+  @media(max-width:640px){.cards{grid-template-columns:1fr}.cal{grid-template-columns:repeat(5,1fr);gap:3px}.cell{min-height:70px}.evc{font-size:.62rem}}
+</style>
+</head>
+<body>
+<style>.hub-back{display:block;background:#0b3d6b;color:#fff;text-decoration:none;font:600 13px/1.3 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:8px 20px;letter-spacing:.2px}.hub-back:hover{background:#0a3155}</style>
+<a class="hub-back" href="index.html">← Volver a los visores</a>
+<header class="top"><div class="wrap">
+  <h1>Reuniones de Revisión de Dotación 2026</h1>
+  <p>Servicio Local de Educación Pública de Petorca · Calendario referencial jul–oct 2026</p>
+</div></header>
+
+<div class="note"><div class="box">
+  Las <b>fechas</b> son las definidas en la programación. Los <b>horarios se ajustan sobre la marcha</b>:
+  cuando una reunión aún no tiene hora fijada aparece como <i>“Horario por definir”</i>.
+</div></div>
+
+<div class="controls">
+  <div class="grid-f">
+    <div class="field"><label for="fProf">Profesional de acompañamiento</label><select id="fProf"></select></div>
+    <div class="field"><label for="fComuna">Comuna</label><select id="fComuna"><option value="">Todas</option></select></div>
+    <div class="field"><label for="fMes">Mes</label><select id="fMes"><option value="">Todos</option></select></div>
+    <div class="field"><label for="fLugar">Lugar de reunión</label>
+      <select id="fLugar"><option value="">Todos</option><option value="Slep">SLEP Petorca (Pullally)</option><option value="Petorca">Petorca</option></select></div>
+    <div class="field"><label for="fRole">Ver contraparte</label>
+      <select id="fRole"><option value="atp" selected>Apoyo Técnico Pedagógico</option><option value="gp">Gestión de Personas</option><option value="gae">Apoyo a Establecimientos</option><option value="infra">Infraestructura</option></select></div>
+    <div class="field"><label for="fSearch">Buscar establecimiento</label><input type="text" id="fSearch" placeholder="Nombre o código…" autocomplete="off"></div>
+  </div>
+  <div class="row2">
+    <span class="count" id="count"></span>
+    <div class="spacer"></div>
+    <div class="toggle"><button id="vList" class="on">Lista</button><button id="vCal">Calendario</button></div>
+    <button class="clear" id="clear">Limpiar filtros</button>
+  </div>
+</div>
+
+<main>
+  <div id="listView"></div>
+  <div id="calView" class="hidden"></div>
+</main>
+<footer>Generado desde «CALENDARIO REUNIONES DOTACION 2027» (pestaña resumen) y directorio de contrapartes · SLEP Petorca</footer>
+
+<script>
+const EVENTOS = [{"code": "5401003", "name": "PULMAHUE", "mes": "Julio", "mesnum": 7, "dia": 31, "diasem": "Viernes", "iso": "2026-07-31", "fecha": "31/07/2026", "hora": "09:00", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Sala Cuna y Jardín Infantil", "gp": "Claudia Vargas", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Verónica Díaz", "director": "Katherin Andrea Espinoza Aravena"}, {"code": "1132", "name": "ESCUELA BASICA POZA VERDE", "mes": "Julio", "mesnum": 7, "dia": 31, "diasem": "Viernes", "iso": "2026-07-31", "fecha": "31/07/2026", "hora": "11:00", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Paula Cataldo", "director": "Carolina Andrea Rosales Arancibia"}, {"code": "1145", "name": "ESCUELA ENRIQUE DOLL ROJAS", "mes": "Agosto", "mesnum": 8, "dia": 4, "diasem": "Martes", "iso": "2026-08-04", "fecha": "04/08/2026", "hora": "09:00", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Leandro Ríos", "director": "Patricio Emilio Morel Chacana"}, {"code": "1137", "name": "ESCUELA BASICA HORTENCIA POWELL S.", "mes": "Agosto", "mesnum": 8, "dia": 4, "diasem": "Martes", "iso": "2026-08-04", "fecha": "04/08/2026", "hora": "11:00", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Fabiola Bustos", "director": "Carolina Andrea Acevedo Quezada"}, {"code": "1170", "name": "ESCUELA BASICA VALLE DE ARTIFICIO", "mes": "Agosto", "mesnum": 8, "dia": 5, "diasem": "Miercoles", "iso": "2026-08-05", "fecha": "05/08/2026", "hora": "09:00", "lugar": "Slep", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Valentina Rojas", "atp": "Marjorie Gaete", "director": "Milka Edith Lemus Reyes"}, {"code": "5402002", "name": "RINCONCITO", "mes": "Agosto", "mesnum": 8, "dia": 5, "diasem": "Miercoles", "iso": "2026-08-05", "fecha": "05/08/2026", "hora": "11:30", "lugar": "Slep", "comuna": "Cabildo", "area": "Urbano", "tipo": "Sala Cuna y Jardín Infantil", "gp": "Claudia Vargas", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Verónica Díaz", "director": "Valentina Constanza Mayea Farías"}, {"code": "11196", "name": "CTRO.REC.ATENC.DIVERS.CRAD PAUL PERCY HARRIS", "mes": "Agosto", "mesnum": 8, "dia": 6, "diasem": "Jueves", "iso": "2026-08-06", "fecha": "06/08/2026", "hora": "09:00", "lugar": "Slep", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela Especial", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Valentina Rojas", "atp": "Claudia Aguilera", "director": "Nicoley Andrea Bascuñán Guajardo"}, {"code": "1126", "name": "ESCUELA ESPECIAL SOL NACIENTE", "mes": "Agosto", "mesnum": 8, "dia": 6, "diasem": "Jueves", "iso": "2026-08-06", "fecha": "06/08/2026", "hora": "11:30", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Escuela Especial", "gp": "Maythiare Palma", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Claudia Aguilera", "director": "Marcelo Isaías Matamala Ruz"}, {"code": "1125", "name": "ESCUELA DIEGO PORTALES", "mes": "Agosto", "mesnum": 8, "dia": 7, "diasem": "Viernes", "iso": "2026-08-07", "fecha": "07/08/2026", "hora": "09:00", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Paula Cataldo", "director": "Ociel Díaz Pérez"}, {"code": "5401002", "name": "SANTA TERESA", "mes": "Agosto", "mesnum": 8, "dia": 7, "diasem": "Viernes", "iso": "2026-08-07", "fecha": "07/08/2026", "hora": "11:30", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Sala Cuna y Jardín Infantil", "gp": "Claudia Vargas", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Verónica Díaz", "director": "Italia Soraya García López"}, {"code": "40242", "name": "COLEGIO BICENTENARIO", "mes": "Agosto", "mesnum": 8, "dia": 11, "diasem": "Martes", "iso": "2026-08-11", "fecha": "11/08/2026", "hora": "", "lugar": "", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Leandro Ríos", "director": "Felipe Sebastián Román Román"}, {"code": "5404003", "name": "MIS PRIMEROS PASOS", "mes": "Agosto", "mesnum": 8, "dia": 11, "diasem": "Martes", "iso": "2026-08-11", "fecha": "11/08/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Sala Cuna", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Catalina Bobadilla", "atp": "Verónica Díaz", "director": "Cynthia Ivon Saavedra Henríquez"}, {"code": "1176", "name": "ESCUELA PABLO NERUDA", "mes": "Agosto", "mesnum": 8, "dia": 12, "diasem": "Miercoles", "iso": "2026-08-12", "fecha": "12/08/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Fabiola Bustos", "director": "José Alberto Astudillo Rodríguez"}, {"code": "1182", "name": "ESCUELA BASICA G-47", "mes": "Agosto", "mesnum": 8, "dia": 12, "diasem": "Miercoles", "iso": "2026-08-12", "fecha": "12/08/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Susan Ramírez", "director": "Patricio Andrés Vilches Guerrero"}, {"code": "1140", "name": "ESCUELA BASICA CARLOS ARIZTIA RUIZ", "mes": "Agosto", "mesnum": 8, "dia": 13, "diasem": "Jueves", "iso": "2026-08-13", "fecha": "13/08/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Leandro Ríos", "director": "Andrea Araya"}, {"code": "12299", "name": "ESCUELA BASICA ANEXO PICHILEMU", "mes": "Agosto", "mesnum": 8, "dia": 13, "diasem": "Jueves", "iso": "2026-08-13", "fecha": "13/08/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Fabiola Bustos", "director": "Daniela Fernanda Gaete Tapia"}, {"code": "1161", "name": "ESCUELA BASICA PEDEGUA", "mes": "Agosto", "mesnum": 8, "dia": 14, "diasem": "Viernes", "iso": "2026-08-14", "fecha": "14/08/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Susan Ramírez", "director": "Maritza Angélica Leiva Olivares"}, {"code": "5404002", "name": "MUNDO DE PEQUES-CHINCOLCO", "mes": "Agosto", "mesnum": 8, "dia": 14, "diasem": "Viernes", "iso": "2026-08-14", "fecha": "14/08/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Sala Cuna", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Catalina Bobadilla", "atp": "Verónica Díaz", "director": "Paula Ivana Jerez Cáceres"}, {"code": "1174", "name": "ESCUELA BASICA SAN LORENZO", "mes": "Agosto", "mesnum": 8, "dia": 18, "diasem": "Martes", "iso": "2026-08-18", "fecha": "18/08/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Marjorie Gaete", "director": "Sara Cristina de Lourdes Leiva López"}, {"code": "5401004", "name": "MANITOS DE COLORES", "mes": "Agosto", "mesnum": 8, "dia": 18, "diasem": "Martes", "iso": "2026-08-18", "fecha": "18/08/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Jardín Infantil", "gp": "Claudia Vargas", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Verónica Díaz", "director": "Lorena Soledad Ramírez Estay"}, {"code": "1156", "name": "ESCUELA BASICA G-24", "mes": "Agosto", "mesnum": 8, "dia": 19, "diasem": "Miercoles", "iso": "2026-08-19", "fecha": "19/08/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Claudia Aguilera", "director": "Ximena Alejandra Pacheco Muñoz"}, {"code": "1158", "name": "ESCUELA BASICA BENANCIO PEREZ", "mes": "Agosto", "mesnum": 8, "dia": 19, "diasem": "Miercoles", "iso": "2026-08-19", "fecha": "19/08/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Marjorie Gaete", "director": "Jessica Fabiola Molina Gallardo"}, {"code": "11206", "name": "ESCUELA MUNICIPAL LAS PUERTAS", "mes": "Agosto", "mesnum": 8, "dia": 20, "diasem": "Jueves", "iso": "2026-08-20", "fecha": "20/08/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Valentina Rojas", "atp": "Leandro Ríos", "director": "María José Plaza Pastén"}, {"code": "1178", "name": "ESCUELA BASICA LA VINA", "mes": "Agosto", "mesnum": 8, "dia": 20, "diasem": "Jueves", "iso": "2026-08-20", "fecha": "20/08/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Marjorie Gaete", "director": "Jacqueline Magaly Fierro Acosta"}, {"code": "1151", "name": "ESCUELA BASICA VILLA SANTA ANA", "mes": "Agosto", "mesnum": 8, "dia": 21, "diasem": "Viernes", "iso": "2026-08-21", "fecha": "21/08/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Claudia Aguilera", "director": "Yesenia Fernanda Gil morales"}, {"code": "1152", "name": "ESCUELA EDUARDO FREI MONTALVA", "mes": "Agosto", "mesnum": 8, "dia": 21, "diasem": "Viernes", "iso": "2026-08-21", "fecha": "21/08/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Claudia Aguilera", "director": "Claudio Abelardo Pinilla Garay"}, {"code": "1128", "name": "ESCUELA COMUNIDADES DE VALLE HERMOSO", "mes": "Agosto", "mesnum": 8, "dia": 25, "diasem": "Martes", "iso": "2026-08-25", "fecha": "25/08/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Susan Ramírez", "director": "Patricia del Carmen Astudillo Brito"}, {"code": "5401007", "name": "HUMBERTO BASULTO", "mes": "Agosto", "mesnum": 8, "dia": 25, "diasem": "Martes", "iso": "2026-08-25", "fecha": "25/08/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Sala Cuna y Jardín Infantil", "gp": "Claudia Vargas", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Verónica Díaz", "director": "Grace Carol Margot Cataldo Díaz"}, {"code": "1130", "name": "ESC. BASICA LOS HORNOS DE HUAQUEN", "mes": "Agosto", "mesnum": 8, "dia": 26, "diasem": "Miercoles", "iso": "2026-08-26", "fecha": "26/08/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Susan Ramírez", "director": "Katherine Cecilia Godoy Godoy"}, {"code": "1180", "name": "ESCUELA BASICA G-45", "mes": "Agosto", "mesnum": 8, "dia": 26, "diasem": "Miercoles", "iso": "2026-08-26", "fecha": "26/08/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Marjorie Gaete", "director": "José Manuel López Silva"}, {"code": "1120", "name": "CENTRO DE EDUCACION DE ADULTOS LA LIGUA", "mes": "Agosto", "mesnum": 8, "dia": 27, "diasem": "Jueves", "iso": "2026-08-27", "fecha": "27/08/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Liceo", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Paula Cataldo", "director": "Milton Ernesto Astudillo Egaña"}, {"code": "1139", "name": "ESCUELA MINISTRO GOMEZ MILLAS", "mes": "Agosto", "mesnum": 8, "dia": 27, "diasem": "Jueves", "iso": "2026-08-27", "fecha": "27/08/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Susan Ramírez", "director": "Angellina del Pilar Rodríguez Vicencio"}, {"code": "1157", "name": "ESCUELA BASICA LOS ALAMOS EL SOBRANTE", "mes": "Agosto", "mesnum": 8, "dia": 28, "diasem": "Viernes", "iso": "2026-08-28", "fecha": "28/08/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Claudia Aguilera", "director": "Rossana Jimena Castro Hidalgo"}, {"code": "1160", "name": "ESCUELA HOGAR FRONTERIZA DE CHALACO", "mes": "Agosto", "mesnum": 8, "dia": 28, "diasem": "Viernes", "iso": "2026-08-28", "fecha": "28/08/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Claudia Aguilera", "director": "William Ángel Santana Espinoza"}, {"code": "1122", "name": "ESCUELA REPUBLICA DE VENEZUELA", "mes": "Septiembre", "mesnum": 9, "dia": 1, "diasem": "Martes", "iso": "2026-09-01", "fecha": "01/09/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Leandro Ríos", "director": "Jacqueline del Carmen Espinoza Barraza"}, {"code": "5403001", "name": "RAYITO DE SOL", "mes": "Septiembre", "mesnum": 9, "dia": 1, "diasem": "Martes", "iso": "2026-09-01", "fecha": "01/09/2026", "hora": "", "lugar": "Slep", "comuna": "Papudo", "area": "Rural", "tipo": "Sala Cuna y Jardín Infantil", "gp": "Tamara Sierra", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Verónica Díaz", "director": "Bárbara Cornejo Navarrete"}, {"code": "1135", "name": "ESCUELA BASICA LOS MOLLES", "mes": "Septiembre", "mesnum": 9, "dia": 2, "diasem": "Miercoles", "iso": "2026-09-02", "fecha": "02/09/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Paula Cataldo", "director": "Macarena Andrea Santos Fredes"}, {"code": "1192", "name": "ESCUELA RURAL PULLALLY", "mes": "Septiembre", "mesnum": 9, "dia": 2, "diasem": "Miercoles", "iso": "2026-09-02", "fecha": "02/09/2026", "hora": "", "lugar": "Slep", "comuna": "Papudo", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Paula Cataldo", "director": "Josefa Amira Allendes Encina"}, {"code": "1168", "name": "ESCUELA HANS WENKE MENGERS", "mes": "Septiembre", "mesnum": 9, "dia": 3, "diasem": "Jueves", "iso": "2026-09-03", "fecha": "03/09/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Susan Ramírez", "director": "Stefanie Lillo"}, {"code": "5402004", "name": "SANTA MARTA", "mes": "Septiembre", "mesnum": 9, "dia": 3, "diasem": "Jueves", "iso": "2026-09-03", "fecha": "03/09/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Sala Cuna y Jardín Infantil", "gp": "Claudia Vargas", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Verónica Díaz", "director": "Yohana  Macarena Cosmelli Bruna"}, {"code": "1147", "name": "ESCUELA FERNANDO GARCIA OLDINI", "mes": "Septiembre", "mesnum": 9, "dia": 4, "diasem": "Viernes", "iso": "2026-09-04", "fecha": "04/09/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Claudia Aguilera", "director": "Paulina Constanza Martínez Hidalgo"}, {"code": "5404001", "name": "LAMPARITA", "mes": "Septiembre", "mesnum": 9, "dia": 4, "diasem": "Viernes", "iso": "2026-09-04", "fecha": "04/09/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Urbano", "tipo": "Sala Cuna y Jardín Infantil", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Catalina Bobadilla", "atp": "Verónica Díaz", "director": "Paola Andrea Zamora Silva"}, {"code": "1142", "name": "ESCUELA LA CANELA", "mes": "Septiembre", "mesnum": 9, "dia": 8, "diasem": "Martes", "iso": "2026-09-08", "fecha": "08/09/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Leandro Ríos", "director": "Ida Rosa Figueroa Pizarro"}, {"code": "1144", "name": "ESCUELA BASICA PICHICUY", "mes": "Septiembre", "mesnum": 9, "dia": 8, "diasem": "Martes", "iso": "2026-09-08", "fecha": "08/09/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Paula Cataldo", "director": "María Pía Osorio Villanueva"}, {"code": "1173", "name": "ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO", "mes": "Septiembre", "mesnum": 9, "dia": 9, "diasem": "Miercoles", "iso": "2026-09-09", "fecha": "09/09/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Marjorie Gaete", "director": "Jorge Rafael Olivares Olivares"}, {"code": "5403002", "name": "BARQUITO DE PAPEL", "mes": "Septiembre", "mesnum": 9, "dia": 9, "diasem": "Miercoles", "iso": "2026-09-09", "fecha": "09/09/2026", "hora": "", "lugar": "Slep", "comuna": "Papudo", "area": "Urbano", "tipo": "Jardín Infantil", "gp": "Tamara Sierra", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Verónica Díaz", "director": "Marcela Lépez Rojas"}, {"code": "1181", "name": "ESCUELA BASICA LOS ANGELES", "mes": "Septiembre", "mesnum": 9, "dia": 29, "diasem": "Martes", "iso": "2026-09-29", "fecha": "29/09/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Leandro Ríos", "director": "Maria José Collao Saavedra"}, {"code": "12336", "name": "LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA", "mes": "Septiembre", "mesnum": 9, "dia": 29, "diasem": "Martes", "iso": "2026-09-29", "fecha": "29/09/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Urbano", "tipo": "Liceo", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Francisca Tapia", "director": "Humberto Esteban Pino Arosteguy"}, {"code": "14479", "name": "ESCUELA BASICA MUNICIPAL ARAUCARIA", "mes": "Septiembre", "mesnum": 9, "dia": 30, "diasem": "Miercoles", "iso": "2026-09-30", "fecha": "30/09/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Urbano", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Valentina Rojas", "atp": "Francisca Tapia", "director": "Arturo Alejandro Valdebenito Torres"}, {"code": "5401006", "name": "EL CARMEN CUNCUNITA", "mes": "Septiembre", "mesnum": 9, "dia": 30, "diasem": "Miercoles", "iso": "2026-09-30", "fecha": "30/09/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Sala Cuna y Jardín Infantil", "gp": "Claudia Vargas", "gae": "Ester Santana", "infra": "Catalina Bobadilla", "atp": "Verónica Díaz", "director": "Veronica Jacqueline Jelvez Wilke"}, {"code": "11199", "name": "COLEGIO LUIS CRUZ MARTINEZ", "mes": "Octubre", "mesnum": 10, "dia": 1, "diasem": "Jueves", "iso": "2026-10-01", "fecha": "01/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Colegio", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Claudia Aguilera", "director": "Lisette Paola Fernández Arredondo"}, {"code": "1129", "name": "ESCUELA ANGEL MENAY", "mes": "Octubre", "mesnum": 10, "dia": 1, "diasem": "Jueves", "iso": "2026-10-01", "fecha": "01/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Marjorie Gaete", "director": "Priscila Ninoska Villalobos Ramírez"}, {"code": "1149", "name": "LICEO CORDILLERA", "mes": "Octubre", "mesnum": 10, "dia": 2, "diasem": "Viernes", "iso": "2026-10-02", "fecha": "02/10/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Colegio", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Catalina Bobadilla", "atp": "Francisca Tapia", "director": "Mario Andrés Zamora Valle"}, {"code": "1150", "name": "ESCUELA BASICA NEFTALI REYES B.", "mes": "Octubre", "mesnum": 10, "dia": 2, "diasem": "Viernes", "iso": "2026-10-02", "fecha": "02/10/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Marjorie Gaete", "director": "Carolina Andrea Delgado Delgado"}, {"code": "1134", "name": "CARMEN SANCHEZ ARAYA", "mes": "Octubre", "mesnum": 10, "dia": 6, "diasem": "Martes", "iso": "2026-10-06", "fecha": "06/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Fabiola Bustos", "director": "Sergio Francisco Vergara Tapia"}, {"code": "40099", "name": "LICEO TECNICO PROFESIONAL PAPUDO", "mes": "Octubre", "mesnum": 10, "dia": 6, "diasem": "Martes", "iso": "2026-10-06", "fecha": "06/10/2026", "hora": "", "lugar": "Slep", "comuna": "Papudo", "area": "Urbano", "tipo": "Liceo", "gp": "Tamara Sierra", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Paula Cataldo", "director": "Massiel Andrea Quiroga Valencia"}, {"code": "1191", "name": "ESCUELA PAPUDO", "mes": "Octubre", "mesnum": 10, "dia": 7, "diasem": "Miercoles", "iso": "2026-10-07", "fecha": "07/10/2026", "hora": "", "lugar": "Slep", "comuna": "Papudo", "area": "Urbano", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Jorge Aranda", "infra": "Catalina Bobadilla", "atp": "Susan Ramírez", "director": "Sabrina Estefanie Obregón Aguilera"}, {"code": "5401005", "name": "MANITOS DE ANGEL", "mes": "Octubre", "mesnum": 10, "dia": 7, "diasem": "Miercoles", "iso": "2026-10-07", "fecha": "07/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Sala Cuna y Jardín Infantil", "gp": "Claudia Vargas", "gae": "Ester Santana", "infra": "Catalina Bobadilla", "atp": "Verónica Díaz", "director": "Alejandra Fernández Espinoza"}, {"code": "1167", "name": "LICEO Y ESCUELA MUNICIPAL", "mes": "Octubre", "mesnum": 10, "dia": 8, "diasem": "Jueves", "iso": "2026-10-08", "fecha": "08/10/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Urbano", "tipo": "Liceo", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Valentina Rojas", "atp": "Francisca Tapia", "director": "Marcelo Patricio Lazcano Collao"}, {"code": "1171", "name": "ESCUELA BASICA LA FRONTERA DE ALICAHUE", "mes": "Octubre", "mesnum": 10, "dia": 8, "diasem": "Jueves", "iso": "2026-10-08", "fecha": "08/10/2026", "hora": "", "lugar": "Slep", "comuna": "Cabildo", "area": "Rural", "tipo": "Escuela", "gp": "Claudia Vargas", "gae": "Jorge Aranda", "infra": "Valentina Rojas", "atp": "Fabiola Bustos", "director": "Felipe Cristián Iturrieta Lazo"}, {"code": "1148", "name": "LICEO JOSE MANUEL BORGOÑO NUNEZ", "mes": "Octubre", "mesnum": 10, "dia": 9, "diasem": "Viernes", "iso": "2026-10-09", "fecha": "09/10/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Urbano", "tipo": "Colegio", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Catalina Bobadilla", "atp": "Francisca Tapia", "director": "Cesar Benito Marchant Arredondo"}, {"code": "1153", "name": "ESCUELA BASICA EL CRUCERO", "mes": "Octubre", "mesnum": 10, "dia": 9, "diasem": "Viernes", "iso": "2026-10-09", "fecha": "09/10/2026", "hora": "", "lugar": "Petorca", "comuna": "Petorca", "area": "Rural", "tipo": "Escuela", "gp": "Tamara Sierra", "gae": "Ester Santana", "infra": "Valentina Rojas", "atp": "Claudia Aguilera", "director": "Andrés Fabián Gallardo Olivares"}, {"code": "1121", "name": "LICEO PULMAHUE DE LA LIGUA", "mes": "Octubre", "mesnum": 10, "dia": 13, "diasem": "Martes", "iso": "2026-10-13", "fecha": "13/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Liceo", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Paula Cataldo", "director": "Richard Vladimir Guzmán Rojas"}, {"code": "1143", "name": "ESCUELA BASICA QUEBRADILLA", "mes": "Octubre", "mesnum": 10, "dia": 13, "diasem": "Martes", "iso": "2026-10-13", "fecha": "13/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Susan Ramírez", "director": "Juan Pablo Espinoza Tordecilla"}, {"code": "1123", "name": "ESCUELA GABRIELA MISTRAL", "mes": "Octubre", "mesnum": 10, "dia": 14, "diasem": "Miercoles", "iso": "2026-10-14", "fecha": "14/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Urbano", "tipo": "Colegio", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Francisca Tapia", "director": "Víctor Miguel Quinteros González"}, {"code": "1131", "name": "ESC. BASICA CASAS VIEJAS DE LONGOTOMA", "mes": "Octubre", "mesnum": 10, "dia": 14, "diasem": "Miercoles", "iso": "2026-10-14", "fecha": "14/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Catalina Bobadilla", "atp": "Fabiola Bustos", "director": "Nolberto Antonio Jeldes Espinoza"}, {"code": "1133", "name": "ESC.BASICA LAS CASAS DE HUAQUEN", "mes": "Octubre", "mesnum": 10, "dia": 15, "diasem": "Jueves", "iso": "2026-10-15", "fecha": "15/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Susan Ramírez", "director": "Paola Yanoli Fernández Pérez"}, {"code": "1136", "name": "ESCUELA BASICA PUYANCON", "mes": "Octubre", "mesnum": 10, "dia": 15, "diasem": "Jueves", "iso": "2026-10-15", "fecha": "15/10/2026", "hora": "", "lugar": "Slep", "comuna": "La Ligua", "area": "Rural", "tipo": "Escuela", "gp": "Maythiare Palma", "gae": "Claudio Roa", "infra": "Valentina Rojas", "atp": "Leandro Ríos", "director": "María Verónica Godoy Álvarez"}];
+const ROLE_LABEL={atp:'Apoyo Técnico Pedagógico',gp:'Gestión de Personas',gae:'Apoyo a Establecimientos',infra:'Infraestructura'};
+const ATTENDEES='';
+const MESNAME={7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre'};
+const $=s=>document.querySelector(s);
+let VIEW='list';
+
+function comunaKey(c){return (c||'').toLowerCase().replace(/\s+/g,'').replace(/í/g,'i');}
+function comunaClass(c){return 'c-'+comunaKey(c);}
+function lugarInfo(l){
+  if(l==='Slep')return {txt:'SLEP Petorca · Sala Pullally',cls:'lugar'};
+  if(l==='Petorca')return {txt:'Petorca · Espacio por definir',cls:'lugar pet'};
+  return {txt:'Lugar por definir',cls:'lugar'};
+}
+function pad(n){return String(n).padStart(2,'0');}
+function outlookUrl(ev,role){
+  const base='https://outlook.office.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent';
+  const loc=lugarInfo(ev.lugar).txt;
+  const prof=ev[role]||'';
+  const body=`Reunión de revisión de dotación.\nEstablecimiento: ${ev.code} - ${ev.name}\nContraparte ${ROLE_LABEL[role]}: ${prof}\nDirección: ${ev.director||''}\nAsistentes: Marcela Ortega, Mauricio Urrutia`;
+  let p=`&subject=${encodeURIComponent('Reunión Dotación 2027 — '+ev.code+' - '+ev.name)}`+
+        `&location=${encodeURIComponent(loc)}&body=${encodeURIComponent(body)}`;
+  if(ev.hora){const [hh,mm]=ev.hora.split(':');let eh=+hh+1,em=+mm+30;if(em>=60){em-=60;eh++;}
+    p+=`&startdt=${ev.iso}T${pad(+hh)}:${pad(+mm)}:00&enddt=${ev.iso}T${pad(eh)}:${pad(em)}:00`;}
+  else{const [y,m,d]=ev.iso.split('-');const nd=new Date(Date.UTC(+y,+m-1,+d+1));
+    p+=`&allday=true&startdt=${ev.iso}&enddt=${nd.getUTCFullYear()}-${pad(nd.getUTCMonth()+1)}-${pad(nd.getUTCDate())}`;}
+  return base+p;
+}
+function fill(sel,vals,all){const el=$(sel);const keep=el.value;
+  el.innerHTML=`<option value="">${all}</option>`+vals.map(v=>`<option value="${v}">${v}</option>`).join('');
+  if([...el.options].some(o=>o.value===keep))el.value=keep;}
+function refreshProf(){const role=$('#fRole').value;
+  fill('#fProf',[...new Set(EVENTOS.map(e=>e[role]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),'Todos');}
+function initFilters(){refreshProf();
+  fill('#fComuna',[...new Set(EVENTOS.map(e=>e.comuna).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),'Todas');
+  const mo=[...new Set(EVENTOS.map(e=>e.mesnum))].sort((a,b)=>a-b);
+  fill('#fMes',mo.map(m=>MESNAME[m]),'Todos');}
+
+function currentRows(){
+  const role=$('#fRole').value,fp=$('#fProf').value,fc=$('#fComuna').value,fm=$('#fMes').value,fl=$('#fLugar').value;
+  const fs=$('#fSearch').value.trim().toLowerCase();
+  return EVENTOS.filter(e=>(!fp||e[role]===fp)&&(!fc||e.comuna===fc)&&(!fm||MESNAME[e.mesnum]===fm)&&(!fl||e.lugar===fl)&&
+    (!fs||e.name.toLowerCase().includes(fs)||e.code.includes(fs)));
+}
+function renderList(rows,role){
+  const el=$('#listView');
+  if(!rows.length){el.innerHTML='<div class="empty">No hay reuniones con estos filtros.</div>';return;}
+  const g={};rows.forEach(e=>{(g[e.iso]=g[e.iso]||[]).push(e);});
+  el.innerHTML=Object.keys(g).sort().map(iso=>{const day=g[iso],f=day[0];
+    const cards=day.map(e=>{const li=lugarInfo(e.lugar);
+      const hora=e.hora?`<span class="chip hora">🕐 ${e.hora}</span>`:`<span class="chip tbd">Horario por definir</span>`;
+      return `<div class="card"><div><div class="est">${e.code} - ${e.name}</div></div>
+        <div class="chips"><span class="chip comuna ${comunaClass(e.comuna)}">${e.comuna||'—'}</span>
+        ${e.tipo?`<span class="chip">${e.tipo}</span>`:''}${hora}<span class="chip ${li.cls}">${li.txt}</span></div>
+        <div class="meta"><span class="prof">Acompaña (${ROLE_LABEL[role]}): <b>${e[role]||'—'}</b></span>
+        ${e.director?`<span>Dirección: ${e.director}</span>`:''}</div>
+        <a class="addbtn" target="_blank" rel="noopener" href="${outlookUrl(e,role)}">＋ Agregar a Outlook</a></div>`;
+    }).join('');
+    return `<section class="day"><h2>${f.fecha}<span class="d">${f.diasem} · ${f.mes}</span></h2><div class="cards">${cards}</div></section>`;
+  }).join('');
+}
+function renderCal(rows,role){
+  const el=$('#calView');
+  const byIso={};rows.forEach(e=>{(byIso[e.iso]=byIso[e.iso]||[]).push(e);});
+  const months=[...new Set(EVENTOS.map(e=>e.mesnum))].sort((a,b)=>a-b);
+  const wd=['Lun','Mar','Mié','Jue','Vie'];
+  let out='';
+  months.forEach(m=>{
+    let cells='';
+    const first=new Date(2026,m-1,1);let dow=(first.getDay()+6)%7; // 0=Mon
+    const dim=new Date(2026,m,0).getDate();
+    // leading blanks (only Mon-Fri columns)
+    for(let i=0;i<dow&&i<5;i++)cells+='<div class="cell empty"></div>';
+    for(let d=1;d<=dim;d++){
+      const day=new Date(2026,m-1,d);const wi=(day.getDay()+6)%7;
+      if(wi>4)continue; // skip weekend
+      const iso=`2026-${pad(m)}-${pad(d)}`;const evs=byIso[iso]||[];
+      const evhtml=evs.sort((a,b)=>(a.hora||'99').localeCompare(b.hora||'99')).map(e=>
+        `<button class="evc l-${comunaKey(e.comuna)}" title="${e.code} - ${e.name} — ${e.comuna}\n${e.hora?('Hora '+e.hora):'Horario por definir'} · ${lugarInfo(e.lugar).txt}\nAcompaña: ${e[role]||'—'}" onclick="window.open('${outlookUrl(e,role)}','_blank')">${e.hora?`<span class="t">${e.hora}</span> `:''}${e.code} - ${e.name}</button>`
+      ).join('');
+      cells+=`<div class="cell${evs.length?'':' '}"><span class="num">${d}</span>${evhtml}</div>`;
+      if(wi===4){/* Friday ends the row naturally in 5-col grid */}
+    }
+    out+=`<section class="month"><h3>${MESNAME[m]} 2026</h3><div class="cal">${wd.map(w=>`<div class="hd">${w}</div>`).join('')}${cells}</div></section>`;
+  });
+  out+=`<div class="cal-legend">${['La Ligua','Cabildo','Petorca','Papudo'].map(c=>`<span><span class="dot" style="background:${{'La Ligua':'#6366f1',Cabildo:'#c026d3',Petorca:'#d97706',Papudo:'#059669'}[c]}"></span>${c}</span>`).join('')}<span>· Haz clic en una reunión para agregarla a Outlook</span></div>`;
+  el.innerHTML=out;
+}
+function render(){
+  const role=$('#fRole').value;const rows=currentRows();
+  $('#count').innerHTML=`<b>${rows.length}</b> reunion${rows.length===1?'':'es'}`+(rows.length!==EVENTOS.length?` de ${EVENTOS.length}`:'');
+  if(VIEW==='list'){renderList(rows,role);}else{renderCal(rows,role);}
+}
+function setView(v){VIEW=v;
+  $('#vList').classList.toggle('on',v==='list');$('#vCal').classList.toggle('on',v==='cal');
+  $('#listView').classList.toggle('hidden',v!=='list');$('#calView').classList.toggle('hidden',v!=='cal');
+  render();}
+['#fProf','#fComuna','#fMes','#fLugar','#fSearch'].forEach(s=>$(s).addEventListener('input',render));
+$('#fRole').addEventListener('change',()=>{refreshProf();render();});
+$('#vList').addEventListener('click',()=>setView('list'));
+$('#vCal').addEventListener('click',()=>setView('cal'));
+$('#clear').addEventListener('click',()=>{['#fProf','#fComuna','#fMes','#fLugar'].forEach(s=>$(s).value='');$('#fSearch').value='';$('#fRole').value='atp';refreshProf();render();});
+initFilters();render();
+</script>
+</body>
+</html>
