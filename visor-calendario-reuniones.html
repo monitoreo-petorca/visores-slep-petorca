@@ -25,12 +25,15 @@
   .note .box{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:9px 13px;font-size:.82rem}
   .controls{max-width:1180px;margin:16px auto 0;padding:0 20px}
   .grid-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  .field{display:flex;flex-direction:column}
   .field label{display:block;font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:0 0 4px}
+  .field select,.field input[type=text]{margin-top:auto}
   select,input[type=text]{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:.9rem;color:var(--ink);appearance:none}
   select:focus,input:focus{outline:2px solid var(--brand2);outline-offset:-1px;border-color:var(--brand2)}
   .row2{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
   .count{font-size:.9rem;color:var(--muted)}.count b{color:var(--ink)}
   .spacer{margin-left:auto}
+  .viewlbl{font-size:.82rem;color:var(--muted);font-weight:600;margin-right:-4px}
   .toggle{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
   .toggle button{border:0;background:#fff;padding:8px 15px;font-size:.85rem;cursor:pointer;color:var(--muted);font-weight:600}
   .toggle button.on{background:var(--brand);color:#fff}
@@ -114,6 +117,7 @@
   <div class="row2">
     <span class="count" id="count"></span>
     <div class="spacer"></div>
+    <span class="viewlbl">Ver:</span>
     <div class="toggle"><button id="vList" class="on">Lista</button><button id="vCal">Calendario</button></div>
     <button class="clear" id="clear">Limpiar filtros</button>
   </div>
