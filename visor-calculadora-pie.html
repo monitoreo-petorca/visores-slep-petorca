@@ -268,6 +268,21 @@
   .hlogo{flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 13px;box-shadow:0 2px 8px rgba(24,39,38,.09);margin-top:4px}
   .hlogo img{height:46px;display:block}
   @media(max-width:640px){.hwrap{flex-wrap:wrap;gap:14px}.hlogo img{height:38px}}
+
+  .ecrear{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .asis-primary{background:var(--neet)!important;border-color:var(--neet)!important;color:#fff!important}
+  .asis-primary:hover{background:#0f6155!important}
+  .asis-status{flex:1 1 100%;font-size:12.5px;margin-top:6px;color:var(--muted);line-height:1.4}
+  .asis-status.ok{color:var(--ok)} .asis-status.err{color:var(--falta)} .asis-status.warn{color:var(--neep)}
+  .asis-status.load{color:var(--blue)}
+  .rowacts{display:flex;gap:2px;align-items:center}
+  .clonebtn{border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);border-radius:5px;padding:6px 9px;white-space:nowrap}
+  .clonebtn:hover{border-color:var(--neet);color:var(--neet);background:var(--neet-soft)}
+  .gtag{display:inline-block;font-size:10px;font-weight:600;color:var(--blue);background:var(--blue-soft);border:1px solid #cdd9e4;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle;text-transform:none;letter-spacing:0}
+  .piehint{font-size:12px;color:var(--muted);margin-top:6px}
+  .piehint b{font-weight:600;color:var(--ink)}
+  .piehint.warn{color:var(--neep)}
+  .matsrc{font-size:11px;color:var(--blue);font-style:italic;margin-left:4px}
 </style>
 </head>
 <body>
@@ -524,7 +539,7 @@ function fmtCron(h){const H=Math.floor(h+1e-9),m=Math.round((h-H)*60);return (m?
 function fmtPed(hc){return (hc/HP).toFixed(1).replace('.',',')+' hp';}
 function fte(hc){return (hc/JORNADA).toFixed(1).replace('.',',');}
 
-function addCurso(d){cursos.push({id:++uid,n:(d&&d.n)||("Curso "+(cursos.length+1)),neet:(d&&d.neet!=null)?d.neet:5,neep:(d&&d.neep!=null)?d.neep:1,mat:(d&&d.mat!=null)?d.mat:0,cap:(d&&d.cap!=null)?d.cap:0,jec:(d&&d.jec!=null)?d.jec:globalJec,mg:(d&&d.mg)||false,niveles:(d&&d.niveles)?d.niveles.slice():[]});}
+function addCurso(d){cursos.push({id:++uid,n:(d&&d.n)||("Curso "+(cursos.length+1)),neet:(d&&d.neet!=null)?d.neet:5,neep:(d&&d.neep!=null)?d.neep:1,mat:(d&&d.mat!=null)?d.mat:0,cap:(d&&d.cap!=null)?d.cap:0,jec:(d&&d.jec!=null)?d.jec:globalJec,mg:(d&&d.mg)||false,niveles:(d&&d.niveles)?d.niveles.slice():[],rbd:(d&&d.rbd)||null,grado:(d&&d.grado)||null,gLabel:(d&&d.gLabel)||null,letra:(d&&d.letra)||null,cupos:(d&&d.cupos!=null)?d.cupos:null,pie:(d&&d.pie!=null)?d.pie:null});}
 function loadCase(k){
   if(k==="clear"){cursos=[];render();return;}
   const c=CASES[k];globalJec=c.jec;
@@ -547,15 +562,15 @@ function render(){
     const el=document.createElement('div');el.className='curso';
     el.innerHTML=
       '<div class="ctop">'+
-        '<div class="field fname"><label>Curso</label><input type="text" value="'+esc(c.n)+'" data-id="'+c.id+'" data-f="name"></div>'+
+        '<div class="field fname"><label>Curso'+(c.gLabel?'<span class="gtag">'+esc(c.gLabel)+(c.letra?' '+c.letra:'')+'</span>':'')+'</label><input type="text" value="'+esc(c.n)+'" data-id="'+c.id+'" data-f="name"></div>'+
         '<div class="field"><label>Capacidad</label><input type="number" class="mat cap" min="0" value="'+(c.cap||'')+'" data-id="'+c.id+'" data-f="cap" placeholder="—"></div>'+
         '<div class="field"><label>Matrícula</label><input type="number" class="mat" min="0" value="'+(c.mat||'')+'" data-id="'+c.id+'" data-f="mat" placeholder="—"></div>'+
         '<div class="field"><label>NEET</label><span class="stepper"><button data-id="'+c.id+'" data-f="neet" data-d="-1">−</button><span class="v">'+c.neet+'</span><button data-id="'+c.id+'" data-f="neet" data-d="1">+</button></span></div>'+
         '<div class="field"><label>NEEP</label><span class="stepper"><button data-id="'+c.id+'" data-f="neep" data-d="-1">−</button><span class="v">'+c.neep+'</span><button data-id="'+c.id+'" data-f="neep" data-d="1">+</button></span></div>'+
         '<div class="field"><label>Jornada</label><button class="jec-mini '+(c.jec?'on':'')+'" data-id="'+c.id+'" data-f="jec">'+(c.jec?'CON JEC':'SIN JEC')+'</button></div>'+
-        '<button class="del" data-id="'+c.id+'" data-f="del" title="Quitar">×</button>'+
+        '<div class="rowacts"><button class="clonebtn" data-id="'+c.id+'" data-f="clone" title="Añadir grupo curso a este nivel (clonar la letra)">＋ grupo</button><button class="del" data-id="'+c.id+'" data-f="del" title="Quitar">×</button></div>'+
       '</div>'+
-      (c.cap>0?'<div class="occline'+(over?' over':'')+'">Ocupación '+occ+'% · '+(c.mat||0)+'/'+c.cap+(over?' · sobrecupo':'')+'</div>':'')+
+      (c.cap>0?'<div class="occline'+(over?' over':'')+'">Ocupación '+occ+'% · '+(c.mat||0)+'/'+c.cap+(over?' · sobrecupo':'')+'</div>':'')+(c.pie!=null?'<div class="piehint'+(((c.neet+c.neep)!==c.pie)?' warn':'')+'">Alumnos PIE en asistencia: <b>'+c.pie+'</b> · asignados NEET+NEEP: <b>'+(c.neet+c.neep)+'</b>'+(((c.neet+c.neep)!==c.pie)?' — ajusta el reparto':' \u2713')+'</div>':'')+
       '<div class="mgline">'+
         '<button class="mg-toggle '+(c.mg?'on':'')+'" data-id="'+c.id+'" data-f="mg">'+(c.mg?'✓ Multigrado':'Multigrado')+'</button>'+
         (c.mg?'<span class="mg-help">El aula multigrado cuenta como un solo curso para el DS 170: un tramo de horas base y un cupo 5+2.</span>':'')+
@@ -675,7 +690,8 @@ function renderImput(){
 document.getElementById('rows').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   const id=+b.dataset.id,f=b.dataset.f;
-  if(f==='del'){cursos=cursos.filter(x=>x.id!==id);render();return;}
+  if(f==='clone'){cloneCurso(id);return;}
+  if(f==='del'){var _c=cursos.find(x=>x.id===id);var _r=_c&&_c.rbd,_g=_c&&_c.grado;cursos=cursos.filter(x=>x.id!==id);if(_r&&_g)resplitGrade(_r,_g);render();return;}
   if(f==='jec'){const c=cursos.find(x=>x.id===id);c.jec=c.jec?0:1;render();return;}
   if(f==='mg'){const c=cursos.find(x=>x.id===id);c.mg=!c.mg;render();return;}
   if(f==='lvl'){const c=cursos.find(x=>x.id===id);const l=+b.dataset.l;const i=c.niveles.indexOf(l);if(i>=0)c.niveles.splice(i,1);else c.niveles.push(l);render();return;}
@@ -722,6 +738,136 @@ document.getElementById('pList').addEventListener('click',e=>{
 
 // ===== Directorio SLEP Petorca (referencia) =====
 const DIRECTORY=[{"rbd": "40242", "nom": "COLEGIO BICENTENARIO", "com": "Cabildo", "area": "U", "pie": false, "micro": null, "comb": false, "prio": 63.8, "mat": 222, "gc": 8, "cob": "1° a 8° Básico", "tipo": "Escuela"}, {"rbd": "11196", "nom": "CTRO.REC.ATENC.DIVERS.CRAD PAUL PERCY HARRIS", "com": "Cabildo", "area": "U", "pie": false, "micro": null, "comb": false, "prio": 0.0, "mat": 47, "gc": 13, "cob": "NT1 a Laboral 3", "tipo": "Escuela Especial"}, {"rbd": "1180", "nom": "ESCUELA BASICA G-45", "com": "Cabildo", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 64.0, "mat": 232, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1182", "nom": "ESCUELA BASICA G-47", "com": "Cabildo", "area": "R", "pie": false, "micro": "Valles de Cabildo", "comb": true, "prio": 39.5, "mat": 8, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1171", "nom": "ESCUELA BASICA LA FRONTERA DE ALICAHUE", "com": "Cabildo", "area": "R", "pie": false, "micro": "Valles de Cabildo", "comb": true, "prio": 79.5, "mat": 13, "gc": 6, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1178", "nom": "ESCUELA BASICA LA VIÑA", "com": "Cabildo", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 73.7, "mat": 158, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1181", "nom": "ESCUELA BASICA LOS ANGELES", "com": "Cabildo", "area": "R", "pie": false, "micro": "Valles de Cabildo", "comb": true, "prio": 89.9, "mat": 6, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "14479", "nom": "ESCUELA BASICA MUNICIPAL ARAUCARIA", "com": "Cabildo", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 75.3, "mat": 337, "gc": 19, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1174", "nom": "ESCUELA BASICA SAN LORENZO", "com": "Cabildo", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 73.6, "mat": 91, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1170", "nom": "ESCUELA BASICA VALLE DE ARTIFICIO", "com": "Cabildo", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 72.8, "mat": 128, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1173", "nom": "ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO", "com": "Cabildo", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 79.8, "mat": 114, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1168", "nom": "ESCUELA HANS WENKE MENGERS", "com": "Cabildo", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 75.8, "mat": 323, "gc": 19, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "11206", "nom": "ESCUELA MUNICIPAL LAS PUERTAS", "com": "Cabildo", "area": "R", "pie": false, "micro": "Valles de Cabildo", "comb": true, "prio": 38.5, "mat": 10, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1176", "nom": "ESCUELA PABLO NERUDA", "com": "Cabildo", "area": "R", "pie": true, "micro": "Valles de Cabildo", "comb": true, "prio": 79.0, "mat": 36, "gc": 8, "cob": "NT1 a 6° Básico", "tipo": "Escuela"}, {"rbd": "12336", "nom": "LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA", "com": "Cabildo", "area": "U", "pie": false, "micro": null, "comb": false, "prio": 72.0, "mat": 467, "gc": 15, "cob": "1° a 4° Medio", "tipo": "Liceo"}, {"rbd": "1167", "nom": "LICEO Y ESCUELA MUNICIPAL", "com": "Cabildo", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 79.3, "mat": 534, "gc": 21, "cob": "1° Medio a 2° Nivel", "tipo": "Liceo"}, {"rbd": "5402002", "nom": "RINCONCITO", "com": "Cabildo", "area": "U", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogénea  a Nivel Medio Mixto", "tipo": "Sala Cuna y Jardín Infantil"}, {"rbd": "5402004", "nom": "SANTA MARTA", "com": "Cabildo", "area": "R", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogénea  a Nivel Medio Mixto", "tipo": "Sala Cuna y Jardín Infantil"}, {"rbd": "1134", "nom": "CARMEN SANCHEZ ARAYA", "com": "La Ligua", "area": "R", "pie": true, "micro": "Sembrando Futuro", "comb": true, "prio": 59.0, "mat": 16, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1120", "nom": "CENTRO DE EDUCACION DE ADULTOS LA LIGUA", "com": "La Ligua", "area": "U", "pie": false, "micro": null, "comb": true, "prio": 0.0, "mat": 55, "gc": 4, "cob": "1er a 2do Nivel", "tipo": "Liceo"}, {"rbd": "11199", "nom": "COLEGIO LUIS CRUZ MARTINEZ", "com": "La Ligua", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 74.0, "mat": 636, "gc": 22, "cob": "NT1 a 4° Medio", "tipo": "Colegio"}, {"rbd": "5401006", "nom": "EL CARMEN CUNCUNITA", "com": "La Ligua", "area": "U", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogéna a Medio y Transición Convencional", "tipo": "Sala Cuna y Jardín Infantil"}, {"rbd": "1131", "nom": "ESC. BASICA CASAS VIEJAS DE LONGOTOMA", "com": "La Ligua", "area": "R", "pie": true, "micro": "Sembrando Futuro", "comb": true, "prio": 74.8, "mat": 31, "gc": 2, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1130", "nom": "ESC. BASICA LOS HORNOS DE HUAQUEN", "com": "La Ligua", "area": "R", "pie": false, "micro": "Sembrando Futuro", "comb": true, "prio": 84.6, "mat": 33, "gc": 3, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1133", "nom": "ESC.BASICA LAS CASAS DE HUAQUEN", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 75.0, "mat": 72, "gc": 6, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1129", "nom": "ESCUELA ANGEL MENAY", "com": "La Ligua", "area": "R", "pie": false, "micro": "Sembrando Futuro", "comb": true, "prio": 84.0, "mat": 12, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "12299", "nom": "ESCUELA BASICA ANEXO PICHILEMU", "com": "La Ligua", "area": "R", "pie": false, "micro": "Sembrando Futuro", "comb": true, "prio": 100.0, "mat": 8, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1140", "nom": "ESCUELA BASICA CARLOS ARIZTIA RUIZ", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 63.2, "mat": 60, "gc": 4, "cob": "1° a 8° Básico", "tipo": "Escuela"}, {"rbd": "1137", "nom": "ESCUELA BASICA HORTENCIA POWELL S.", "com": "La Ligua", "area": "R", "pie": false, "micro": "Sembrando Futuro", "comb": true, "prio": 66.1, "mat": 23, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1135", "nom": "ESCUELA BASICA LOS MOLLES", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 60.9, "mat": 52, "gc": 3, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1144", "nom": "ESCUELA BASICA PICHICUY", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 85.6, "mat": 39, "gc": 3, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1132", "nom": "ESCUELA BASICA POZA VERDE", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 78.6, "mat": 167, "gc": 7, "cob": "1° a 8° Básico", "tipo": "Escuela"}, {"rbd": "1136", "nom": "ESCUELA BASICA PUYANCON", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 80.8, "mat": 65, "gc": 5, "cob": "1° a 8° Básico", "tipo": "Escuela"}, {"rbd": "1143", "nom": "ESCUELA BASICA QUEBRADILLA", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 58.0, "mat": 32, "gc": 2, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1128", "nom": "ESCUELA COMUNIDADES DE VALLE HERMOSO", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 76.2, "mat": 282, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1125", "nom": "ESCUELA DIEGO PORTALES", "com": "La Ligua", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 81.0, "mat": 129, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1145", "nom": "ESCUELA ENRIQUE DOLL ROJAS", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 85.6, "mat": 51, "gc": 4, "cob": "1° a 8° Básico", "tipo": "Escuela"}, {"rbd": "1126", "nom": "ESCUELA ESPECIAL SOL NACIENTE", "com": "La Ligua", "area": "U", "pie": false, "micro": null, "comb": true, "prio": 0.0, "mat": 34, "gc": 4, "cob": "1° a 8° Básico", "tipo": "Escuela Especial"}, {"rbd": "1123", "nom": "ESCUELA GABRIELA MISTRAL", "com": "La Ligua", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 76.1, "mat": 722, "gc": 24, "cob": "NT1 a 4° Medio", "tipo": "Colegio"}, {"rbd": "1142", "nom": "ESCUELA LA CANELA", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 72.4, "mat": 46, "gc": 5, "cob": "1° a 8° Básico", "tipo": "Escuela"}, {"rbd": "1139", "nom": "ESCUELA MINISTRO GOMEZ MILLAS", "com": "La Ligua", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 72.4, "mat": 34, "gc": 7, "cob": "NT1 a 6° Básico", "tipo": "Escuela"}, {"rbd": "1122", "nom": "ESCUELA REPUBLICA DE VENEZUELA", "com": "La Ligua", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 77.3, "mat": 312, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "5401007", "nom": "HUMBERTO BASULTO", "com": "La Ligua", "area": "U", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogénea  a Nivel Medio Mixto", "tipo": "Sala Cuna y Jardín Infantil"}, {"rbd": "1121", "nom": "LICEO PULMAHUE DE LA LIGUA", "com": "La Ligua", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 78.7, "mat": 545, "gc": 20, "cob": "1° a 4° Medio", "tipo": "Liceo"}, {"rbd": "5401005", "nom": "MANITOS DE ANGEL", "com": "La Ligua", "area": "R", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogéna a Medio y Transición Convencional", "tipo": "Sala Cuna y Jardín Infantil"}, {"rbd": "5401004", "nom": "MANITOS DE COLORES", "com": "La Ligua", "area": "U", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogénea a Nivel Medio Mixto", "tipo": "Jardín Infantil"}, {"rbd": "5401003", "nom": "PULMAHUE", "com": "La Ligua", "area": "U", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogénea a Nivel Medio Mayor", "tipo": "Sala Cuna y Jardín Infantil"}, {"rbd": "5401002", "nom": "SANTA TERESA", "com": "La Ligua", "area": "U", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogénea a Nivel Medio Mixto", "tipo": "Sala Cuna y Jardín Infantil"}, {"rbd": "5403002", "nom": "BARQUITO DE PAPEL", "com": "Papudo", "area": "U", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "Nivel Medio Mixto", "tipo": "Jardín Infantil"}, {"rbd": "1191", "nom": "ESCUELA PAPUDO", "com": "Papudo", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 67.6, "mat": 295, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1192", "nom": "ESCUELA RURAL PULLALLY", "com": "Papudo", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 68.4, "mat": 289, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "40099", "nom": "LICEO TECNICO PROFESIONAL PAPUDO", "com": "Papudo", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 74.0, "mat": 198, "gc": 9, "cob": "1° a 4° Medio", "tipo": "Liceo"}, {"rbd": "5403001", "nom": "RAYITO DE SOL", "com": "Papudo", "area": "R", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogénea  a Nivel Medio Mixto", "tipo": "Sala Cuna y Jardín Infantil"}, {"rbd": "1158", "nom": "ESCUELA BASICA BENANCIO PEREZ", "com": "Petorca", "area": "R", "pie": true, "micro": "Incakán", "comb": true, "prio": 72.7, "mat": 7, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1153", "nom": "ESCUELA BASICA EL CRUCERO", "com": "Petorca", "area": "R", "pie": false, "micro": "Incakán", "comb": true, "prio": 100.0, "mat": 3, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1156", "nom": "ESCUELA BASICA G-24", "com": "Petorca", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 90.6, "mat": 40, "gc": 5, "cob": "1° a 8° Básico", "tipo": "Escuela"}, {"rbd": "1157", "nom": "ESCUELA BASICA LOS ALAMOS EL SOBRANTE", "com": "Petorca", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 78.8, "mat": 33, "gc": 4, "cob": "NT1 a 6° Básico", "tipo": "Escuela"}, {"rbd": "1150", "nom": "ESCUELA BASICA NEFTALI REYES B.", "com": "Petorca", "area": "R", "pie": true, "micro": "Incakán", "comb": true, "prio": 58.3, "mat": 7, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1161", "nom": "ESCUELA BASICA PEDEGUA", "com": "Petorca", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 80.7, "mat": 174, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1151", "nom": "ESCUELA BASICA VILLA SANTA ANA", "com": "Petorca", "area": "R", "pie": true, "micro": "Incakán", "comb": true, "prio": 78.9, "mat": 5, "gc": 1, "cob": "1° a 6° Básico", "tipo": "Escuela"}, {"rbd": "1152", "nom": "ESCUELA EDUARDO FREI MONTALVA", "com": "Petorca", "area": "R", "pie": true, "micro": null, "comb": true, "prio": 85.1, "mat": 70, "gc": 7, "cob": "NT1 a 6° Básico", "tipo": "Escuela"}, {"rbd": "1147", "nom": "ESCUELA FERNANDO GARCIA OLDINI", "com": "Petorca", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 69.7, "mat": 99, "gc": 10, "cob": "NT1 a 8° Básico", "tipo": "Escuela"}, {"rbd": "1160", "nom": "ESCUELA HOGAR FRONTERIZA DE CHALACO", "com": "Petorca", "area": "R", "pie": true, "micro": "Incakán", "comb": true, "prio": 74.4, "mat": 9, "gc": 3, "cob": "NT1 a 6° Básico", "tipo": "Escuela"}, {"rbd": "5404001", "nom": "LAMPARITA", "com": "Petorca", "area": "U", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Menor a Nivel Medio Mixto", "tipo": "Sala Cuna y Jardín Infantil"}, {"rbd": "1149", "nom": "LICEO CORDILLERA", "com": "Petorca", "area": "R", "pie": true, "micro": null, "comb": false, "prio": 78.2, "mat": 151, "gc": 15, "cob": "NT1 a 4° Medio", "tipo": "Colegio"}, {"rbd": "1148", "nom": "LICEO JOSE MANUEL BORGOÑO NUNEZ", "com": "Petorca", "area": "U", "pie": true, "micro": null, "comb": false, "prio": 79.0, "mat": 422, "gc": 30, "cob": "NT1 a 2° Nivel", "tipo": "Colegio"}, {"rbd": "5404003", "nom": "MIS PRIMEROS PASOS", "com": "Petorca", "area": "R", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogénea", "tipo": "Sala Cuna"}, {"rbd": "5404002", "nom": "MUNDO DE PEQUES", "com": "Petorca", "area": "R", "pie": false, "micro": null, "comb": false, "prio": null, "mat": null, "gc": null, "cob": "SC Heterogénea", "tipo": "Sala Cuna"}];
+// ===== Capacidad SAE (anual, precargada) + Matrícula/PIE en vivo (visor-asistencia) =====
+const SAE={"corte":"2026-07-21","cap":{"11199":{"m3":72,"b7":72,"m1":72,"m2":72,"b8":72,"m4":72,"b1":35,"b2":35,"b6":72,"b5":35,"nt1":30,"nt2":30,"b3":35,"b4":35},"1123":{"m2":70,"b6":70,"b8":70,"m3":70,"nt1":30,"nt2":30,"b1":35,"b2":35,"b3":35,"b4":70,"b5":70,"b7":70,"m1":70,"m4":70},"12336":{"m2":120,"m3":120,"m1":120,"m4":116},"1133":{"b6":11,"b1":17,"b2":16,"b3":8,"b4":12,"b5":16},"1143":{"b1":5,"b2":6,"b3":7,"b4":7,"b5":9,"b6":3},"1176":{"nt1":15,"nt2":15,"b1":15,"b2":15,"b3":15,"b4":15,"b5":15,"b6":15},"1136":{"b8":20,"b7":20,"b1":12,"b2":12,"b3":14,"b4":10,"b5":15,"b6":9},"1121":{"m2":150,"m1":155,"m3":150,"m4":150},"1191":{"b4":35,"b2":30,"nt1":30,"nt2":30,"b1":30,"b3":35,"b5":40,"b6":35,"b7":35,"b8":38},"1145":{"b4":10,"b1":10,"b2":10,"b3":10,"b5":10,"b6":10,"b7":10,"b8":10},"1167":{"m3":160,"m1":200,"m2":165,"m4":160},"1144":{"b6":10,"b1":10,"b2":10,"b3":10,"b4":10,"b5":10},"1132":{"b2":17,"b1":21,"b3":21,"b4":21,"b5":21,"b6":26,"b7":30,"b8":30},"1125":{"b7":24,"nt1":15,"nt2":20,"b1":24,"b2":24,"b3":24,"b4":24,"b5":24,"b6":24,"b8":24},"1147":{"b1":20,"nt1":20,"nt2":20,"b2":20,"b3":20,"b4":20,"b5":20,"b6":20,"b7":20,"b8":20},"1122":{"nt1":32,"nt2":32,"b1":36,"b2":36,"b3":36,"b4":36,"b5":36,"b6":36,"b7":36,"b8":36},"1128":{"nt1":30,"nt2":30,"b1":30,"b2":33,"b3":33,"b4":33,"b5":33,"b6":33,"b7":33,"b8":33},"1129":{"b1":5,"b2":5,"b3":5,"b4":4,"b5":4,"b6":3},"1130":{"b1":9,"b2":6,"b3":6,"b4":6,"b5":2,"b6":8},"1131":{"b1":5,"b2":10,"b3":4,"b4":5,"b5":2,"b6":8},"1134":{"b1":4,"b2":4,"b3":4,"b4":4,"b5":5,"b6":4},"1135":{"b1":7,"b2":13,"b3":9,"b4":11,"b5":10,"b6":10},"1137":{"b1":5,"b2":6,"b3":6,"b4":4,"b5":4,"b6":5},"1139":{"nt1":11,"nt2":11,"b1":8,"b2":8,"b3":10,"b4":6,"b5":8,"b6":8},"1140":{"b1":10,"b2":10,"b3":10,"b4":10,"b5":10,"b6":10},"1142":{"b1":10,"b2":10,"b3":10,"b4":10,"b5":10,"b6":10,"b7":20,"b8":20},"1148":{"nt1":20,"nt2":20,"b1":20,"b2":20,"b3":20,"b4":25,"b5":25,"b6":25,"b7":40,"b8":35,"m1":70,"m2":70,"m3":75,"m4":76},"1149":{"nt1":30,"nt2":30,"b1":30,"b2":30,"b3":30,"b4":30,"b5":30,"b6":30,"b7":30,"b8":30,"m1":30,"m2":30,"m3":30,"m4":30},"1150":{"b1":5,"b2":5,"b3":5,"b4":5,"b5":5,"b6":5},"1151":{"b1":4,"b2":4,"b3":2,"b4":2,"b5":2,"b6":2},"1152":{"nt1":10,"nt2":10,"b1":15,"b2":17,"b3":15,"b4":15,"b5":15,"b6":15},"1153":{"b1":3,"b2":3,"b3":3,"b4":3,"b5":3,"b6":3},"1156":{"b1":10,"b2":10,"b3":10,"b4":10,"b5":10,"b6":10,"b7":20,"b8":20},"1157":{"nt1":10,"nt2":10,"b1":10,"b2":10,"b3":10,"b4":10,"b5":10,"b6":10},"1158":{"b1":5,"b2":5,"b3":5,"b4":5,"b5":5,"b6":5},"1160":{"nt1":6,"nt2":6,"b1":4,"b2":4,"b3":3,"b4":3,"b5":3,"b6":3},"1161":{"nt1":26,"nt2":26,"b1":26,"b2":26,"b3":26,"b4":26,"b5":26,"b6":26,"b7":26,"b8":26},"1168":{"nt1":60,"nt2":60,"b1":70,"b2":70,"b3":70,"b4":70,"b5":70,"b6":70,"b7":70,"b8":70},"1170":{"nt1":19,"nt2":19,"b1":19,"b2":19,"b3":19,"b4":19,"b5":21,"b6":19,"b7":19,"b8":19},"1171":{"b1":8,"b2":8,"b3":8,"b4":8,"b5":8,"b6":8},"1173":{"nt1":15,"nt2":20,"b1":20,"b2":20,"b3":20,"b4":20,"b5":22,"b6":22,"b7":22,"b8":22},"1174":{"nt1":15,"nt2":15,"b1":20,"b2":20,"b3":20,"b4":15,"b5":20,"b6":10,"b7":15,"b8":20},"1178":{"nt1":25,"nt2":25,"b1":25,"b2":25,"b3":25,"b4":25,"b5":25,"b6":25,"b7":25,"b8":25},"1180":{"nt1":24,"nt2":24,"b1":24,"b2":24,"b3":24,"b4":24,"b5":24,"b6":22,"b7":30,"b8":30},"1181":{"b1":5,"b2":5,"b3":5,"b4":5,"b5":5,"b6":5},"1182":{"b1":2,"b2":1,"b3":1,"b4":2,"b5":5,"b6":1},"1192":{"nt1":32,"nt2":32,"b1":32,"b2":36,"b3":30,"b4":34,"b5":37,"b6":34,"b7":34,"b8":39},"11206":{"b1":5,"b2":5,"b3":5,"b4":5,"b5":5,"b6":5},"12299":{"b1":3,"b2":3,"b3":3,"b4":5,"b5":3,"b6":3},"14479":{"nt1":30,"nt2":50,"b1":50,"b2":50,"b3":50,"b4":50,"b5":60,"b6":60,"b7":60,"b8":60},"40099":{"m1":68,"m2":62,"m3":60,"m4":60},"40242":{"b1":32,"b2":32,"b3":32,"b4":32,"b5":32,"b6":32,"b7":32,"b8":32}}};
+const SAE_CAP=SAE.cap, SAE_CORTE=SAE.corte;
+const ASIS_URL=(typeof window!=='undefined'&&window.__ASIS_URL)||'visor-asistencia.html';
+let asisCache=null, asisFecha=null;
+const GORDER=['nt1','nt2','b1','b2','b3','b4','b5','b6','b7','b8','m1','m2','m3','m4'];
+function gradeKey(nivel){
+  var t=norm(nivel).replace(/\u00a0/g,' ');
+  if(t.indexOf('prekinder')>=0||t.indexOf('pre-kinder')>=0)return 'nt1';
+  if(t.indexOf('kinder')>=0)return 'nt2';
+  var m=t.match(/(\d+)\s*[^a-z0-9]?\s*basic/); if(m)return 'b'+parseInt(m[1],10);
+  m=t.match(/(\d+)\s*[^a-z0-9]?\s*medio/); if(m)return 'm'+parseInt(m[1],10);
+  return null;
+}
+function gradeLabel(k){
+  if(k==='nt1')return 'NT1 (Prekínder)';
+  if(k==='nt2')return 'NT2 (Kínder)';
+  if(!k)return '';
+  return k.slice(1)+'° '+(k[0]==='b'?'básico':'medio');
+}
+function parseAsisCurso(str){
+  var t=(str||'').replace(/\u00a0/g,' ').trim();
+  var m=t.match(/^(.*?)\s+([A-Z])$/);
+  if(m)return {grade:m[1].trim(), letra:m[2]};
+  return {grade:t, letra:null};
+}
+function evenSplit(total,count){
+  total=Math.max(0,Math.round(total||0));count=Math.max(1,count|0);
+  var base=Math.floor(total/count), extra=total-base*count, a=[],i;
+  for(i=0;i<count;i++)a.push(base+(i<extra?1:0));
+  return a;
+}
+// Regla del usuario: 35–76 → 2 · 77–115 → 3 · 116–120 → 4 · >120 → grupos de 35 + residual
+function splitCupos(total){
+  total=Math.max(0,Math.round(total||0));
+  if(total>120){var a=[],rem=total;while(rem>35){a.push(35);rem-=35;}a.push(rem);return a;}
+  var n = total<=34?1 : total<=76?2 : total<=115?3 : 4;
+  return evenSplit(total,n);
+}
+function extractD(html){
+  var m=html.match(/const D=(\{[\s\S]*?\});\s*\n\s*const MKEYS/);
+  if(!m)m=html.match(/const D=(\{[\s\S]*?\});/);
+  if(!m)throw new Error('estructura no reconocida');
+  return JSON.parse(m[1]);
+}
+async function fetchAsis(force){
+  if(asisCache&&!force)return asisCache;
+  var r=await fetch(ASIS_URL,{cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var D=extractD(await r.text());
+  asisCache=(D.pie&&D.pie.cursos)?D.pie.cursos:[];
+  asisFecha=(D.ocup&&D.ocup.meta&&D.ocup.meta.fecha)||null;
+  return asisCache;
+}
+function estabStatus(msg,cls){
+  var el=document.getElementById('asisStatus');
+  if(el){el.textContent=msg;el.className='asis-status'+(cls?' '+cls:'');}
+}
+function asisKey(rbd,grado,letra){return String(rbd)+'|'+grado+'|'+(letra||'');}
+function indexAsis(list){
+  var idx={};
+  list.forEach(function(c){var p=parseAsisCurso(c.curso);var k=gradeKey(p.grade)||('x:'+norm(p.grade));idx[asisKey(c.rbd,k,p.letra)]=c;});
+  return idx;
+}
+async function traerDeAsistencia(){
+  if(!estab)return;
+  estabStatus('Consultando matrícula del día en el visor de asistencia…','load');
+  var list;
+  try{list=await fetchAsis(true);}
+  catch(e){estabStatus('No se pudo leer el visor de asistencia ('+e.message+'). Puedes usar «Prellenar» o ingresar a mano.','err');return;}
+  var rbd=String(estab.rbd);
+  var mine=list.filter(function(c){return String(c.rbd)===rbd && (c.mat||c.pie);});
+  if(!mine.length){estabStatus('El visor de asistencia no reporta cursos con matrícula para este establecimiento hoy. Usa «Prellenar s/ cobertura» o ingresa a mano.','warn');return;}
+  var byG={};
+  mine.forEach(function(c){
+    var p=parseAsisCurso(c.curso); var k=gradeKey(p.grade); var key=k||('x:'+norm(p.grade));
+    (byG[key]=byG[key]||{k:k,label:k?gradeLabel(k):p.grade,items:[]}).items.push({letra:p.letra,mat:c.mat||0,pie:c.pie||0});
+  });
+  var keys=Object.keys(byG).sort(function(a,b){
+    var ia=GORDER.indexOf(byG[a].k),ib=GORDER.indexOf(byG[b].k);
+    if(ia<0)ia=99; if(ib<0)ib=99;
+    return ia-ib || (byG[a].label<byG[b].label?-1:1);
+  });
+  var cap=SAE_CAP[rbd]||{};
+  cursos=[];uid=0;
+  keys.forEach(function(key){
+    var grp=byG[key], k=grp.k;
+    grp.items.sort(function(a,b){return (a.letra||'')<(b.letra||'')?-1:1;});
+    var cupos=(k&&cap[k]!=null)?cap[k]:0;
+    var caps=evenSplit(cupos,grp.items.length);
+    grp.items.forEach(function(it,i){
+      var letra=it.letra||String.fromCharCode(65+i);
+      addCurso({n:grp.label+' '+letra,rbd:rbd,grado:k||key,gLabel:grp.label,letra:letra,
+        cupos:cupos,cap:caps[i],mat:it.mat,pie:it.pie,neet:it.pie||0,neep:0,jec:globalJec,mg:false,niveles:[]});
+    });
+  });
+  render();
+  estabStatus('Matrícula al '+(asisFecha||'día')+' (visor de asistencia) · capacidad SAE del '+SAE_CORTE+'. '+cursos.length+' grupos curso. El total PIE se cargó como NEET — ajusta el reparto NEET/NEEP en cada curso.','ok');
+}
+async function refrescarMatricula(){
+  if(!estab){estabStatus('Primero elige un establecimiento.','warn');return;}
+  if(!cursos.some(function(c){return c.rbd;}))return traerDeAsistencia();
+  estabStatus('Actualizando matrícula…','load');
+  var list;
+  try{list=await fetchAsis(true);}catch(e){estabStatus('No se pudo actualizar ('+e.message+').','err');return;}
+  var idx=indexAsis(list), n=0;
+  cursos.forEach(function(c){
+    if(!c.rbd||!c.grado)return;
+    var hit=idx[asisKey(c.rbd,c.grado,c.letra)];
+    if(hit){c.mat=hit.mat||0;c.pie=hit.pie||0;n++;}
+  });
+  render();
+  estabStatus('Matrícula actualizada al '+(asisFecha||'día')+' ('+n+' de '+cursos.length+' grupos emparejados).','ok');
+}
+function resplitGrade(rbd,grado){
+  var sibs=cursos.filter(function(c){return c.rbd===rbd&&c.grado===grado;});
+  if(!sibs.length)return;
+  var cupos=sibs[0].cupos||0, caps=evenSplit(cupos,sibs.length);
+  sibs.forEach(function(c,i){c.cap=caps[i];c.letra=String.fromCharCode(65+i);if(c.gLabel)c.n=c.gLabel+' '+c.letra;});
+}
+function cloneCurso(id){
+  var c=cursos.find(function(x){return x.id===id;});if(!c)return;
+  addCurso({n:c.n,rbd:c.rbd,grado:c.grado,gLabel:c.gLabel,letra:c.letra,cupos:c.cupos,cap:c.cap,mat:0,pie:null,neet:0,neep:0,jec:c.jec,mg:c.mg,niveles:c.niveles.slice()});
+  var nw=cursos.pop(), lastIdx=cursos.length-1;
+  if(c.rbd&&c.grado){cursos.forEach(function(x,i){if(x.rbd===c.rbd&&x.grado===c.grado)lastIdx=i;});}
+  cursos.splice(lastIdx+1,0,nw);
+  if(c.rbd&&c.grado)resplitGrade(c.rbd,c.grado);
+  render();
+}
+
 let estabMode='blank', estab=null, defaultMg=false;
 
 function badgesHtml(e){
@@ -749,13 +895,14 @@ function renderEstab(){
       '<div class="combo"><input type="text" id="estabInput" class="estab-sel" autocomplete="off" placeholder="Escribe RBD, nombre o comuna..." value="'+val+'">'+
         '<div class="combo-list" id="comboList" style="display:none"></div></div></div>'+
     (estab
-      ? '<div class="ebadges">'+badgesHtml(estab)+'</div><div class="ecrear"><button id="prellenar" class="mg-toggle">Prellenar cursos según cobertura</button>'+(estab.cob?'<span class="mg-help" style="margin-left:8px">Cobertura: '+esc(estab.cob)+(estab.comb?' · combinado':'')+'</span>':'')+'</div>'
+      ? '<div class="ebadges">'+badgesHtml(estab)+'</div><div class="ecrear">'+'<button id="btnAsis" class="mg-toggle asis-primary">Traer grupos curso + matrícula (asistencia)</button>'+'<button id="btnRefresh" class="mg-toggle">↻ Actualizar matrícula</button>'+'<button id="prellenar" class="mg-toggle">Prellenar s/ cobertura</button>'+(estab.cob?'<span class="mg-help" style="margin-left:8px">Cobertura: '+esc(estab.cob)+(estab.comb?' · combinado':'')+'</span>':'')+'<div id="asisStatus" class="asis-status"></div></div>'
       : '<div class="ehint">Empieza a escribir para ver coincidencias por RBD, nombre o comuna.</div>');
 }
 function selectEstab(rbd){
   estab=DIRECTORY.find(function(x){return x.rbd===rbd;})||null;
   if(estab){defaultMg=!!estab.comb;}
   renderEstab();compute();
+  if(estab){traerDeAsistencia();}
 }
 function crearCursos(){
   if(!estab)return;
@@ -858,6 +1005,8 @@ document.getElementById('estabBody').addEventListener('click',function(e){
   const item=e.target.closest('.combo-item');
   if(item){pickCombo(item.dataset.rbd);return;}
   if(e.target.id==='prellenar')prellenar();
+  if(e.target.id==='btnAsis')traerDeAsistencia();
+  if(e.target.id==='btnRefresh')refrescarMatricula();
 });
 document.addEventListener('click',function(e){
   if(!e.target.closest('.combo')){const l=document.getElementById('comboList');if(l)l.style.display='none';}
@@ -876,7 +1025,7 @@ function applyState(s){
   estabMode=s.estabMode||'blank';
   globalJec=(s.globalJec!=null)?s.globalJec:1;
   regimen=(s.regimen!=null)?s.regimen:0.65;
-  cursos=s.cursos.map(function(c){return {id:c.id,n:c.n,neet:c.neet||0,neep:c.neep||0,mat:c.mat||0,cap:c.cap||0,jec:c.jec?1:0,mg:!!c.mg,niveles:Array.isArray(c.niveles)?c.niveles.slice():[]};});
+  cursos=s.cursos.map(function(c){return {id:c.id,n:c.n,neet:c.neet||0,neep:c.neep||0,mat:c.mat||0,cap:c.cap||0,jec:c.jec?1:0,mg:!!c.mg,niveles:Array.isArray(c.niveles)?c.niveles.slice():[],rbd:c.rbd||null,grado:c.grado||null,gLabel:c.gLabel||null,letra:c.letra||null,cupos:(c.cupos!=null)?c.cupos:null,pie:(c.pie!=null)?c.pie:null};});
   personas=(s.personas||[]).map(function(p){return {id:p.id,name:p.name,rol:p.rol,horas:p.horas};});
   uid=cursos.reduce(function(m,c){return Math.max(m,c.id||0);},0);
   pid=personas.reduce(function(m,p){return Math.max(m,p.id||0);},0);
