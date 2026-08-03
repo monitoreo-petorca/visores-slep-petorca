@@ -831,11 +831,11 @@ async function traerDeAsistencia(){
     grp.items.forEach(function(it,i){
       var letra=it.letra||String.fromCharCode(65+i);
       addCurso({n:grp.label+' '+letra,rbd:rbd,grado:k||key,gLabel:grp.label,letra:letra,
-        cupos:cupos,cap:caps[i],mat:it.mat,pie:it.pie,neet:it.pie||0,neep:0,jec:globalJec,mg:false,niveles:[]});
+        cupos:cupos,cap:caps[i],mat:it.mat,pie:it.pie,neet:0,neep:0,jec:globalJec,mg:false,niveles:[]});
     });
   });
   render();
-  estabStatus('Matrícula al '+(asisFecha||'día')+' (visor de asistencia) · capacidad SAE del '+SAE_CORTE+'. '+cursos.length+' grupos curso. El total PIE se cargó como NEET — ajusta el reparto NEET/NEEP en cada curso.','ok');
+  estabStatus('Matrícula al '+(asisFecha||'día')+' (visor de asistencia) · capacidad SAE del '+SAE_CORTE+'. '+cursos.length+' grupos curso. El total de alumnos PIE del visor se muestra como referencia — ingresa el desglose NEET/NEEP en cada curso.','ok');
 }
 async function refrescarMatricula(){
   if(!estab){estabStatus('Primero elige un establecimiento.','warn');return;}
