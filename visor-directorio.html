@@ -814,6 +814,15 @@ header.top .priv{margin-top:8px;font-size:12px;background:rgba(255,255,255,.14);
 .mchip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;border:1px solid var(--line);border-radius:20px;padding:4px 11px;cursor:pointer;background:#fff;opacity:.42;user-select:none}
 .mchip.on{opacity:1;border-color:var(--azul)}
 .mchip i{width:11px;height:11px;border-radius:50%;display:inline-block}
+#qmap{flex:1;min-width:200px;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px}
+#qmap:focus{outline:none;border-color:var(--acc)}
+#mapsel{min-width:170px}
+.mpopq{width:100%;padding:6px 8px;margin-bottom:6px;border:1px solid var(--line);border-radius:6px;font-size:13px}
+#mapselopts{max-height:230px;overflow:auto}
+.maptoggle{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;color:var(--txt);cursor:pointer;white-space:nowrap}
+.mapclear{font-size:12.5px;color:var(--acc);cursor:pointer}
+.maplbl{font:600 11px/1.25 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1f2733;background:#fff;border:1px solid #cfd8e3;border-radius:6px;padding:3px 7px;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.maplbl span{font-weight:400;color:#5a6675;font-size:10px}
 .leaflet-popup-content{font:13px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;margin:10px 12px}
 .eelink{color:var(--txt);text-decoration:none;border-bottom:1px dotted var(--acc);cursor:pointer}
 .eelink:hover{color:var(--acc)}
@@ -937,7 +946,16 @@ header.top .priv{margin-top:8px;font-size:12px;background:rgba(255,255,255,.14);
 
 <div id="view-mapa" class="wrap" hidden>
   <div class="mapbar">
-    <span style="font-size:13px;color:var(--mut)">Comunas (clic para mostrar/ocultar):</span>
+    <input id="qmap" placeholder="Buscar en el mapa (nombre, RBD, comuna…)" autocomplete="off">
+    <div class="msel" id="mapsel">
+      <button type="button" class="mbtn"><span class="mlab">Seleccionar EE</span><span class="mcnt"></span><span class="mcar">▾</span></button>
+      <div class="pop"><input id="qmapsel" class="mpopq" placeholder="filtrar lista…" autocomplete="off"><div id="mapselopts"></div></div>
+    </div>
+    <label class="maptoggle"><input type="checkbox" id="maplabels"> Mostrar etiquetas</label>
+    <span class="mapclear" id="mapclear">↺ Limpiar</span>
+  </div>
+  <div class="mapbar" style="padding-top:0">
+    <span style="font-size:13px;color:var(--mut)">Comunas:</span>
     <span id="maplegend"></span>
     <span class="count" id="mapcount"></span>
   </div>
@@ -1424,46 +1442,82 @@ function closeConfirm(){ $('#confirmModal').hidden=true; _pendingRbd=null; }
 
 // ===== Vista: Mapa (Leaflet) =====
 const MAPCOLORS={'Cabildo':'#1d7dd6','La Ligua':'#137a4b','Papudo':'#b5540c','Petorca':'#7a3ca3'};
-let _map=null,_layers={},_mapComunas=new Set(META.comunas);
+let _map=null,_mk=[],_mapComunas=new Set(META.comunas),_mapLabels=false,_mapSel=new Set();
+function mapPopup(e,la,lo){
+  const mv=has(e.mat_jun26)?`${e.mat_jun26} (jun-2026)`:(has(e.mat_2026)?e.mat_2026+' (abril)':'—');
+  return `<b>${esc(e.nombre)}</b><br>RBD ${esc(e.rbd)} · ${esc(e.comuna)} · ${esc(e.tipo)}<br>`+
+    (has(e.director)?`👤 ${esc(e.director)}<br>`:'')+
+    (has(e.tel_institucional)?`☎ ${esc(fmtTel(e.tel_institucional))}<br>`:'')+
+    (has(e.correo_director)?`✉ <a href="mailto:${esc(String(e.correo_director).trim())}">${esc(e.correo_director)}</a><br>`:'')+
+    `🎓 Matrícula: ${esc(mv)}<br>`+
+    `<a href="https://www.google.com/maps?q=${la},${lo}" target="_blank" rel="noopener" title="Abre Google Maps en una pestaña nueva">Ver en Google Maps ↗ (pestaña nueva)</a> · `+
+    `<a href="#" onclick="askFicha('${esc(e.rbd)}');return false;">Ver ficha</a>`;
+}
+function mapLabel(e){
+  const mv=has(e.mat_jun26)?e.mat_jun26+' est.':(has(e.mat_2026)?e.mat_2026+' est.':'');
+  return `<b>${esc(e.nombre)}</b><br><span>RBD ${esc(e.rbd)} · ${esc(e.comuna)}${mv?' · '+esc(mv):''}</span>`;
+}
 function initMap(){
   if(_map) return;
   if(typeof L==='undefined'){ document.getElementById('map').innerHTML='<p style="padding:24px;color:var(--mut)">No se pudo cargar el mapa (requiere conexión a internet para las bibliotecas y mosaicos).</p>'; return; }
   _map=L.map('map',{scrollWheelZoom:true}).setView([-32.38,-71.13],10);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(_map);
-  const bounds=[];
   EE.forEach(e=>{
     const la=parseFloat(e.lat), lo=parseFloat(e.lng);
     if(!isFinite(la)||!isFinite(lo)) return;
-    const col=MAPCOLORS[e.comuna]||'#657085';
-    const m=L.circleMarker([la,lo],{radius:7,color:'#fff',weight:1.5,fillColor:col,fillOpacity:.92});
-    const mv=has(e.mat_jun26)?`${e.mat_jun26} (jun-2026)`:(has(e.mat_2026)?e.mat_2026+' (abril)':'—');
-    m.bindPopup(`<b>${esc(e.nombre)}</b><br>RBD ${esc(e.rbd)} · ${esc(e.comuna)} · ${esc(e.tipo)}<br>`+
-      (has(e.director)?`👤 ${esc(e.director)}<br>`:'')+
-      (has(e.tel_institucional)?`☎ ${esc(fmtTel(e.tel_institucional))}<br>`:'')+
-      (has(e.correo_director)?`✉ <a href="mailto:${esc(String(e.correo_director).trim())}">${esc(e.correo_director)}</a><br>`:'')+
-      `🎓 Matrícula: ${esc(mv)}<br>`+
-      `<a href="https://www.google.com/maps?q=${la},${lo}" target="_blank" rel="noopener" title="Abre Google Maps en una pestaña nueva">Ver en Google Maps ↗ (pestaña nueva)</a> · `+
-      `<a href="#" onclick="askFicha('${esc(e.rbd)}');return false;">Ver ficha</a>`);
-    (_layers[e.comuna]=_layers[e.comuna]||L.layerGroup().addTo(_map)).addLayer(m);
-    bounds.push([la,lo]);
+    const m=L.circleMarker([la,lo],{radius:7,color:'#fff',weight:1.5,fillColor:(MAPCOLORS[e.comuna]||'#657085'),fillOpacity:.92});
+    m.bindPopup(mapPopup(e,la,lo)); m._e=e;
+    _mk.push(m);
   });
-  if(bounds.length) _map.fitBounds(bounds,{padding:[30,30]});
-  buildLegend();
+  buildMapSelect(); buildLegend();
+  // wire controles del mapa
+  $('#qmap').addEventListener('input',()=>applyMapFilter(false));
+  $('#maplabels').addEventListener('change',()=>{ _mapLabels=$('#maplabels').checked; refreshLabels(); });
+  $('#mapclear').onclick=()=>{ _mapSel.clear(); $('#mapselopts').querySelectorAll('input').forEach(i=>i.checked=false); $('#qmap').value=''; _mapComunas=new Set(META.comunas); buildLegend(); applyMapFilter(true); syncMapSelBtn(); };
+  applyMapFilter(true);
+}
+function mapVisible(e){
+  if(!_mapComunas.has(e.comuna)) return false;
+  if(_mapSel.size && !_mapSel.has(e.rbd)) return false;
+  const q=norm($('#qmap').value||'');
+  if(q && !norm(`${e.nombre} ${e.rbd} ${e.comuna} ${e.tipo} ${e.director||''}`).includes(q)) return false;
+  return true;
+}
+function refreshLabels(){
+  _mk.forEach(m=>{ m.unbindTooltip(); if(_mapLabels) m.bindTooltip(mapLabel(m._e),{permanent:true,direction:'top',offset:[0,-6],className:'maplbl'}); });
+}
+function applyMapFilter(fit){
+  if(!_map) return;
+  const pts=[];
+  _mk.forEach(m=>{
+    if(mapVisible(m._e)){ if(!_map.hasLayer(m)) m.addTo(_map); pts.push(m.getLatLng()); }
+    else if(_map.hasLayer(m)) _map.removeLayer(m);
+  });
+  updateMapCount(pts.length);
+  if(fit && pts.length) _map.fitBounds(pts,{padding:[40,40],maxZoom:15});
 }
 function buildLegend(){
   $('#maplegend').innerHTML=META.comunas.map(c=>`<span class="mchip ${_mapComunas.has(c)?'on':''}" data-c="${esc(c)}"><i style="background:${MAPCOLORS[c]||'#657085'}"></i>${esc(c)}</span>`).join('');
   $('#maplegend').querySelectorAll('.mchip').forEach(ch=>ch.onclick=()=>{
-    const c=ch.dataset.c;
-    if(_mapComunas.has(c)){ _mapComunas.delete(c); if(_layers[c])_map.removeLayer(_layers[c]); }
-    else { _mapComunas.add(c); if(_layers[c])_layers[c].addTo(_map); }
-    ch.classList.toggle('on'); updateMapCount();
+    const c=ch.dataset.c; if(_mapComunas.has(c))_mapComunas.delete(c); else _mapComunas.add(c);
+    ch.classList.toggle('on'); applyMapFilter(true);
   });
-  updateMapCount();
 }
-function updateMapCount(){
-  const n=EE.filter(e=>_mapComunas.has(e.comuna)).length;
-  $('#mapcount').innerHTML=`<b>${n}</b> establecimientos en el mapa`;
+function buildMapSelect(){
+  const opts=EE.slice().sort((a,b)=>a.comuna.localeCompare(b.comuna,'es')||a.nombre.localeCompare(b.nombre,'es'))
+    .map(e=>`<label class="mopt" data-txt="${esc(norm(e.rbd+' '+e.nombre+' '+e.comuna))}"><input type="checkbox" value="${esc(e.rbd)}"><span>${esc(e.rbd)} – ${esc(e.nombre)}</span></label>`).join('');
+  $('#mapselopts').innerHTML=opts;
+  const ms=$('#mapsel'), btn=ms.querySelector('.mbtn'), pop=ms.querySelector('.pop');
+  btn.onclick=(ev)=>{ ev.stopPropagation(); const open=ms.classList.contains('open'); closeAllPops(); if(!open)ms.classList.add('open'); };
+  pop.onclick=ev=>ev.stopPropagation();
+  $('#qmapsel').addEventListener('input',e=>{ const q=norm(e.target.value); pop.querySelectorAll('.mopt').forEach(o=>o.style.display=(!q||o.dataset.txt.includes(q))?'':'none'); });
+  pop.querySelectorAll('input').forEach(inp=>inp.onchange=()=>{
+    if(inp.checked)_mapSel.add(inp.value); else _mapSel.delete(inp.value);
+    syncMapSelBtn(); applyMapFilter(true);
+  });
 }
+function syncMapSelBtn(){ const n=_mapSel.size; $('#mapsel .mcnt').textContent=n?` (${n})`:''; $('#mapsel').classList.toggle('has',n>0); $('#mapclear').style.display=(n||norm($('#qmap').value||'')||_mapComunas.size<META.comunas.length)?'inline':'none'; }
+function updateMapCount(n){ $('#mapcount').innerHTML=`<b>${n}</b> establecimientos en el mapa`; syncMapSelBtn(); }
 
 // ===== Tutorial guiado =====
 const TOUR=[
@@ -1475,7 +1529,7 @@ const TOUR=[
   {view:'directorio', sel:'#list', title:'Lista y ficha', text:'Haz clic en un establecimiento para abrir su <b>ficha completa</b> a la derecha: identificación, contrapartes y equipo directivo.'},
   {view:'telefonos', sel:'#teltable', title:'Teléfonos, correos y ubicación', text:'Tabla rápida de los 68 EE. <b>Ordena</b> por cualquier columna, <b>copia</b> correos y <b>exporta a CSV</b>. Al hacer clic en <b>RBD – Establecimiento</b> se abre su ficha (te pide confirmar, para evitar clics accidentales).'},
   {view:'telefonos', sel:'#teltable', title:'Columna Ubicación', text:'El enlace de la columna <b>Ubicación</b> abre el establecimiento en <b>Google Maps, en una pestaña nueva</b>.'},
-  {view:'mapa', sel:'#maplegend', title:'Mapa por comuna', text:'Cada punto es un establecimiento, coloreado por comuna. Usa la leyenda para <b>mostrar u ocultar</b> comunas.'},
+  {view:'mapa', sel:'.mapbar', title:'Mapa: buscar y filtrar', text:'Cada punto es un EE, coloreado por comuna. <b>Busca</b> en el mapa, elige varios EE con <b>Seleccionar EE</b>, activa <b>Mostrar etiquetas</b> para fijar el nombre sobre cada punto, y usa la leyenda para mostrar/ocultar comunas.'},
   {view:'mapa', sel:'#map', title:'Detalle en el mapa', text:'Haz clic en un punto para ver director, teléfono, correo y matrícula. Los enlaces del globo abren <b>Google Maps (pestaña nueva)</b> o la ficha del EE.'},
   {view:'anexos', sel:'#anxtable', title:'Anexos oficina', text:'Directorio interno de <b>anexos telefónicos</b> de la oficina central: busca por anexo, área o persona, filtra por área o piso y exporta a CSV.'},
   {view:'glosario', sel:'#glist', title:'Glosario', text:'¿Dudas con un término? En <b>Glosario</b> están las definiciones (prioritarios/SEP, IVE, PIE, PACE, SNED, ADECO, categoría de desempeño…). Además, en la ficha muchos términos muestran su <b>definición al pasar el mouse</b> (van subrayados con puntitos).'},
