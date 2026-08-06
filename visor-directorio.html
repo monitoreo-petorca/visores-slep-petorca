@@ -1026,7 +1026,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <button class="nom-mini" id="nom-ee-all">Todos (visibles)</button>
         <button class="nom-mini" id="nom-ee-none">Ninguno</button>
       </div>
-      <div id="nom-comchips" class="nom-tools"></div>
+      <div id="nom-facets" class="nom-tools"></div>
+        <div id="nom-comchips" class="nom-tools"></div>
       <div class="ee-list" id="nom-eelist"></div>
     </div>
   </div>
@@ -1523,7 +1524,7 @@ const NOM_GROUPS = [
 ];
 const NOM_LABELS={}; const NOM_ALLK=[]; NOM_GROUPS.forEach(gr=>gr.fields.forEach(f=>{NOM_LABELS[f[0]]=f[1];NOM_ALLK.push(f[0]);}));
 const NOM_BASIC=['rbd','nombre','comuna','tipo','area','director','correo_director','tel_institucional','mat_jun26'];
-const nomState={cols:new Set(NOM_BASIC), ees:new Set(EE.map(e=>e.rbd)), qcol:'', qee:'', com:new Set()};
+const nomState={cols:new Set(NOM_BASIC), ees:new Set(EE.map(e=>e.rbd)), qcol:'', qee:'', com:new Set(), facets:{}};
 let nomBuilt=false;
 EE.forEach(function(e){ e._dv=(typeof e.rbd_dv==='string'&&e.rbd_dv.indexOf('-')>=0)?e.rbd_dv.split('-').pop():''; });
 function nomVal(e,k){ let v=e[k]; if(Array.isArray(v)) v=v.filter(x=>x!==''&&x!=null).join(', '); return (v==null)?'':v; }
@@ -1541,6 +1542,36 @@ function nomBuildCols(){
   });
 }
 function nomComunas(){return [...new Set(EE.map(e=>e.comuna).filter(has))].sort((a,b)=>String(a).localeCompare(String(b),'es'));}
+const NOM_FACETS=[
+  {k:'area',label:'Área'},
+  {k:'microcentro',label:'Microcentro'},
+  {k:'cp_gp',label:'Contraparte GDP'},
+  {k:'cp_infra',label:'Contraparte Infra'},
+  {k:'cp_atp',label:'Contraparte ATP'},
+];
+function nomFacetOptions(k){ return [...new Set(EE.map(e=>e[k]).filter(has))].sort((a,b)=>String(a).localeCompare(String(b),'es')); }
+function nomBuildFacets(){
+  const c=$('#nom-facets');
+  c.innerHTML='<span style="font-size:12px;color:var(--mut);align-self:center;margin-right:2px">Filtros rápidos:</span>'+
+    NOM_FACETS.map(f=>{
+      const sel=nomState.facets[f.k]||[];
+      const opts=nomFacetOptions(f.k).map(o=>`<label class="mopt"><input type="checkbox" value="${esc(o)}" ${sel.indexOf(o)>=0?'checked':''}><span>${esc(o)}</span></label>`).join('')||'<span style="font-size:12px;color:var(--mut);padding:6px 10px;display:block">Sin datos</span>';
+      return `<div class="msel" data-fk="${f.k}"><button type="button" class="mbtn"><span class="mlab">${esc(f.label)}</span><span class="mcnt">${sel.length||''}</span><span class="mcar">▾</span></button><div class="pop">${opts}</div></div>`;
+    }).join('')+'<span class="nom-mini" id="nom-facet-reset" style="align-self:center">↺ Limpiar filtros</span>';
+  c.querySelectorAll('.msel').forEach(ms=>{
+    const k=ms.dataset.fk, btn=ms.querySelector('.mbtn'), pop=ms.querySelector('.pop');
+    btn.onclick=ev=>{ev.stopPropagation();const open=ms.classList.contains('open');if(typeof closeAllPops==='function')closeAllPops();if(!open)ms.classList.add('open');};
+    pop.onclick=ev=>ev.stopPropagation();
+    pop.querySelectorAll('input').forEach(inp=>inp.onchange=()=>{
+      const vals=[...pop.querySelectorAll('input:checked')].map(i=>i.value);
+      if(vals.length)nomState.facets[k]=vals; else delete nomState.facets[k];
+      const b=ms.querySelector('.mcnt'); if(b) b.textContent=vals.length||'';
+      nomBuildEEList(); nomUpdateCounts();
+    });
+  });
+  $('#nom-facet-reset').onclick=()=>{ nomState.facets={}; nomBuildFacets(); nomBuildEEList(); nomUpdateCounts(); };
+}
+
 function nomBuildComChips(){
   $('#nom-comchips').innerHTML='<span style="font-size:12px;color:var(--mut);align-self:center">Filtrar lista:</span>'+
     nomComunas().map(c=>`<button class="nom-mini nom-com" data-c="${esc(c)}" style="${nomState.com.has(c)?'background:#eef4fb;border-color:var(--azul);color:var(--azul)':''}">${esc(c)}</button>`).join('');
@@ -1552,6 +1583,7 @@ function nomVisibleEEs(){
   const q=norm(nomState.qee);
   return EE.filter(e=>{
     if(nomState.com.size && !nomState.com.has(e.comuna)) return false;
+    for(const k in nomState.facets){ if(nomState.facets[k].length && nomState.facets[k].indexOf(e[k])<0) return false; }
     if(q && !norm(`${e.rbd} ${e.nombre} ${e.comuna}`).includes(q)) return false;
     return true;
   });
@@ -1627,7 +1659,7 @@ function nomXLSX(){
 }
 function buildNomina(){
   if(!nomBuilt){
-    nomBuildComChips();
+    nomBuildFacets(); nomBuildComChips();
     $('#nom-qcol').oninput=e=>{nomState.qcol=e.target.value;nomBuildCols();};
     $('#nom-qee').oninput=e=>{nomState.qee=e.target.value;nomBuildEEList();};
     $('#nom-col-none').onclick=()=>{nomState.cols.clear();nomBuildCols();nomUpdateCounts();nomRenderPrev();};
