@@ -1475,7 +1475,7 @@ function telCSV(){
 // ===== Vista: Constructor de nóminas =====
 const NOM_GROUPS = [
   {g:'Identificación', fields:[
-    ['rbd','RBD'],['rbd_dv','RBD (con dígito verificador)'],['nombre','Nombre del establecimiento'],
+    ['rbd','RBD'],['rbd_dv','RBD (con dígito verificador)'],['_dv','Dígito verificador (solo DV)'],['nombre','Nombre del establecimiento'],
     ['comuna','Comuna'],['estado','Estado']]},
   {g:'Clasificación y oferta', fields:[
     ['area','Área (Urbano/Rural)'],['tipo','Tipo de establecimiento'],['cobertura','Cobertura'],
@@ -1525,6 +1525,7 @@ const NOM_LABELS={}; const NOM_ALLK=[]; NOM_GROUPS.forEach(gr=>gr.fields.forEach
 const NOM_BASIC=['rbd','nombre','comuna','tipo','area','director','correo_director','tel_institucional','mat_jun26'];
 const nomState={cols:new Set(NOM_BASIC), ees:new Set(EE.map(e=>e.rbd)), qcol:'', qee:'', com:new Set()};
 let nomBuilt=false;
+EE.forEach(function(e){ e._dv=(typeof e.rbd_dv==='string'&&e.rbd_dv.indexOf('-')>=0)?e.rbd_dv.split('-').pop():''; });
 function nomVal(e,k){ let v=e[k]; if(Array.isArray(v)) v=v.filter(x=>x!==''&&x!=null).join(', '); return (v==null)?'':v; }
 function nomBuildCols(){
   const q=norm(nomState.qcol);
