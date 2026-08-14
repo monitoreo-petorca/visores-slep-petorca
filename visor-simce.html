@@ -170,8 +170,9 @@ body.theme-light .tip::after{background:#fff;color:#1e293b;border-color:#e2e8f0;
 .ord-table td.col-sorted{background:rgba(37,99,235,.14);font-weight:700;}
 .ord-table tr.ord-low td{opacity:.55;font-style:italic;}
 .ord-table tr.ord-sel td{box-shadow:inset 3px 0 0 #2563eb;background:rgba(37,99,235,.10);}
-.ord-ficha{opacity:.35;margin-right:5px;font-size:.85em;cursor:pointer;}
-.ord-ficha:hover{opacity:1;}
+.ord-ficha{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-right:7px;vertical-align:-4px;border:1px solid #3f5673;border-radius:4px;background:#16233a;color:#7dd3fc;cursor:pointer;flex-shrink:0;transition:background .12s,border-color .12s,color .12s;}
+.ord-ficha:hover{background:#2563eb;border-color:#60a5fa;color:#fff;}
+.ord-ficha svg{display:block;}
 .ord-nulo{color:#475569;}
 .ord-ins{color:#f87171;} .ord-ele{color:#fbbf24;} .ord-ade{color:#4ade80;}
 .ord-note{font-size:.65rem;color:#64748b;padding:8px 14px;line-height:1.55;border-top:1px solid #334155;flex-shrink:0;}
@@ -186,6 +187,8 @@ body.theme-light #view-orden .ord-note{color:#64748b;border-top-color:#e2e8f0;}
 body.theme-light #view-orden .ord-nulo{color:#cbd5e1;}
 body.theme-light #view-orden .ord-table th.pos-h,body.theme-light #view-orden .ord-table th.pos-h:hover{color:#94a3b8;}
 body.theme-light #view-orden .ord-table td.pos{color:#94a3b8;}
+body.theme-light #view-orden .ord-ficha{background:#eff6ff;border-color:#bfdbfe;color:#2563eb;}
+body.theme-light #view-orden .ord-ficha:hover{background:#2563eb;border-color:#2563eb;color:#fff;}
 .cmp-hint{font-size:.74rem;color:#64748b;margin-bottom:12px;line-height:1.5;}
 #cmp-table-wrap{overflow-x:auto;}
 .cmp-table{width:100%;border-collapse:collapse;font-size:.73rem;min-width:380px;}
@@ -1560,6 +1563,10 @@ var ordMateria = 'lect';
 var ordSortKey = 'avg_lect';
 var ordSortDir = 'desc';
 var ordRowsCache = [];
+var ORD_ICON = '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+  + '<path d="M9.2 1.8H4.3c-.8 0-1.5.7-1.5 1.5v9.4c0 .8.7 1.5 1.5 1.5h7.4c.8 0 1.5-.7 1.5-1.5V5.8z"/>'
+  + '<path d="M9.2 1.8v4h4"/><path d="M5.6 8.6h4.8M5.6 11.1h3.2"/></svg>';
+
 var ordColsCache = [];
 
 function setOrdGrado(g){
@@ -1712,7 +1719,7 @@ function renderOrden() {
       if (ordSortKey === c.k) tdc += ' col-sorted';
       var txt;
       if (c.k === 'nombre') {
-        txt = '<span class="ord-ficha" onclick="event.stopPropagation();selectSchool(' + r.rbd + ')" title="Abrir ficha del establecimiento">📋</span>' + v;
+        txt = '<span class="ord-ficha" onclick="event.stopPropagation();selectSchool(' + r.rbd + ')" title="Abrir la ficha de este establecimiento">' + ORD_ICON + '</span>' + v;
       }
       else if (c.txt) txt = v;
       else if (v === null || v === undefined) txt = '<span class="ord-nulo">—</span>';
