@@ -156,6 +156,9 @@ body.theme-light .tip::after{background:#fff;color:#1e293b;border-color:#e2e8f0;
 .ord-table{width:100%;border-collapse:collapse;font-size:.72rem;}
 .ord-table th{position:sticky;top:0;z-index:2;background:#0f172a;color:#64748b;font-size:.62rem;text-transform:uppercase;letter-spacing:.2px;font-weight:600;padding:8px 5px;border-bottom:2px solid #334155;cursor:pointer;user-select:none;white-space:nowrap;text-align:right;}
 .ord-table th.txt{text-align:left;}
+.ord-table th.pos-h{cursor:default;color:#475569;width:26px;padding-left:2px;padding-right:2px;}
+.ord-table th.pos-h:hover{color:#475569;}
+.ord-table td.pos{color:#64748b;font-variant-numeric:tabular-nums;font-size:.68rem;text-align:right;padding-left:2px;padding-right:2px;}
 .ord-table th:hover{color:#93c5fd;}
 .ord-table th.sorted{color:#60a5fa;}
 .ord-table th small{display:block;font-size:.9em;font-weight:400;text-transform:none;letter-spacing:0;opacity:.75;}
@@ -181,6 +184,8 @@ body.theme-light #view-orden .ord-table td.col-sorted{background:rgba(37,99,235,
 body.theme-light #view-orden .ord-ins{color:#b91c1c;} body.theme-light #view-orden .ord-ele{color:#a16207;} body.theme-light #view-orden .ord-ade{color:#15803d;}
 body.theme-light #view-orden .ord-note{color:#64748b;border-top-color:#e2e8f0;}
 body.theme-light #view-orden .ord-nulo{color:#cbd5e1;}
+body.theme-light #view-orden .ord-table th.pos-h,body.theme-light #view-orden .ord-table th.pos-h:hover{color:#94a3b8;}
+body.theme-light #view-orden .ord-table td.pos{color:#94a3b8;}
 .cmp-hint{font-size:.74rem;color:#64748b;margin-bottom:12px;line-height:1.5;}
 #cmp-table-wrap{overflow-x:auto;}
 .cmp-table{width:100%;border-collapse:collapse;font-size:.73rem;min-width:380px;}
@@ -1593,6 +1598,7 @@ function ordBuildCols() {
     : [['lect','Lectura'],['mate','Matemática']];
   var matLbl = {lect:'Lectura', mate:'Matemática', hist:'Historia'};
   var cols = [
+    {k:'__pos', lbl:'N°', pos:true},
     {k:'nombre', lbl:'Establecimiento', txt:true},
     {k:'comuna', lbl:'Comuna', txt:true},
     {k:'n',      lbl:'n', sub:'con puntaje', dec:0}
@@ -1675,6 +1681,10 @@ function renderOrden() {
   var arrow = (ordSortDir === 'desc') ? ' ↓' : ' ↑';
   var t = '<div class="ord-wrap"><table class="ord-table"><thead><tr>';
   cols.forEach(function(c){
+    if (c.pos) {
+      t += '<th class="pos-h" title="Posición en el orden actual. Cambia según la columna por la que ordenes.">N°</th>';
+      return;
+    }
     var sorted = (ordSortKey === c.k);
     t += '<th class="' + (c.txt ? 'txt' : '') + (sorted ? ' sorted' : '') + '" onclick="setOrdSort(\'' + c.k + '\')" title="' + (c.full || c.lbl) + (c.sub ? ' · ' + c.sub : '') + ' — clic para ordenar">';
     t += c.lbl + (sorted ? arrow : '');
@@ -1683,12 +1693,21 @@ function renderOrden() {
   });
   t += '</tr></thead><tbody>';
 
-  rows.forEach(function(r){
+  var prevVal = undefined, prevPos = 0;
+  rows.forEach(function(r, ri){
+    // Empates comparten posición (1,2,2,4): evita sugerir diferencias que el dato no respalda.
+    var cur = r[ordSortKey];
+    var pos;
+    if (ri > 0 && cur !== null && cur === prevVal) { pos = prevPos; }
+    else { pos = ri + 1; prevPos = pos; }
+    prevVal = cur;
+    r.__pos = pos;
     var low = (r.n > 0 && r.n < 10);
     var cls = 'ord-row' + (low ? ' ord-low' : '') + (activeRbd === r.rbd ? ' ord-sel' : '');
     t += '<tr class="' + cls + '" onclick="ordSelect(' + r.rbd + ')" title="' + (low ? 'Menos de 10 casos con puntaje: el promedio es poco estable. Clic para ubicarlo en el mapa.' : 'Clic para ubicarlo en el mapa') + '">';
     cols.forEach(function(c){
       var v = r[c.k];
+      if (c.pos) { t += '<td class="pos">' + pos + '</td>'; return; }
       var tdc = (c.k === 'nombre') ? 'nm' : (c.k === 'comuna' ? 'cm' : (c.cls || ''));
       if (ordSortKey === c.k) tdc += ' col-sorted';
       var txt;
@@ -1708,6 +1727,7 @@ function renderOrden() {
   var lowN = rows.filter(function(r){ return r.n > 0 && r.n < 10; }).length;
   var note = '<div class="ord-note">';
   note += '<b>' + rows.length + ' establecimientos con datos.</b> Clic en cualquier encabezado para ordenar de mayor a menor (segundo clic invierte el orden). Clic en una fila la ubica en el mapa; el ícono 📋 abre la ficha del establecimiento.<br>';
+  note += 'La <b>numeración (N°)</b> indica la posición en el orden que estás viendo y cambia al ordenar por otra columna; los valores empatados comparten posición.<br>';
   note += 'Este ordenamiento es una <b>herramienta de lectura</b> para priorizar el acompañamiento, no una clasificación de calidad ni una comparación entre comunidades educativas. ';
   note += 'Los promedios SIMCE tienen error de medición y no son directamente comparables entre establecimientos de distinto contexto.';
   if (lowN) note += ' Las ' + lowN + ' fila' + (lowN > 1 ? 's' : '') + ' atenuada' + (lowN > 1 ? 's' : '') + ' corresponde' + (lowN > 1 ? 'n' : '') + ' a EE con menos de 10 casos con puntaje: su promedio es poco estable.';
@@ -1724,6 +1744,7 @@ function ordExportCSV() {
   ordRowsCache.forEach(function(r){
     lines.push(ordColsCache.map(function(c){
       var v = r[c.k];
+      if (c.pos) return (r.__pos != null ? r.__pos : '');
       if (v === null || v === undefined) return '';
       if (c.txt) return '"' + String(v).replace(/"/g, '""') + '"';
       return Number(v).toFixed(c.dec).replace('.', ',');
@@ -1745,59 +1766,6 @@ applyFilters();
 applyTheme(currentTheme);
 switchView('detalle');
 
-</script>
-<style>
-.hlpx-fab{position:fixed;right:20px;bottom:20px;z-index:9998;width:52px;height:52px;border-radius:50%;background:#0b3d6b;color:#fff;border:none;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;font:700 22px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;display:flex;align-items:center;justify-content:center}
-.hlpx-fab:hover{background:#0a3155}
-.hlpx-fab span{margin-top:-2px}
-.hlpx-tip{position:fixed;right:20px;bottom:80px;z-index:9998;background:#0b3d6b;color:#fff;font:600 12px/1.3 system-ui,-apple-system,sans-serif;padding:7px 11px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:180px;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
-.hlpx-fab:hover + .hlpx-tip{opacity:1;transform:translateY(0)}
-.hlpx-back{position:fixed;inset:0;z-index:9999;background:rgba(15,23,35,.55);display:none;align-items:flex-start;justify-content:center;padding:36px 16px;overflow-y:auto}
-.hlpx-back.on{display:flex}
-.hlpx-modal{background:#fff;color:#1a1a1a;border-radius:16px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
-.hlpx-head{position:sticky;top:0;background:#fff;border-bottom:1px solid #e8e8e5;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0}
-.hlpx-head h2{margin:0;font-size:18px;font-weight:700;color:#0b3d6b}
-.hlpx-close{background:#f3f3f0;border:1px solid #e2e2df;color:#555;border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:15px;line-height:1;flex:none}
-.hlpx-close:hover{border-color:#0b3d6b;color:#0b3d6b}
-.hlpx-body{padding:20px 22px 26px}
-.hlpx-body h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:#0b6cc2;margin:22px 0 8px;font-weight:700}
-.hlpx-body h3:first-child{margin-top:0}
-.hlpx-body p{font-size:13.5px;line-height:1.6;color:#43433f;margin:0 0 10px}
-.hlpx-body b{color:#1a1a1a}
-.hlpx-body dl{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;margin:0 0 8px}
-@media(max-width:560px){.hlpx-body dl{grid-template-columns:1fr;gap:2px 0}.hlpx-body dd{margin-bottom:9px}}
-.hlpx-body dt{font-weight:670;font-size:13px;color:#1a1a1a;white-space:nowrap}
-.hlpx-body dd{margin:0;font-size:13px;color:#43433f}
-</style>
-<button class="hlpx-fab" id="hlpxFab" aria-haspopup="dialog" aria-label="Ayuda: cómo usar este visor"><span>?</span></button>
-<div class="hlpx-tip">¿Cómo usar este visor?</div>
-<div class="hlpx-back" id="hlpxBack" role="dialog" aria-modal="true" aria-labelledby="hlpxTitle">
-  <div class="hlpx-modal">
-    <div class="hlpx-head"><h2 id="hlpxTitle">Cómo usar el visor SIMCE</h2><button class="hlpx-close" id="hlpxClose" aria-label="Cerrar">&#10005;</button></div>
-    <div class="hlpx-body"><h3>¿Qué es este visor?</h3>
-<p>Reúne los resultados <b>SIMCE</b> de los establecimientos del <b>SLEP Petorca</b> en un mapa interactivo, para revisar aprendizajes y brechas y focalizar el apoyo pedagógico.</p>
-<h3>Cómo navegarlo</h3>
-<p>Explora el <b>mapa</b> y <b>selecciona un establecimiento</b> para ver su ficha de resultados. Puedes comparar establecimientos entre sí.</p>
-<h3>Las métricas, en simple</h3>
-<dl>
-  <dt>SIMCE</dt><dd>Sistema de Medición de la Calidad de la Educación: prueba estandarizada nacional por asignatura y nivel.</dd>
-  <dt>Puntaje promedio</dt><dd>Resultado del establecimiento en la asignatura/nivel evaluado.</dd>
-  <dt>Estándares de Aprendizaje</dt><dd>Niveles Insuficiente / Elemental / Adecuado: qué proporción de estudiantes alcanza cada uno.</dd>
-  <dt>Brecha / variación</dt><dd>Diferencia respecto de un referente o respecto de mediciones anteriores.</dd>
-</dl>
-<h3>¿Para qué sirve?</h3>
-<p><b>Identificar focos de mejora</b> en los aprendizajes, <b>priorizar el acompañamiento</b> pedagógico y contextualizar los resultados con la realidad de cada establecimiento.</p>
-<h3>Cómo leerlo bien</h3>
-<p>El SIMCE varía por <b>cohorte</b> y puede tener N pequeños en cursos chicos: interpreta <b>tendencias</b> y patrones antes que un puntaje puntual.</p></div>
-  </div>
-</div>
-<script>
-(function(){var b=document.getElementById('hlpxBack'),f=document.getElementById('hlpxFab'),c=document.getElementById('hlpxClose');
-function op(){b.classList.add('on');document.body.style.overflow='hidden';}
-function cl(){b.classList.remove('on');document.body.style.overflow='';}
-f.addEventListener('click',op);c.addEventListener('click',cl);
-b.addEventListener('click',function(e){if(e.target===b)cl();});
-document.addEventListener('keydown',function(e){if(e.key==='Escape')cl();});})();
 </script>
 </body>
 </html>
