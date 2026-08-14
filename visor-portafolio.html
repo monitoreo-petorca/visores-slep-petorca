@@ -315,11 +315,24 @@
       <p class="amp-p">La señal para el apoyo es doble: (a) la masa de docentes “logrados” está en <b>B</b> y podría traccionarse hacia <b>A</b> con acompañamiento focalizado en los aspectos de excelencia; (b) el grupo <b>por lograr (C+D+E = 34,9%)</b> es comparable al nacional, así que la prioridad no es un rezago general, sino <b>mover el techo</b> (de B a A) y sostener la baja incidencia de E.</p>
     </div>
     <div class="panel" style="margin-top:18px">
+      <h3 class="amp-h3">Serie histórica 2023–2025 · territorio de las 4 comunas</h3>
+      <p class="amp-p" style="margin-bottom:14px">Evolución del <b>% logrado (A+B)</b> del Portafolio en el conjunto de las 4 comunas del SLEP (Cabildo, La Ligua, Papudo, Petorca), leída de los informes 2023, 2024 y 2025 del visor nacional CPEIP.</p>
+      <div class="areagrid" id="serieWrap"></div>
+      <div class="seg-legend" id="serieLegend"></div>
+      <div style="overflow-x:auto;margin-top:18px">
+        <table class="amp-table" id="serieTable"><thead><tr><th>Año</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>% Logrado (A+B)</th><th>N</th></tr></thead><tbody></tbody></table>
+      </div>
+      <p class="amp-p" style="margin-top:14px">La trayectoria es <b>no lineal</b>: 51,7% (2023) → 43,0% (2024) → 64,8% (2025). Buena parte del vaivén responde a <b>quién rinde cada año</b>: el Portafolio se rinde por rotación de agrupaciones, así que cambian el N (321 → 121 → 179) y la composición. El salto de 2025 se explica sobre todo por el aumento de la categoría <b>A</b> (de 3,3% en 2024 a 11,2% en 2025).</p>
+      <div class="src-box" style="border-left-color:var(--g3);margin:12px 0 0">
+        <b>Nota de comparabilidad:</b> el universo es <b>todos los establecimientos de las 4 comunas (todas las dependencias)</b>, no solo el SLEP, porque el SLEP como sostenedor recién existe desde 2025. Referencia 2025: solo-SLEP = <b>62,0%</b> (129 docentes) · 4 comunas = <b>64,8%</b> (179) · base sistematizada de este visor = <b>65,1%</b> (106). Las diferencias vienen de incluir o no a los establecimientos particulares subvencionados del territorio.
+      </div>
+    </div>
+    <div class="panel" style="margin-top:18px">
       <h3 class="amp-h3">Por tarea: dónde se juega la brecha</h3>
       <p class="amp-p">Al abrir por tarea (pestaña <b>Panel de resultados</b>), la brecha de Petorca frente al referente Nacional se concentra en <b>Trabajo Colaborativo (T5): −24,7 puntos</b>, la debilidad transversal. La fortaleza es <b>Reflexión Pedagógica (T3): +9,5</b>. Planificación (T1), Evaluación Formativa (T2) y Clase Grabada (T4) están cerca del referente. Esto sugiere que el diferencial de excelencia (menos categoría A) se explica más por <b>T5</b> que por un déficit generalizado — un foco concreto para el desarrollo profesional docente.</p>
     </div>
     <div class="src-box" style="border-left-color:var(--g3);margin-top:18px;margin-bottom:0">
-      <b>Próximas capas (en preparación):</b> serie histórica 2023–2025 y resultados por agrupación (EP, EB, PCG, EM, EMTP, EE-EE, EE-ER, EA), que el visor nacional también entrega. Se incorporarán en una próxima actualización de esta pestaña.
+      <b>Próxima capa (en preparación):</b> resultados por agrupación (EP, EB, PCG, EM, EMTP, EE-EE, EE-ER, EA). El desglose por agrupación del visor nacional requiere una extracción manual cuidadosa —y para Petorca implica N por grupo muy pequeños—, por lo que se incorporará en una próxima actualización.
     </div>
   </section>
   </div><!-- /tab-ampliada -->
@@ -664,6 +677,22 @@ const BENCH=[
   {lab:"Regi\u00f3n de Valpara\u00edso",A:10.6,B:57.2,C:21.3,D:8.0,E:3.0,N:3785},
   {lab:"Nacional (pa\u00eds)",A:8.9,B:55.8,C:21.4,D:9.3,E:4.5,N:33773}
 ];
+const SERIE=[
+  {lab:"2023",A:7.2,B:44.5,C:26.2,D:15,E:7.2,N:321},
+  {lab:"2024",A:3.3,B:39.7,C:33.1,D:14.9,E:9.1,N:121},
+  {lab:"2025",A:11.2,B:53.6,C:21.2,D:10.6,E:3.4,N:179}
+];
+function renderSerie(){
+  const wrap=$("#serieWrap"); if(!wrap) return;
+  const nf=n=>n.toLocaleString("es-CL");
+  wrap.innerHTML=SERIE.map(g=>{
+    const logrado=(g.A+g.B).toFixed(1);
+    const segs=["A","B","C","D","E"].map(c=>`<span style="width:${g[c]}%;background:${CATCOL[c]}" title="${c}: ${g[c]}%"></span>`).join("");
+    return `<div class="acard"><div class="al">Portafolio ${g.lab}</div><div class="av">${logrado}%</div><div class="an">% logrado (A+B) \u00b7 N=${nf(g.N)} docentes</div><div class="stack">${segs}</div></div>`;
+  }).join("");
+  const leg=$("#serieLegend"); if(leg){leg.innerHTML=[["A","A \u00b7 m\u00e1s alto"],["B","B"],["C","C"],["D","D"],["E","E \u00b7 m\u00e1s bajo"]].map(([c,t])=>`<div class="it"><span class="sw" style="background:${CATCOL[c]}"></span>${t}</div>`).join("");}
+  const tb=$("#serieTable tbody"); if(tb){tb.innerHTML=SERIE.map(g=>`<tr><td>${g.lab}</td><td>${g.A}</td><td>${g.B}</td><td>${g.C}</td><td>${g.D}</td><td>${g.E}</td><td><b>${(g.A+g.B).toFixed(1)}</b></td><td>${nf(g.N)}</td></tr>`).join("");}
+}
 function renderAmpliada(){
   const wrap=$("#benchWrap"); if(!wrap) return;
   const nf=n=>n.toLocaleString("es-CL");
@@ -718,7 +747,7 @@ $("#foot").innerHTML=`<b>Fuente:</b> Sistematización de 44 informes «Informe R
 <b>Notas de calidad:</b> los PDF originales son escaneados; los datos se extrajeron por OCR y se validaron contra la huella de los valores «Nacional». N por establecimiento pequeño (1–3 docentes en muchos casos) → priorizar patrones agregados por sobre cifras individuales. JI Lamparita (RBD 33548): 3 inscritos, 0 portafolios. El PDF del Sostenedor muestra en portada «I. Municipalidad de Ninhue» → verificar en origen. Tipología de grupos construida con umbral de cobertura del SLEP (${DATA.meta.cobertura.toFixed(1)}%) y desempeño = 0 pts vs. Nacional. Documento de trabajo.`;
 
 /* ================= init ================= */
-function renderAll(){renderKPI();renderTarea();renderCov();renderHeat();renderArea();renderScatter();renderFilters();renderTable();renderGlossary();renderAmpliada();}
+function renderAll(){renderKPI();renderTarea();renderCov();renderHeat();renderArea();renderScatter();renderFilters();renderTable();renderGlossary();renderAmpliada();renderSerie();}
 renderAll();
 $("#dlFilt").onclick=()=>download("Establecimientos_SLEP_Petorca_filtrado.csv",toCSV(tableRows()));
 $("#dlAll").onclick=()=>download("Establecimientos_SLEP_Petorca_completo.csv",toCSV(DATA.establecimientos));
