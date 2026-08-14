@@ -79,6 +79,7 @@ body.theme-light .tip::after{background:#fff;color:#1e293b;border-color:#e2e8f0;
 /* RIGHT PANEL */
 #right-panel{width:450px;background:#1e293b;border-left:1px solid #334155;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
 #right-panel.collapsed{width:0;overflow:hidden;}
+#right-panel.wide{width:min(840px,64vw);}
 #right-panel-tabs{display:flex;background:#0f172a;border-bottom:1px solid #334155;flex-shrink:0;}
 .rptab{flex:1;padding:8px 4px;text-align:center;font-size:.74rem;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
 .rptab:hover{color:#94a3b8;}
@@ -149,6 +150,37 @@ body.theme-light .tip::after{background:#fff;color:#1e293b;border-color:#e2e8f0;
 .gf-sort select{background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:3px 6px;border-radius:4px;font-size:.68rem;cursor:pointer;}
 .gf-chart-wrap{flex:1;overflow-y:auto;padding:10px 14px;}
 .gf-no-data{font-size:.76rem;color:#64748b;text-align:center;padding:30px;}
+/* ── ORDENAMIENTO ── */
+#view-orden{display:none;flex-direction:column;overflow:hidden;}
+.ord-wrap{flex:1;overflow:auto;padding:0 14px;}
+.ord-table{width:100%;border-collapse:collapse;font-size:.72rem;}
+.ord-table th{position:sticky;top:0;z-index:2;background:#0f172a;color:#64748b;font-size:.62rem;text-transform:uppercase;letter-spacing:.2px;font-weight:600;padding:8px 5px;border-bottom:2px solid #334155;cursor:pointer;user-select:none;white-space:nowrap;text-align:right;}
+.ord-table th.txt{text-align:left;}
+.ord-table th:hover{color:#93c5fd;}
+.ord-table th.sorted{color:#60a5fa;}
+.ord-table th small{display:block;font-size:.9em;font-weight:400;text-transform:none;letter-spacing:0;opacity:.75;}
+.ord-table td{padding:5px 5px;border-bottom:1px solid #1a2535;color:#e2e8f0;text-align:right;white-space:nowrap;}
+.ord-table td.nm{text-align:left;font-weight:600;max-width:155px;overflow:hidden;text-overflow:ellipsis;}
+.ord-table td.cm{text-align:left;color:#94a3b8;}
+.ord-table tr{cursor:pointer;}
+.ord-table tbody tr:hover td{background:#0f172a;}
+.ord-table td.col-sorted{background:rgba(37,99,235,.14);font-weight:700;}
+.ord-table tr.ord-low td{opacity:.55;font-style:italic;}
+.ord-table tr.ord-sel td{box-shadow:inset 3px 0 0 #2563eb;background:rgba(37,99,235,.10);}
+.ord-ficha{opacity:.35;margin-right:5px;font-size:.85em;cursor:pointer;}
+.ord-ficha:hover{opacity:1;}
+.ord-nulo{color:#475569;}
+.ord-ins{color:#f87171;} .ord-ele{color:#fbbf24;} .ord-ade{color:#4ade80;}
+.ord-note{font-size:.65rem;color:#64748b;padding:8px 14px;line-height:1.55;border-top:1px solid #334155;flex-shrink:0;}
+body.theme-light #view-orden .ord-table th{background:#f8fafc;color:#475569;border-bottom-color:#e2e8f0;}
+body.theme-light #view-orden .ord-table th.sorted{color:#1d4ed8;}
+body.theme-light #view-orden .ord-table td{color:#1e293b;border-bottom-color:#f1f5f9;}
+body.theme-light #view-orden .ord-table td.cm{color:#64748b;}
+body.theme-light #view-orden .ord-table tbody tr:hover td{background:#f1f5f9;}
+body.theme-light #view-orden .ord-table td.col-sorted{background:rgba(37,99,235,.10);}
+body.theme-light #view-orden .ord-ins{color:#b91c1c;} body.theme-light #view-orden .ord-ele{color:#a16207;} body.theme-light #view-orden .ord-ade{color:#15803d;}
+body.theme-light #view-orden .ord-note{color:#64748b;border-top-color:#e2e8f0;}
+body.theme-light #view-orden .ord-nulo{color:#cbd5e1;}
 .cmp-hint{font-size:.74rem;color:#64748b;margin-bottom:12px;line-height:1.5;}
 #cmp-table-wrap{overflow-x:auto;}
 .cmp-table{width:100%;border-collapse:collapse;font-size:.73rem;min-width:380px;}
@@ -393,6 +425,7 @@ body.theme-light .sub{color:#bfdbfe;}
       <div class="rptab" id="tab-resumen" onclick="switchView('resumen')">📊 Resumen</div>
       <div class="rptab" id="tab-cmp" onclick="switchView('cmp')">⚖️ Comparativo</div>
       <div class="rptab" id="tab-graficos" onclick="switchView('graficos')">📈 Gráficos</div>
+      <div class="rptab" id="tab-orden" onclick="switchView('orden')">📐 Ordenamiento</div>
       <div style="display:flex;align-items:center;padding:0 8px;">
         <button id="det-close" onclick="closeDetail()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:1rem;">✕</button>
       </div>
@@ -413,6 +446,8 @@ body.theme-light .sub{color:#bfdbfe;}
     <div class="rp-view" id="view-cmp" style="overflow-y:auto;padding:14px;display:none;"></div>
     <!-- GRAFICOS -->
     <div class="rp-view" id="view-graficos" style="flex-direction:column;overflow:hidden;"></div>
+    <!-- ORDENAMIENTO -->
+    <div class="rp-view" id="view-orden" style="flex-direction:column;overflow:hidden;"></div>
   </div>
 </div>
 <script>
@@ -575,6 +610,7 @@ function applyFilters() {
   updateStats();
   if (currentView === 'resumen') renderResumen();
   if (currentView === 'graficos') renderGraficos();
+  if (currentView === 'orden')    renderOrden();
 }
 
 // ── SIDEBAR LIST ─────────────────────────────────────────────────────────────
@@ -677,10 +713,14 @@ function switchView(view) {
   var activeV = document.getElementById('view-'+view);
   activeV.classList.add('active');
   activeV.style.display = 'flex';
-  document.getElementById('right-panel').classList.remove('collapsed');
+  var rp = document.getElementById('right-panel');
+  rp.classList.remove('collapsed');
+  rp.classList.toggle('wide', view === 'orden');   // la tabla de ordenamiento necesita más ancho
+  if (map) setTimeout(function(){ try { map.invalidateSize(); } catch(e){} }, 30);
   if (view === 'resumen') renderResumen();
   if (view === 'cmp') renderComparativo();
   if (view === 'graficos') renderGraficos();
+  if (view === 'orden')    renderOrden();
 }
 
 // ── DETALLE ──────────────────────────────────────────────────────────────────
@@ -936,7 +976,9 @@ function selectSchool(rbd) {
 }
 
 function closeDetail() {
-  document.getElementById('right-panel').classList.add('collapsed');
+  var rp = document.getElementById('right-panel');
+  rp.classList.add('collapsed'); rp.classList.remove('wide');
+  if (map) setTimeout(function(){ try { map.invalidateSize(); } catch(e){} }, 30);
   activeRbd = null; updateColors();
   document.querySelectorAll('.si').forEach(function(el){ el.classList.remove('active'); });
 }
@@ -1507,6 +1549,194 @@ function renderGraficosDesemp() {
 }
 
 
+// ── ORDENAMIENTO ─────────────────────────────────────────────────────────────
+var ordGrado   = '4b';
+var ordMateria = 'lect';
+var ordSortKey = 'avg_lect';
+var ordSortDir = 'desc';
+var ordRowsCache = [];
+var ordColsCache = [];
+
+function setOrdGrado(g){
+  ordGrado = g;
+  if (ordMateria === 'hist') ordMateria = 'lect';
+  if (ordSortKey === 'avg_hist' && g !== '8b') ordSortKey = 'avg_lect';
+  renderOrden();
+}
+function setOrdMateria(m){ ordMateria = m; renderOrden(); }
+
+// Clic en la fila: ubica el EE en el mapa y lo marca, sin salir de la tabla.
+function ordSelect(rbd){
+  activeRbd = rbd;
+  var d = null;
+  for (var i = 0; i < DATA.length; i++) { if (DATA[i].rbd === rbd) { d = DATA[i]; break; } }
+  if (!d) return;
+  document.querySelectorAll('.si').forEach(function(el){ el.classList.remove('active'); });
+  var li = document.getElementById('li-' + rbd);
+  if (li) { li.classList.add('active'); li.scrollIntoView({block:'nearest'}); }
+  try { updateColors(); } catch(e){}
+  try { if (markers[rbd] && d.lat && d.lng) map.panTo([d.lat, d.lng]); } catch(e){}
+  document.querySelectorAll('#view-orden .ord-row').forEach(function(tr){ tr.classList.remove('ord-sel'); });
+  var idx = ordRowsCache.findIndex ? ordRowsCache.findIndex(function(r){ return r.rbd === rbd; }) : -1;
+  var trs = document.querySelectorAll('#view-orden .ord-row');
+  if (idx >= 0 && trs[idx]) trs[idx].classList.add('ord-sel');
+}
+function setOrdSort(k){
+  if (ordSortKey === k) { ordSortDir = (ordSortDir === 'desc') ? 'asc' : 'desc'; }
+  else { ordSortKey = k; ordSortDir = (k === 'nombre' || k === 'comuna') ? 'asc' : 'desc'; }
+  renderOrden();
+}
+
+function ordBuildCols() {
+  var mats = (ordGrado === '8b')
+    ? [['lect','Lectura'],['mate','Matemática'],['hist','Historia']]
+    : [['lect','Lectura'],['mate','Matemática']];
+  var matLbl = {lect:'Lectura', mate:'Matemática', hist:'Historia'};
+  var cols = [
+    {k:'nombre', lbl:'Establecimiento', txt:true},
+    {k:'comuna', lbl:'Comuna', txt:true},
+    {k:'n',      lbl:'n', sub:'con puntaje', dec:0}
+  ];
+  mats.forEach(function(m){
+    cols.push({k:'avg_'+m[0], lbl:m[1], sub:'promedio', dec:1});
+  });
+  cols.push({k:'ins', lbl:'% Insuf.', full:'% Insuficiente', sub:matLbl[ordMateria], dec:1, cls:'ord-ins'});
+  cols.push({k:'ele', lbl:'% Elem.',  full:'% Elemental',    sub:matLbl[ordMateria], dec:1, cls:'ord-ele'});
+  cols.push({k:'ade', lbl:'% Adec.',  full:'% Adecuado',      sub:matLbl[ordMateria], dec:1, cls:'ord-ade'});
+  return cols;
+}
+
+function ordBuildRows() {
+  var rows = [];
+  for (var i = 0; i < filtered.length; i++) {
+    var d = filtered[i];
+    var s = SIMCE[String(d.rbd)];
+    if (!s || !s[ordGrado]) continue;
+    var g = s[ordGrado];
+    var r = { rbd: d.rbd, nombre: d.nombre_corto || d.nombre, comuna: d.comuna || '', n: g.nc || 0 };
+    var hasAvg = false;
+    ['lect','mate','hist'].forEach(function(m){
+      var v = g['avg_' + m + ordGrado];
+      r['avg_' + m] = (typeof v === 'number') ? v : null;
+      if (r['avg_' + m] !== null) hasAvg = true;
+    });
+    var eda = g['eda_' + ordMateria + ordGrado] || {};
+    var hasEda = Object.keys(eda).length > 0;
+    r.ins = hasEda ? (eda['Insuficiente'] || 0) : null;
+    r.ele = hasEda ? (eda['Elemental']    || 0) : null;
+    r.ade = hasEda ? (eda['Adecuado']     || 0) : null;
+    if (!hasAvg && !hasEda) continue;
+    rows.push(r);
+  }
+  var dir = (ordSortDir === 'desc') ? -1 : 1;
+  var key = ordSortKey;
+  rows.sort(function(a, b){
+    var va = a[key], vb = b[key];
+    if (typeof va === 'string' || typeof vb === 'string') {
+      return (va || '').localeCompare(vb || '') * dir;
+    }
+    // nulos siempre al final, sea cual sea la dirección
+    if (va === null && vb === null) return a.nombre.localeCompare(b.nombre);
+    if (va === null) return 1;
+    if (vb === null) return -1;
+    if (va === vb) return a.nombre.localeCompare(b.nombre);
+    return (va - vb) * dir;
+  });
+  return rows;
+}
+
+function renderOrden() {
+  var el = document.getElementById('view-orden');
+  // Historia no reporta Estándares de Aprendizaje: solo entra como columna de promedio.
+  var matsDisp = [['lect','📖 Lectura'],['mate','📐 Matemática']];
+
+  var h = '<div class="gf-controls">';
+  h += '<span style="font-size:.68rem;color:#64748b;font-weight:600;">NIVEL:</span>';
+  [['4b','4°B'],['8b','8°B'],['2m','2°M']].forEach(function(g){
+    h += '<button class="gf-btn' + (ordGrado === g[0] ? ' active' : '') + '" onclick="setOrdGrado(\'' + g[0] + '\')">' + g[1] + '</button>';
+  });
+  h += '<div style="width:1px;background:#334155;margin:0 4px;align-self:stretch;"></div>';
+  h += '<span style="font-size:.68rem;color:#64748b;font-weight:600;" title="Historia no reporta Estándares de Aprendizaje; sí aparece como columna de promedio en 8° Básico.">ESTÁNDARES DE:</span>';
+  matsDisp.forEach(function(m){
+    h += '<button class="gf-btn' + (ordMateria === m[0] ? ' active' : '') + '" onclick="setOrdMateria(\'' + m[0] + '\')">' + m[1] + '</button>';
+  });
+  h += '<button class="gf-btn" style="margin-left:auto;" onclick="ordExportCSV()">⬇ CSV</button>';
+  h += '</div>';
+
+  var cols = ordBuildCols();
+  var rows = ordBuildRows();
+  ordColsCache = cols; ordRowsCache = rows;
+
+  if (!rows.length) {
+    el.innerHTML = h + '<div class="gf-no-data">Sin datos SIMCE para este nivel en los establecimientos filtrados.</div>';
+    return;
+  }
+
+  var arrow = (ordSortDir === 'desc') ? ' ↓' : ' ↑';
+  var t = '<div class="ord-wrap"><table class="ord-table"><thead><tr>';
+  cols.forEach(function(c){
+    var sorted = (ordSortKey === c.k);
+    t += '<th class="' + (c.txt ? 'txt' : '') + (sorted ? ' sorted' : '') + '" onclick="setOrdSort(\'' + c.k + '\')" title="' + (c.full || c.lbl) + (c.sub ? ' · ' + c.sub : '') + ' — clic para ordenar">';
+    t += c.lbl + (sorted ? arrow : '');
+    if (c.sub) t += '<small>' + c.sub + '</small>';
+    t += '</th>';
+  });
+  t += '</tr></thead><tbody>';
+
+  rows.forEach(function(r){
+    var low = (r.n > 0 && r.n < 10);
+    var cls = 'ord-row' + (low ? ' ord-low' : '') + (activeRbd === r.rbd ? ' ord-sel' : '');
+    t += '<tr class="' + cls + '" onclick="ordSelect(' + r.rbd + ')" title="' + (low ? 'Menos de 10 casos con puntaje: el promedio es poco estable. Clic para ubicarlo en el mapa.' : 'Clic para ubicarlo en el mapa') + '">';
+    cols.forEach(function(c){
+      var v = r[c.k];
+      var tdc = (c.k === 'nombre') ? 'nm' : (c.k === 'comuna' ? 'cm' : (c.cls || ''));
+      if (ordSortKey === c.k) tdc += ' col-sorted';
+      var txt;
+      if (c.k === 'nombre') {
+        txt = '<span class="ord-ficha" onclick="event.stopPropagation();selectSchool(' + r.rbd + ')" title="Abrir ficha del establecimiento">📋</span>' + v;
+      }
+      else if (c.txt) txt = v;
+      else if (v === null || v === undefined) txt = '<span class="ord-nulo">—</span>';
+      else txt = Number(v).toFixed(c.dec) + (c.k === 'ins' || c.k === 'ele' || c.k === 'ade' ? '%' : '');
+      var tdTitle = (c.k === 'nombre') ? ' title="' + String(v).replace(/"/g,'&quot;') + '"' : '';
+      t += '<td class="' + tdc + '"' + tdTitle + '>' + txt + '</td>';
+    });
+    t += '</tr>';
+  });
+  t += '</tbody></table></div>';
+
+  var lowN = rows.filter(function(r){ return r.n > 0 && r.n < 10; }).length;
+  var note = '<div class="ord-note">';
+  note += '<b>' + rows.length + ' establecimientos con datos.</b> Clic en cualquier encabezado para ordenar de mayor a menor (segundo clic invierte el orden). Clic en una fila la ubica en el mapa; el ícono 📋 abre la ficha del establecimiento.<br>';
+  note += 'Este ordenamiento es una <b>herramienta de lectura</b> para priorizar el acompañamiento, no una clasificación de calidad ni una comparación entre comunidades educativas. ';
+  note += 'Los promedios SIMCE tienen error de medición y no son directamente comparables entre establecimientos de distinto contexto.';
+  if (lowN) note += ' Las ' + lowN + ' fila' + (lowN > 1 ? 's' : '') + ' atenuada' + (lowN > 1 ? 's' : '') + ' corresponde' + (lowN > 1 ? 'n' : '') + ' a EE con menos de 10 casos con puntaje: su promedio es poco estable.';
+  note += '</div>';
+
+  el.innerHTML = h + t + note;
+}
+
+function ordExportCSV() {
+  if (!ordRowsCache.length) return;
+  var glbl = {'4b':'4basico','8b':'8basico','2m':'2medio'};
+  var sep = ';';
+  var lines = [ordColsCache.map(function(c){ return c.lbl + (c.sub ? ' (' + c.sub + ')' : ''); }).join(sep)];
+  ordRowsCache.forEach(function(r){
+    lines.push(ordColsCache.map(function(c){
+      var v = r[c.k];
+      if (v === null || v === undefined) return '';
+      if (c.txt) return '"' + String(v).replace(/"/g, '""') + '"';
+      return Number(v).toFixed(c.dec).replace('.', ',');
+    }).join(sep));
+  });
+  var blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'simce_ordenamiento_' + (glbl[ordGrado] || ordGrado) + '_' + ordMateria + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 try { if (window.ChartDataLabels) { Chart.register(window.ChartDataLabels); } } catch(e){}
 
@@ -1515,6 +1745,59 @@ applyFilters();
 applyTheme(currentTheme);
 switchView('detalle');
 
+</script>
+<style>
+.hlpx-fab{position:fixed;right:20px;bottom:20px;z-index:9998;width:52px;height:52px;border-radius:50%;background:#0b3d6b;color:#fff;border:none;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;font:700 22px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;display:flex;align-items:center;justify-content:center}
+.hlpx-fab:hover{background:#0a3155}
+.hlpx-fab span{margin-top:-2px}
+.hlpx-tip{position:fixed;right:20px;bottom:80px;z-index:9998;background:#0b3d6b;color:#fff;font:600 12px/1.3 system-ui,-apple-system,sans-serif;padding:7px 11px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:180px;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
+.hlpx-fab:hover + .hlpx-tip{opacity:1;transform:translateY(0)}
+.hlpx-back{position:fixed;inset:0;z-index:9999;background:rgba(15,23,35,.55);display:none;align-items:flex-start;justify-content:center;padding:36px 16px;overflow-y:auto}
+.hlpx-back.on{display:flex}
+.hlpx-modal{background:#fff;color:#1a1a1a;border-radius:16px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.hlpx-head{position:sticky;top:0;background:#fff;border-bottom:1px solid #e8e8e5;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0}
+.hlpx-head h2{margin:0;font-size:18px;font-weight:700;color:#0b3d6b}
+.hlpx-close{background:#f3f3f0;border:1px solid #e2e2df;color:#555;border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:15px;line-height:1;flex:none}
+.hlpx-close:hover{border-color:#0b3d6b;color:#0b3d6b}
+.hlpx-body{padding:20px 22px 26px}
+.hlpx-body h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:#0b6cc2;margin:22px 0 8px;font-weight:700}
+.hlpx-body h3:first-child{margin-top:0}
+.hlpx-body p{font-size:13.5px;line-height:1.6;color:#43433f;margin:0 0 10px}
+.hlpx-body b{color:#1a1a1a}
+.hlpx-body dl{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;margin:0 0 8px}
+@media(max-width:560px){.hlpx-body dl{grid-template-columns:1fr;gap:2px 0}.hlpx-body dd{margin-bottom:9px}}
+.hlpx-body dt{font-weight:670;font-size:13px;color:#1a1a1a;white-space:nowrap}
+.hlpx-body dd{margin:0;font-size:13px;color:#43433f}
+</style>
+<button class="hlpx-fab" id="hlpxFab" aria-haspopup="dialog" aria-label="Ayuda: cómo usar este visor"><span>?</span></button>
+<div class="hlpx-tip">¿Cómo usar este visor?</div>
+<div class="hlpx-back" id="hlpxBack" role="dialog" aria-modal="true" aria-labelledby="hlpxTitle">
+  <div class="hlpx-modal">
+    <div class="hlpx-head"><h2 id="hlpxTitle">Cómo usar el visor SIMCE</h2><button class="hlpx-close" id="hlpxClose" aria-label="Cerrar">&#10005;</button></div>
+    <div class="hlpx-body"><h3>¿Qué es este visor?</h3>
+<p>Reúne los resultados <b>SIMCE</b> de los establecimientos del <b>SLEP Petorca</b> en un mapa interactivo, para revisar aprendizajes y brechas y focalizar el apoyo pedagógico.</p>
+<h3>Cómo navegarlo</h3>
+<p>Explora el <b>mapa</b> y <b>selecciona un establecimiento</b> para ver su ficha de resultados. Puedes comparar establecimientos entre sí.</p>
+<h3>Las métricas, en simple</h3>
+<dl>
+  <dt>SIMCE</dt><dd>Sistema de Medición de la Calidad de la Educación: prueba estandarizada nacional por asignatura y nivel.</dd>
+  <dt>Puntaje promedio</dt><dd>Resultado del establecimiento en la asignatura/nivel evaluado.</dd>
+  <dt>Estándares de Aprendizaje</dt><dd>Niveles Insuficiente / Elemental / Adecuado: qué proporción de estudiantes alcanza cada uno.</dd>
+  <dt>Brecha / variación</dt><dd>Diferencia respecto de un referente o respecto de mediciones anteriores.</dd>
+</dl>
+<h3>¿Para qué sirve?</h3>
+<p><b>Identificar focos de mejora</b> en los aprendizajes, <b>priorizar el acompañamiento</b> pedagógico y contextualizar los resultados con la realidad de cada establecimiento.</p>
+<h3>Cómo leerlo bien</h3>
+<p>El SIMCE varía por <b>cohorte</b> y puede tener N pequeños en cursos chicos: interpreta <b>tendencias</b> y patrones antes que un puntaje puntual.</p></div>
+  </div>
+</div>
+<script>
+(function(){var b=document.getElementById('hlpxBack'),f=document.getElementById('hlpxFab'),c=document.getElementById('hlpxClose');
+function op(){b.classList.add('on');document.body.style.overflow='hidden';}
+function cl(){b.classList.remove('on');document.body.style.overflow='';}
+f.addEventListener('click',op);c.addEventListener('click',cl);
+b.addEventListener('click',function(e){if(e.target===b)cl();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')cl();});})();
 </script>
 </body>
 </html>
