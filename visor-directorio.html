@@ -1138,7 +1138,7 @@ const GLOSARIO = {
   matricula_vigente:{t:'Matrícula vigente (neta de retirados)', d:'Número de estudiantes matriculados en el mes de referencia (jun-2026), descontando a quienes figuran retirados durante todo el mes. Fuente: CEM (escuelas/liceos) y GESPARVU (jardines).'},
   adp:{t:'ADP / Concursabilidad', d:'Alta Dirección Pública: mecanismo para proveer por concurso los cargos directivos. El "estado del cargo" indica si el nombramiento está vigente o vencido.'},
   intercultural:{t:'Educación Intercultural', d:'Enseñanza que incorpora la lengua y cultura de los pueblos originarios en el proyecto educativo del establecimiento.'},
-  gae:{t:'Contraparte GAE', d:'Gestión de Apoyo a los Establecimientos: profesional del SLEP que articula el apoyo integral al establecimiento.'},
+  gae:{t:'Contraparte GDA', d:'Gestión de Apoyo a los Establecimientos: profesional del SLEP que articula el apoyo integral al establecimiento.'},
   atp:{t:'Contraparte ATP', d:'Apoyo Técnico Pedagógico: profesional del SLEP que acompaña la mejora de los procesos pedagógicos del establecimiento.'},
 };
 function gterm(label,key){ const g=GLOSARIO[key]; if(!g) return label; return `<span class="gl" tabindex="0" data-tip="${g.d.replace(/"/g,'&quot;')}">${label}</span>`; }
@@ -1357,7 +1357,7 @@ function openFicha(rbd){
   // CONTRAPARTES panel
   const contrapartes = `<div class="sect"><h3>🔗 Contrapartes SLEP para este establecimiento</h3><div class="people">
      ${person('Gestión de Personas', e.cp_gp)}
-     ${person(gterm('Gestión de Apoyo a Establecimientos (GAE)','gae'), e.cp_gae)}
+     ${person(gterm('Gestión de Apoyo a Establecimientos (GDA)','gae'), e.cp_gae)}
      ${person(gterm('Apoyo Técnico Pedagógico (ATP)','atp'), e.cp_atp)}
      ${person('Infraestructura', e.cp_infra)}
    </div></div>
@@ -1408,7 +1408,7 @@ function openFicha(rbd){
   $('#ficha').querySelectorAll('.copy').forEach(b=>b.onclick=ev=>{ev.stopPropagation();navigator.clipboard&&navigator.clipboard.writeText(b.dataset.copy);b.textContent='✓';setTimeout(()=>b.textContent='copiar',1200);});
   $('#copyresumen').onclick=()=>{
     const mv = has(e.mat_jun26)? `${e.mat_jun26} (neta jun-2026)` : (e.mat_2026||'—');
-    const t=`${e.nombre} (RBD ${e.rbd}) — ${e.comuna}, ${e.tipo}, ${e.area}\nCobertura: ${e.cobertura||'—'} · Matrícula vigente: ${mv} · Convenio PIE: ${e.convenio_pie||'—'} · Multigrado: ${e._multigrado}\nDirector/a: ${e.director||'—'} · ${e.correo_director||''} · Tel. ${fmtTel(e.tel_institucional)||'—'}\nContrapartes → GP: ${e.cp_gp||'—'} | GAE: ${e.cp_gae||'—'} | ATP: ${e.cp_atp||'—'} | Infra: ${e.cp_infra||'—'}`;
+    const t=`${e.nombre} (RBD ${e.rbd}) — ${e.comuna}, ${e.tipo}, ${e.area}\nCobertura: ${e.cobertura||'—'} · Matrícula vigente: ${mv} · Convenio PIE: ${e.convenio_pie||'—'} · Multigrado: ${e._multigrado}\nDirector/a: ${e.director||'—'} · ${e.correo_director||''} · Tel. ${fmtTel(e.tel_institucional)||'—'}\nContrapartes → GP: ${e.cp_gp||'—'} | GDA: ${e.cp_gae||'—'} | ATP: ${e.cp_atp||'—'} | Infra: ${e.cp_infra||'—'}`;
     navigator.clipboard&&navigator.clipboard.writeText(t);
     const b=$('#copyresumen');b.textContent='✓ Copiado';setTimeout(()=>b.textContent='📋 Copiar datos base',1400);
   };
@@ -1511,7 +1511,7 @@ const NOM_GROUPS = [
     ['var_bas','Variación cat. Básica'],['var_med','Variación cat. Media'],
     ['aplica_desempeno','Aplica cat. desempeño']]},
   {g:'Contrapartes SLEP', fields:[
-    ['cp_gp','Contraparte Gestión de Personas'],['cp_gae','Contraparte GAE'],
+    ['cp_gp','Contraparte Gestión de Personas'],['cp_gae','Contraparte GDA'],
     ['cp_infra','Contraparte Infraestructura'],['cp_atp','Contraparte ATP']]},
   {g:'Equipo directivo', fields:[
     ['ed_utp','Jefatura UTP'],['ed_utp_correo','Correo Jefatura UTP'],['ed_inspector','Inspector(a) General'],
