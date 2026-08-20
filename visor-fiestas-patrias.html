@@ -154,11 +154,11 @@
 </div></header>
 
 <div class="note"><div class="box">
-  Fuente principal: <b>formulario «Celebraciones Institucionales Fiestas Patrias»</b> respondido por los establecimientos.
-  Las actividades marcadas <b>«sin confirmar en formulario»</b> vienen de la planificación interna de Petorca y aún no han
-  sido ratificadas por el establecimiento. Las <b>contrapartes</b> (Apoyo Técnico Pedagógico y Gestión de Apoyo a
+  Dos fuentes, seleccionables en el filtro <b>Fuente</b>: el <b>formulario «Celebraciones Institucionales Fiestas Patrias»</b>
+  y el <b>reporte interno</b> de Petorca, que recoge lo que los establecimientos informaron por otras vías. El reporte interno
+  trae menos campos que el formulario. Las <b>contrapartes</b> (Apoyo Técnico Pedagógico y Gestión de Apoyo a
   Establecimientos) se imputan desde el directorio institucional: son la referencia por defecto, no una designación.
-  Revisa la pestaña <b>Cobertura</b> para ver qué establecimientos aún no informan.
+  Revisa la pestaña <b>Cobertura</b> para ver qué establecimientos aún no completan el formulario.
 </div></div>
 
 <div class="kpis" id="kpis"></div>
@@ -170,9 +170,11 @@
     <div class="field"><label for="fComuna">Comuna</label><select id="fComuna"></select></div>
     <div class="field"><label for="fFecha">Fecha</label><select id="fFecha"></select></div>
     <div class="field"><label for="fTipoAct">Tipo de actividad</label><select id="fTipoAct"></select></div>
-    <div class="field"><label for="fEstado">Estado</label><select id="fEstado">
-      <option value="">Todas</option><option value="form">Confirmada en formulario</option>
-      <option value="plan">Sin confirmar en formulario</option><option value="apoyo">Pide apoyo del SLEP</option></select></div>
+    <div class="field"><label for="fFuente">Fuente</label><select id="fFuente">
+      <option value="">Todas</option><option value="form">Formulario</option>
+      <option value="plan">Reporte interno</option></select></div>
+    <div class="field"><label for="fApoyo">Gestión SLEP</label><select id="fApoyo">
+      <option value="">Todas</option><option value="1">Solo las que piden apoyo</option></select></div>
     <div class="field"><label for="fAlim">Alimentos</label><select id="fAlim">
       <option value="">Todas</option><option value="Sí">Contempla alimentos</option><option value="No">Sin alimentos</option></select></div>
     <div class="field"><label for="fAforo">Asistentes estimados</label><select id="fAforo"></select></div>
@@ -194,7 +196,7 @@
   <div id="resView" class="hidden"></div>
   <div id="covView" class="hidden"></div>
 </main>
-<footer>Fuentes: formulario «Celebraciones Institucionales Fiestas Patrias» (respuestas de los establecimientos) y planificación interna de Petorca, cruzadas con el Directorio SLEP Petorca 2026 (dirección, contrapartes y distancias) · Unidad de Estudios y Monitoreo</footer>
+<footer>Fuentes: formulario «Celebraciones Institucionales Fiestas Patrias» (respuestas de los establecimientos) y reporte interno de Petorca, cruzadas con el Directorio SLEP Petorca 2026 (dirección, contrapartes y distancias) · Unidad de Estudios y Monitoreo</footer>
 
 <script>
 /* ────────────────────────────────────────────────────────────────────────────
@@ -224,7 +226,7 @@ function horaTxt(e){return e.hora?(e.hora+(e.hfin?'–'+e.hfin:'')):(e.hlbl||'Po
 const CARGOS_OK=['Director','Directora','Profesor encargado','Profesora encargada','Encargado','Encargada'];
 function cargoTxt(c){return CARGOS_OK.includes(c)?c:'Dirección';}
 function tipoAct(e){return e.catg||'Otra actividad';}
-const FUENTE={form:{lbl:'Confirmada en formulario',cls:'ok'},plan:{lbl:'Sin confirmar en formulario',cls:'warn'}};
+const FUENTE={form:'Formulario',plan:'Reporte interno'};
 function mapsUrl(e){
   if(e.coords)return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(e.coords);
   if(e.direccion)return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(e.direccion+', '+e.comuna+', Chile');
@@ -246,7 +248,7 @@ function outlookUrl(e){
     cargoTxt(e.cargo)+': '+(e.director||'—')+'\n'+
     'Apoyo Técnico Pedagógico: '+(e.atp||'—')+'\n'+
     'Gestión de Apoyo a Establecimientos: '+(e.gda||'—')+'\n'+
-    'Fuente: '+FUENTE[e.fuente].lbl;
+    'Fuente: '+FUENTE[e.fuente];
   let p='&subject='+encodeURIComponent('Fiestas Patrias — '+e.name+' ('+e.act+')')+
         '&location='+encodeURIComponent(loc)+'&body='+encodeURIComponent(body);
   if(!e.iso)return '';
@@ -284,13 +286,13 @@ function initFilters(){
 }
 function currentRows(){
   const fa=$('#fATP').value,fg=$('#fGDA').value,fc=$('#fComuna').value,ff=$('#fFecha').value,ft=$('#fTipoAct').value;
-  const fe=$('#fEstado').value,fal=$('#fAlim').value,faf=$('#fAforo').value;
+  const ffu=$('#fFuente').value,fap=$('#fApoyo').value,fal=$('#fAlim').value,faf=$('#fAforo').value;
   const fs=$('#fSearch').value.trim().toLowerCase();
   return ACTS.filter(e=>
     (!fa||e.atp===fa)&&(!fg||e.gda===fg)&&(!fc||e.comuna===fc)&&
     (!ff||(ff==='__TBD__'?!e.iso:e.iso===ff))&&
     (!ft||tipoAct(e)===ft)&&
-    (!fe||(fe==='apoyo'?(e.apoyos&&e.apoyos.length>0):e.fuente===fe))&&
+    (!ffu||e.fuente===ffu)&&(!fap||(e.apoyos&&e.apoyos.length>0))&&
     (!fal||e.alimentos===fal)&&(!faf||e.aforo===faf)&&
     (!fs||e.name.toLowerCase().includes(fs)||e.code.includes(fs)||e.act.toLowerCase().includes(fs)||
       (e.desc||'').toLowerCase().includes(fs)||(e.lugar||'').toLowerCase().includes(fs)));
@@ -322,7 +324,6 @@ function cardHtml(e){
       (e.aforo?'<span class="chip">👥 '+esc(e.aforo)+'</span>':'')+
       (e.alimentos==='Sí'?'<span class="chip alim">🍽 Alimentos</span>':'')+
       (e.familias==='Sí'?'<span class="chip">Abierta a familias</span>':'')+
-      (e.fuente==='plan'?'<span class="chip warn">Sin confirmar en formulario</span>':'')+
     '</div>'+
     ((e.apoyos&&e.apoyos.length)?'<div class="apoyo"><b>Requiere gestión del SLEP:</b> '+e.apoyos.map(esc).join(' · ')+'</div>':'')+
     (e.desc?'<div class="desc">'+esc(e.desc)+'</div>':'')+
@@ -333,8 +334,8 @@ function cardHtml(e){
       (e.director?'<span>'+esc(cargoTxt(e.cargo))+': '+esc(e.director)+'</span>':'')+
       (e.direccion?'<span>📍 '+(mu?'<a href="'+mu+'" target="_blank" rel="noopener">'+esc(e.direccion)+'</a>':esc(e.direccion))+
         (e.dist?' · <b>'+e.dist+' km</b> desde la oficina':'')+'</span>':'')+
-      (e.resp?'<span class="src">Informó: '+esc(e.resp)+(e.rcargo?' · '+esc(e.rcargo):'')+'</span>':
-        '<span class="src">Sin respuesta al formulario · dato de la planificación interna</span>')+
+      (e.resp?'<span class="src">Fuente: formulario · informó '+esc(e.resp)+(e.rcargo?' ('+esc(e.rcargo)+')':'')+'</span>':
+        '<span class="src">Fuente: reporte interno · informado al equipo de Petorca fuera del formulario</span>')+
     '</div>'+
     '<div class="btns">'+
       (ou?'<a class="addbtn" target="_blank" rel="noopener" href="'+ou+'">＋ Agregar a Outlook</a>':'')+
@@ -401,7 +402,7 @@ function renderAgenda(rows){
     const evs=by[p].slice().sort((a,b)=>((a.iso||'zzzz')+(a.hora||'99:99')).localeCompare((b.iso||'zzzz')+(b.hora||'99:99')));
     const km=evs.filter(e=>e.dist).reduce((a,e)=>a+(+e.dist||0),0);
     const items=evs.map(e=>'<li><b>'+esc(horaTxt(e))+'</b> · '+esc(e.name)+
-      (e.fuente==='plan'?' <span class="chip warn">sin confirmar</span>':'')+'<br><span class="w">'+
+'<br><span class="w">'+
       (e.iso?esc(e.diasem+' '+e.dia+'/'+pad(e.mesnum)):'fecha por definir')+' · '+esc(e.act)+
       (e.dist?' · '+e.dist+' km':'')+'</span></li>').join('');
     return '<div class="pcard"><h4>'+esc(p)+'<span class="n">'+evs.length+' act. · '+Math.round(km)+' km</span></h4><ol>'+items+'</ol></div>';
@@ -446,7 +447,7 @@ function dlDetalle(){
     e.fecha,e.diasem,e.hora||e.hlbl,e.hfin,e.comuna,e.rbd_dv,e.name,e.area,e.tipo,
     e.act,tipoAct(e),e.lugar,e.familias,e.alimentos,e.aforo,
     (e.apoyos||[]).join(' · '),e.desc,e.atp,e.gda,
-    e.director,cargoTxt(e.cargo),e.direccion,e.dist,FUENTE[e.fuente].lbl,e.resp,e.rcargo])));
+    e.director,cargoTxt(e.cargo),e.direccion,e.dist,FUENTE[e.fuente],e.resp,e.rcargo])));
 }
 function bar(v,max,suf){
   const w=max>0?Math.max(v>0?3:0,Math.round(v/max*100)):0;
@@ -544,7 +545,7 @@ function renderRes(rows){
 }
 
 /* ── COBERTURA DEL FORMULARIO ─────────────────────────────────────────────── */
-const EST_LBL={form:'Respondió el formulario',plan:'Sin respuesta, con actividad en la planificación',sin:'Sin información'};
+const EST_LBL={form:'Respondió el formulario',plan:'Informó por reporte interno',sin:'Sin información'};
 function renderCov(){
   const el=$('#covView');
   const comunas=[...new Set(COV.map(c=>c.comuna))].sort((a,b)=>a.localeCompare(b,'es'));
@@ -555,13 +556,13 @@ function renderCov(){
   const tot={n:COV.length,form:COV.filter(x=>x.estado==='form').length,plan:COV.filter(x=>x.estado==='plan').length};
   tot.sin=tot.n-tot.form-tot.plan; tot.pct=Math.round(tot.form/tot.n*100);
   const h='<th>Comuna</th><th class="n">EE</th><th class="n">Respondieron</th><th class="n">% respuesta</th>'+
-    '<th class="n">Solo planificación</th><th class="n">Sin información</th><th>Avance</th>';
+    '<th class="n">Solo reporte interno</th><th class="n">Sin información</th><th>Avance</th>';
   const b=cdata.map(d=>'<tr><td class="name">'+esc(d.c)+'</td><td class="n">'+d.n+'</td><td class="n">'+d.form+
     '</td><td class="n">'+d.pct+'%</td><td class="n'+(d.plan?'':' z')+'">'+d.plan+'</td><td class="n">'+d.sin+
     '</td><td>'+bar(d.pct,100,'%')+'</td></tr>').join('');
   const f='<td>Total SLEP</td><td class="n">'+tot.n+'</td><td class="n">'+tot.form+'</td><td class="n">'+tot.pct+
     '%</td><td class="n">'+tot.plan+'</td><td class="n">'+tot.sin+'</td><td></td>';
-  const csvC=[['Comuna','EE','Respondieron','% respuesta','Solo planificación','Sin información']]
+  const csvC=[['Comuna','EE','Respondieron','% respuesta','Solo reporte interno','Sin información']]
     .concat(cdata.map(d=>[d.c,d.n,d.form,d.pct,d.plan,d.sin]))
     .concat([['Total SLEP',tot.n,tot.form,tot.pct,tot.plan,tot.sin]]);
   let out=tbl('c1','Respuesta al formulario por comuna','Sobre los '+COV.length+' establecimientos del Servicio',
@@ -576,7 +577,7 @@ function renderCov(){
     '<td><span class="chip '+(c.estado==='plan'?'warn':'tbd')+'">'+EST_LBL[c.estado]+'</span></td></tr>').join('');
   const csvP=[['Establecimiento','RBD','Comuna','Tipo','Director/a','Apoyo Técnico Pedagógico','Gestión de Apoyo a Establecimientos','Estado']]
     .concat(pend.map(c=>[c.name,c.rbd_dv||c.code,c.comuna,c.tipo,c.director,c.atp,c.gda,EST_LBL[c.estado]]));
-  out+=tbl('c2','Establecimientos pendientes de respuesta','Nominado, para ir a buscarlos con su contraparte',
+  out+=tbl('c2','Establecimientos que aún no completan el formulario','Nominado, para ir a buscarlos con su contraparte',
     h2,b2,'','fiestas_patrias_2026_pendientes.csv',csvP);
 
   const bya={};pend.filter(c=>c.estado==='sin').forEach(c=>{const k=c.atp||'Sin contraparte ATP';(bya[k]=bya[k]||[]).push(c);});
@@ -591,8 +592,8 @@ function renderCov(){
     h3,b3,'','fiestas_patrias_2026_seguimiento_atp.csv',csvA);
 
   out+='<div class="resnote">Esta vista <b>no depende de los filtros</b>: siempre muestra el universo completo de los '+COV.length+
-    ' establecimientos del Servicio. «Solo planificación» son los que no respondieron el formulario pero sí tienen actividad '+
-    'registrada en la planificación interna de Petorca.</div>';
+    ' establecimientos del Servicio. «Solo reporte interno» son los que aún no completan el formulario pero ya informaron '+
+    'su actividad al equipo de Petorca por otra vía. «Sin información» son los que no han informado por ninguna vía.</div>';
   el.innerHTML=out;
 }
 
@@ -610,13 +611,13 @@ function setView(v){VIEW=v;
   [['#vList','list'],['#vCal','cal'],['#vAg','ag'],['#vRes','res'],['#vCov','cov']].forEach(x=>$(x[0]).classList.toggle('on',v===x[1]));
   [['#listView','list'],['#calView','cal'],['#agView','ag'],['#resView','res'],['#covView','cov']].forEach(x=>$(x[0]).classList.toggle('hidden',v!==x[1]));
   render();}
-['#fATP','#fGDA','#fComuna','#fFecha','#fTipoAct','#fEstado','#fAlim','#fAforo','#fSearch'].forEach(s=>$(s).addEventListener('input',render));
+['#fATP','#fGDA','#fComuna','#fFecha','#fTipoAct','#fFuente','#fApoyo','#fAlim','#fAforo','#fSearch'].forEach(s=>$(s).addEventListener('input',render));
 $('#vList').addEventListener('click',()=>setView('list'));
 $('#vCal').addEventListener('click',()=>setView('cal'));
 $('#vAg').addEventListener('click',()=>setView('ag'));
 $('#vRes').addEventListener('click',()=>setView('res'));
 $('#vCov').addEventListener('click',()=>setView('cov'));
-$('#clear').addEventListener('click',()=>{['#fATP','#fGDA','#fComuna','#fFecha','#fTipoAct','#fEstado','#fAlim','#fAforo'].forEach(s=>$(s).value='');$('#fSearch').value='';render();});
+$('#clear').addEventListener('click',()=>{['#fATP','#fGDA','#fComuna','#fFecha','#fTipoAct','#fFuente','#fApoyo','#fAlim','#fAforo'].forEach(s=>$(s).value='');$('#fSearch').value='';render();});
 initFilters();render();
 </script>
 <style>
@@ -651,7 +652,7 @@ initFilters();render();
 <h3>¿Qué es este visor?</h3>
 <p>Reúne las <b>celebraciones institucionales de Fiestas Patrias</b> que los establecimientos del <b>SLEP Petorca</b> informaron por formulario, y las cruza con el <b>directorio institucional</b> para coordinar quién del Servicio acompaña cada acto, desfile, peña o fiesta costumbrista.</p>
 <h3>De dónde vienen los datos</h3>
-<p>La fuente principal es el <b>formulario respondido por cada establecimiento</b>. Cuando un establecimiento no respondió pero sí tenía actividad en la <b>planificación interna de Petorca</b>, esa actividad se conserva marcada como <b>«sin confirmar en formulario»</b>: está en la agenda, pero nadie del establecimiento la ha ratificado todavía.</p>
+<p>El visor combina dos fuentes y el filtro <b>Fuente</b> permite ver una u otra. Ambas vienen de lo que informan los establecimientos; cambia el canal por el que llegó el dato. El <b>formulario</b> son las respuestas registradas en el formulario institucional. El <b>reporte interno</b> son actividades que el establecimiento comunicó al equipo de Petorca por otra vía y que este levantó en su catastro, para establecimientos que todavía no completan el formulario. Por eso el reporte interno trae menos campos: no hay horario de término, lugar exacto, aforo ni alimentos. Al pie de cada ficha se indica siempre de cuál de las dos viene.</p>
 <h3>Las tres vistas</h3>
 <dl>
   <dt>Lista</dt><dd>Actividades agrupadas por día, con ficha completa de cada una. Cada bloque de día se puede plegar.</dd>
