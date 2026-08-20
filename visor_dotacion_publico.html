@@ -365,19 +365,25 @@
   .vtab:hover{color:var(--blue)}
   .vtab.on{color:var(--navy);border-bottom-color:var(--blue)}
   :root[data-theme="dark"] .vtab.on{color:#8ab8f0}
-  .tb-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:start}
-  @media(max-width:980px){.tb-grid{grid-template-columns:1fr}}
+  .tb-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:start}
+  @media(max-width:760px){.tb-grid{grid-template-columns:1fr}}
   .tb-panel{background:var(--surface);border:1px solid var(--bd);border-radius:14px;padding:14px 16px}
+  .tb-panel.off{opacity:.45}
   .tb-panel h4{margin:0 0 2px;font-size:14px;color:var(--navy)}
   :root[data-theme="dark"] .tb-panel h4{color:#8ab8f0}
   .tb-panel .hint{font-size:12px;color:var(--muted);margin:0 0 10px}
-  .tb-list{max-height:280px;overflow:auto;border:1px solid var(--bd);border-radius:10px;padding:6px}
+  .tb-list{max-height:300px;overflow:auto;border:1px solid var(--bd);border-radius:10px;padding:6px}
   .tb-op{display:flex;align-items:flex-start;gap:8px;padding:5px 6px;border-radius:8px;font-size:13px;cursor:pointer}
   .tb-op:hover{background:var(--chip)}
+  .tb-op.off{opacity:.5}
   .tb-op input{margin-top:2px;flex:none}
   .tb-op .ord{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--blue);flex:none}
   .tb-grp{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);
     padding:8px 6px 3px;font-weight:700}
+  .tb-grpsel{display:flex;align-items:baseline;gap:8px}
+  .tb-grpsel button{margin-left:auto;border:0;background:none;font-family:inherit;font-size:10.5px;
+    font-weight:700;color:var(--blue);cursor:pointer;text-transform:none;letter-spacing:0;padding:0}
+  .tb-grpsel button:hover{text-decoration:underline}
   .tb-mini{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 6px}
   .tb-mini .btn{padding:4px 9px;font-size:11.5px}
   .tb-search{width:100%;font-family:inherit;font-size:13px;border:1px solid var(--bd);border-radius:9px;
@@ -402,18 +408,31 @@
 <div class="wrap" id="view-tabla" hidden>
   <div class="card full">
     <h3>Constructor de tablas <span class="info" data-def="constructor">ⓘ</span></h3>
-    <p class="cs">Arma la tabla que necesitas: elige <b>cómo agrupar las filas</b>, <b>qué cifras</b> mostrar y
-      <b>qué establecimientos</b> incluir. Previsualiza y descarga en <b>Excel</b> o CSV.
-      Cifras agregadas, sin datos individualizados de personas.</p>
+    <p class="cs">Arma la tabla que necesitas: elige <b>cómo agrupar las filas</b>, <b>qué cifras</b> mostrar,
+      <b>qué funciones</b> contar y <b>qué establecimientos</b> incluir. Previsualiza y descarga en
+      <b>Excel</b> o CSV. Cifras agregadas, sin datos individualizados de personas.</p>
 
     <div class="tb-bar">
       <div class="fg"><label>Mes</label><select id="tbMes"></select></div>
       <div class="fg"><label>Reemplazos</label>
         <div class="seg" id="tbRem"><button data-v="con" class="on">Con reemplazos</button><button data-v="sin">Sin reemplazos</button></div>
       </div>
+      <div class="fg"><label>Formato de la tabla</label>
+        <select id="tbPivot">
+          <option value="">Lista (una fila por grupo)</option>
+          <option value="func">Matriz · una columna por función específica</option>
+          <option value="fgrp">Matriz · una columna por tipo de función</option>
+        </select>
+      </div>
+      <div class="fg" id="tbPivMetBox" hidden><label>Qué contar en la matriz</label><select id="tbPivMet"></select></div>
+    </div>
+
+    <div class="tb-bar">
+      <span class="cs" style="margin:0;align-self:center">Atajos:</span>
       <button class="btn" id="tbPreset1">Dotación por establecimiento</button>
       <button class="btn" id="tbPreset2">Dotación por comuna</button>
-      <button class="btn" id="tbPreset3">Función por establecimiento</button>
+      <button class="btn" id="tbPreset3">Matriz función × establecimiento</button>
+      <button class="btn" id="tbPreset4">Auxiliares y servicios por EE (EPP)</button>
     </div>
 
     <div class="tb-grid">
@@ -423,9 +442,10 @@
         <div class="tb-list" id="tbDims"></div>
       </div>
 
-      <div class="tb-panel">
+      <div class="tb-panel" id="tbMetBox">
         <h4>2 · Cifras a incluir</h4>
-        <p class="hint">Se calculan sobre el mes y la selección de establecimientos.</p>
+        <p class="hint">Se calculan sobre el mes, las funciones y los establecimientos elegidos.
+          En formato matriz se usa una sola cifra, la del selector de arriba.</p>
         <div class="tb-mini">
           <button class="btn" id="tbMetAll">Todas</button>
           <button class="btn" id="tbMetNone">Ninguna</button>
@@ -435,7 +455,20 @@
       </div>
 
       <div class="tb-panel">
-        <h4>3 · Establecimientos</h4>
+        <h4>3 · Funciones a contar</h4>
+        <p class="hint">Deja solo las que te interesan. Cada grupo se puede marcar o quitar completo.
+          Ojo: los <b>nocheros</b> están declarados en SIGE como «Cuidado del establecimiento».</p>
+        <input class="tb-search" id="tbQfn" type="text" placeholder="Buscar función…" autocomplete="off">
+        <div class="tb-mini">
+          <button class="btn" id="tbFnAll">Todas</button>
+          <button class="btn" id="tbFnNone">Ninguna</button>
+          <button class="btn" id="tbFnEpp">Solo aseo, servicios y mantención</button>
+        </div>
+        <div class="tb-list" id="tbFnList"></div>
+      </div>
+
+      <div class="tb-panel">
+        <h4>4 · Establecimientos</h4>
         <p class="hint">Por defecto van todos. También puedes traer la selección que dejaste en el resumen.</p>
         <input class="tb-search" id="tbQee" type="text" placeholder="Buscar por RBD o nombre…" autocomplete="off">
         <div class="tb-mini">
@@ -459,7 +492,8 @@
     <p class="srcnote" style="margin-top:14px"><span class="srcbadge">OJO</span>
       Las <b>personas</b> se cuentan únicas dentro de cada fila. Si agrupas por establecimiento o por función, quien
       tenga nombramientos en dos establecimientos (o en dos funciones) aparece en ambas filas, así que la suma de la
-      columna es mayor que la dotación total del Servicio. Los <b>nombramientos</b> y las <b>horas</b> sí suman exacto.</p>
+      columna es mayor que la dotación total del Servicio. La fila <b>TOTAL</b> sí está calculada sin duplicar.
+      Los <b>nombramientos</b> y las <b>horas</b> suman exacto en cualquier caso.</p>
   </div>
 </div>
 
@@ -1117,10 +1151,12 @@ const TB_METS = [
   ]},
 ];
 const TB_MET_BASE = ['personas','nombr','horas','jce'];
-const TBS = {dims:['rbd'], mets:TB_MET_BASE.slice(), ee:null, qee:'', rem:'con', sort:null, dir:1};
+const TBS = {dims:['rbd'], mets:TB_MET_BASE.slice(), ee:null, fn:null, qee:'', qfn:'',
+             rem:'con', pivot:'', pivotMet:'personas', sort:null, dir:1};
 let tbInit=false;
 
 function tbEeSet(){ return TBS.ee || (TBS.ee = new Set(EST.map((_,i)=>i))); }
+function tbFnSet(){ return TBS.fn || (TBS.fn = new Set(M.func.map((_,i)=>i))); }
 
 function tbDimValue(r, d){
   if(d==='mes')   return M.meses[r[C.MES]];
@@ -1150,64 +1186,100 @@ const TB_MET_LBL = {};
 TB_METS.forEach(g=>g.items.forEach(([k,l])=>TB_MET_LBL[k]=l));
 
 /* ---- cálculo ---- */
-function tbBuildModel(){
-  const mesSel=document.getElementById('tbMes').value;   // '' = todos los meses
-  const ee=tbEeSet();
-  const groups=new Map();
-  const nuevo=v=>({vals:v, per:new Set(), n:0, horas:0, doc:new Set(), asi:new Set(), cdt:new Set(),
-    rem:0, remper:new Set(), brpt:new Set(), brpm:new Set(), bien:new Map(),
-    muj:new Set(), hom:new Set()});
-  const glob=nuevo([]);          /* acumulador del TOTAL: cuenta unica sobre toda la seleccion */
-  const sumar=(a,r)=>{
-    const rut=r[C.RUT];
-    a.per.add(rut); a.n++; a.horas+=r[C.JORN];
-    (r[C.ESC]===0?a.doc:r[C.ESC]===1?a.asi:a.cdt).add(rut);
-    if(r[C.REM]===1){ a.rem++; a.remper.add(rut); }
-    if(r[C.BRPT]) a.brpt.add(rut);
-    if(r[C.BRPM]) a.brpm.add(rut);
-    if(r[C.ESC]===0 && r[C.BIENIO]!=null){ const p=a.bien.get(rut); if(p==null||r[C.BIENIO]>p) a.bien.set(rut,r[C.BIENIO]); }
-    (r[C.SEXO]===0?a.muj:a.hom).add(rut);
-  };
+function tbNuevo(v){ return {vals:v, per:new Set(), n:0, horas:0, doc:new Set(), asi:new Set(), cdt:new Set(),
+  rem:0, remper:new Set(), brpt:new Set(), brpm:new Set(), bien:new Map(), muj:new Set(), hom:new Set()}; }
+function tbSumar(a,r){
+  const rut=r[C.RUT];
+  a.per.add(rut); a.n++; a.horas+=r[C.JORN];
+  (r[C.ESC]===0?a.doc:r[C.ESC]===1?a.asi:a.cdt).add(rut);
+  if(r[C.REM]===1){ a.rem++; a.remper.add(rut); }
+  if(r[C.BRPT]) a.brpt.add(rut);
+  if(r[C.BRPM]) a.brpm.add(rut);
+  if(r[C.ESC]===0 && r[C.BIENIO]!=null){ const p=a.bien.get(rut); if(p==null||r[C.BIENIO]>p) a.bien.set(rut,r[C.BIENIO]); }
+  (r[C.SEXO]===0?a.muj:a.hom).add(rut);
+}
+function tbVal(a,m){
+  if(!a) return 0;
+  switch(m){
+    case 'personas': return a.per.size;
+    case 'nombr':    return a.n;
+    case 'horas':    return Math.round(a.horas*10)/10;
+    case 'jce':      return Math.round(a.horas/44*10)/10;
+    case 'jprom':    return a.n? Math.round(a.horas/a.n*10)/10 : 0;
+    case 'doc':      return a.doc.size;
+    case 'asi':      return a.asi.size;
+    case 'cdt':      return a.cdt.size;
+    case 'rem':      return a.rem;
+    case 'remper':   return a.remper.size;
+    case 'brpt':     return a.brpt.size;
+    case 'brpm':     return a.brpm.size;
+    case 'bien':     { if(!a.bien.size) return null; let s=0; a.bien.forEach(v=>s+=v);
+                       return Math.round(s/a.bien.size*100)/100; }
+    case 'muj':      return a.muj.size;
+    case 'hom':      return a.hom.size;
+    case 'pmuj':     { const t=a.muj.size+a.hom.size; return t? Math.round(a.muj.size/t*1000)/10 : null; }
+  }
+  return null;
+}
+function tbFiltered(){
+  const mesSel=document.getElementById('tbMes').value;   /* '' = todos los meses */
+  const ee=tbEeSet(), fn=tbFnSet(), out=[];
   for(const r of ROWS){
     if(!ee.has(r[C.EST])) continue;
+    if(!fn.has(r[C.FUNC])) continue;
     if(mesSel!=='' && r[C.MES]!==+mesSel) continue;
     if(TBS.rem==='sin' && r[C.REM]===1) continue;
-    const vals=TBS.dims.map(d=>tbDimValue(r,d));
-    const k=vals.join('\u0001');
-    let a=groups.get(k);
-    if(!a){ a=nuevo(vals); groups.set(k,a); }
-    sumar(a,r); sumar(glob,r);
+    out.push(r);
   }
-  const header=[]; TBS.dims.forEach(d=>header.push(...tbDimCols(d)));
-  const numFrom=header.length;
-  TBS.mets.forEach(m=>header.push(TB_MET_LBL[m]));
-  const val=(a,m)=>{
-    switch(m){
-      case 'personas': return a.per.size;
-      case 'nombr':    return a.n;
-      case 'horas':    return Math.round(a.horas*10)/10;
-      case 'jce':      return Math.round(a.horas/44*10)/10;
-      case 'jprom':    return a.n? Math.round(a.horas/a.n*10)/10 : 0;
-      case 'doc':      return a.doc.size;
-      case 'asi':      return a.asi.size;
-      case 'cdt':      return a.cdt.size;
-      case 'rem':      return a.rem;
-      case 'remper':   return a.remper.size;
-      case 'brpt':     return a.brpt.size;
-      case 'brpm':     return a.brpm.size;
-      case 'bien':     { if(!a.bien.size) return null; let s=0; a.bien.forEach(v=>s+=v);
-                         return Math.round(s/a.bien.size*100)/100; }
-      case 'muj':      return a.muj.size;
-      case 'hom':      return a.hom.size;
-      case 'pmuj':     { const t=a.muj.size+a.hom.size; return t? Math.round(a.muj.size/t*1000)/10 : null; }
+  return {rows:out, mesLbl: mesSel===''? 'todos los meses' : M.meses[+mesSel]};
+}
+
+function tbBuildModel(){
+  const {rows:sel, mesLbl}=tbFiltered();
+  const piv=TBS.pivot;                                   /* '' | 'func' | 'fgrp' */
+  const dims=piv? TBS.dims.filter(d=>d!==piv) : TBS.dims;
+  const groups=new Map();
+  const glob=tbNuevo([]);
+  const globPiv=new Map();
+  const pivIdx=r=> piv==='func' ? r[C.FUNC] : r[C.FGRP];
+  for(const r of sel){
+    const vals=dims.map(d=>tbDimValue(r,d));
+    const k=vals.join('|~|');
+    let a=groups.get(k);
+    if(!a){ a=tbNuevo(vals); if(piv) a.piv=new Map(); groups.set(k,a); }
+    tbSumar(a,r); tbSumar(glob,r);
+    if(piv){
+      const pi=pivIdx(r);
+      let b=a.piv.get(pi); if(!b){ b=tbNuevo([]); a.piv.set(pi,b); } tbSumar(b,r);
+      let gb=globPiv.get(pi); if(!gb){ gb=tbNuevo([]); globPiv.set(pi,gb); } tbSumar(gb,r);
     }
-    return null;
-  };
-  let rows=[...groups.values()].map(a=>{
-    const out=[]; TBS.dims.forEach((d,i)=>out.push(...tbDimCells(d,a.vals[i])));
-    TBS.mets.forEach(m=>out.push(val(a,m)));
-    return out;
-  });
+  }
+  const header=[]; dims.forEach(d=>header.push(...tbDimCols(d)));
+  const numFrom=header.length;
+  let rows, tot=header.map(()=>'');
+  if(piv){
+    const univ = piv==='func' ? M.func : M.fgrp;
+    const cols = univ.map((l,i)=>[l,i]).filter(([,i])=>globPiv.has(i));
+    cols.forEach(([l])=>header.push(l));
+    header.push('Total');
+    rows=[...groups.values()].map(a=>{
+      const out=[]; dims.forEach((d,i)=>out.push(...tbDimCells(d,a.vals[i])));
+      cols.forEach(([,i])=>out.push(tbVal(a.piv.get(i),TBS.pivotMet)));
+      out.push(tbVal(a,TBS.pivotMet));
+      return out;
+    });
+    cols.forEach(([,i],j)=>{ tot[numFrom+j]=tbVal(globPiv.get(i),TBS.pivotMet); });
+    tot[numFrom+cols.length]=tbVal(glob,TBS.pivotMet);
+  } else {
+    TBS.mets.forEach(m=>header.push(TB_MET_LBL[m]));
+    rows=[...groups.values()].map(a=>{
+      const out=[]; dims.forEach((d,i)=>out.push(...tbDimCells(d,a.vals[i])));
+      TBS.mets.forEach(m=>out.push(tbVal(a,m)));
+      return out;
+    });
+    TBS.mets.forEach((m,j)=>{ tot[numFrom+j]=tbVal(glob,m); });
+  }
+  tot[0]='TOTAL';
   const cmp=(x,y)=>{
     const i=TBS.sort==null?0:TBS.sort, a=x[i], b=y[i];
     if(typeof a==='number'||typeof b==='number'){
@@ -1216,21 +1288,18 @@ function tbBuildModel(){
     return String(a??'').localeCompare(String(b??''),'es')*TBS.dir;
   };
   rows.sort(cmp);
-  /* TOTAL: se calcula sobre toda la selección, NO sumando las filas.
-     Así "personas" es la dotación única real y no infla por quien está en dos establecimientos. */
-  const tot=header.map(()=>'');
-  tot[0]='TOTAL';
-  TBS.mets.forEach((m,j)=>{ tot[numFrom+j]=val(glob,m); });
-  return {header, rows, numFrom, tot, mesLbl: mesSel===''? 'todos los meses' : M.meses[+mesSel]};
+  return {header, rows, numFrom, tot, mesLbl, dims};
 }
 
 /* ---- render ---- */
 function tbRenderPrev(){
   const m=tbBuildModel(), host=document.getElementById('tbPrev');
+  const fn=tbFnSet();
   document.getElementById('tbStat').innerHTML =
     `<b>${nf.format(m.rows.length)}</b> filas · <b>${m.header.length}</b> columnas · ${m.mesLbl} · ` +
-    `<b>${nf.format(tbEeSet().size)}</b> de ${EST.length} establecimientos`;
-  if(!TBS.mets.length && !TBS.dims.length){
+    `<b>${nf.format(tbEeSet().size)}</b>/${EST.length} establecimientos · ` +
+    `<b>${nf.format(fn.size)}</b>/${M.func.length} funciones`;
+  if(!m.header.length){
     host.innerHTML='<div class="tb-empty">Marca al menos una forma de agrupar o una cifra.</div>'; return; }
   if(!m.rows.length){ host.innerHTML='<div class="tb-empty">Sin datos para esta selección.</div>'; return; }
   const cap=300, vis=m.rows.slice(0,cap);
@@ -1251,8 +1320,22 @@ function tbRenderPrev(){
 
 /* ---- descargas ---- */
 function tbFileName(ext){
-  const d=TBS.dims.length?TBS.dims.join('-'):'total';
+  const d=TBS.pivot? ('x'+TBS.pivot) : (TBS.dims.length?TBS.dims.join('-'):'total');
   return `dotacion_${d}_SLEP_Petorca.${ext}`;
+}
+function tbFichaTecnica(m){
+  const fn=tbFnSet();
+  const funcs = fn.size===M.func.length ? 'todas' : M.func.filter((_,i)=>fn.has(i)).join(' · ');
+  return [['Visor','Resumen dotación · SLEP Petorca'],['Generado',M.actualizado],
+    ['Mes',m.mesLbl],['Reemplazos',TBS.rem==='con'?'incluidos':'excluidos'],
+    ['Establecimientos',tbEeSet().size+' de '+EST.length],
+    ['Agrupado por',m.dims.length?m.dims.map(d=>tbDimCols(d).join(' / ')).join(' · '):'(sin agrupar)'],
+    ['Formato',TBS.pivot? ('matriz: una columna por '+(TBS.pivot==='func'?'función específica':'tipo de función')+
+      ', valor = '+TB_MET_LBL[TBS.pivotMet]) : 'lista'],
+    ['Funciones incluidas',funcs],
+    ['Fuente dotación','Maestros de remuneraciones (Trayectoria 02)'],
+    ['Fuente función',M.func_sige+' — en jardines VTF y sin declaración SIGE, cargo del maestro'],
+    ['Advertencia','Las personas se cuentan únicas dentro de cada fila; quien trabaja en dos establecimientos aparece en ambos.']];
 }
 function tbCsv(){
   const m=tbBuildModel();
@@ -1276,14 +1359,7 @@ function tbXlsx(){
   ws['!freeze']={xSplit:0,ySplit:1};
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Dotación');
-  const meta=[['Visor','Resumen dotación · SLEP Petorca'],['Generado',M.actualizado],
-    ['Mes',m.mesLbl],['Reemplazos',TBS.rem==='con'?'incluidos':'excluidos'],
-    ['Establecimientos',tbEeSet().size+' de '+EST.length],
-    ['Agrupado por',TBS.dims.length?TBS.dims.map(d=>tbDimCols(d).join(' / ')).join(' · '):'(sin agrupar)'],
-    ['Fuente dotación','Maestros de remuneraciones (Trayectoria 02)'],
-    ['Fuente función',M.func_sige+' — en jardines VTF y sin declaración SIGE, cargo del maestro'],
-    ['Advertencia','Las personas se cuentan únicas dentro de cada fila; quien trabaja en dos establecimientos aparece en ambos.']];
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(meta),'Ficha técnica');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tbFichaTecnica(m)),'Ficha técnica');
   XLSX.writeFile(wb, tbFileName('xlsx'));
 }
 
@@ -1293,10 +1369,10 @@ function tbBuildDims(){
   TB_DIMS.forEach(g=>{
     const t=document.createElement('div'); t.className='tb-grp'; t.textContent=g.g; host.appendChild(t);
     g.items.forEach(([k,l])=>{
-      const on=TBS.dims.indexOf(k);
-      const lab=document.createElement('label'); lab.className='tb-op';
-      lab.innerHTML=`<input type="checkbox" ${on>=0?'checked':''}><span>${l}</span>`+
-        (on>=0?`<span class="ord">${on+1}º</span>`:'');
+      const on=TBS.dims.indexOf(k), muerta=TBS.pivot===k;
+      const lab=document.createElement('label'); lab.className='tb-op'+(muerta?' off':'');
+      lab.innerHTML=`<input type="checkbox" ${on>=0?'checked':''} ${muerta?'disabled':''}><span>${l}</span>`+
+        (muerta?`<span class="ord">en columnas</span>`:on>=0?`<span class="ord">${on+1}º</span>`:'');
       lab.querySelector('input').addEventListener('change',e=>{
         if(e.target.checked){ if(TBS.dims.indexOf(k)<0) TBS.dims.push(k); }
         else TBS.dims=TBS.dims.filter(x=>x!==k);
@@ -1308,11 +1384,14 @@ function tbBuildDims(){
 }
 function tbBuildMets(){
   const host=document.getElementById('tbMets'); host.innerHTML='';
+  const piv=!!TBS.pivot;
+  document.getElementById('tbMetBox').classList.toggle('off',piv);
+  document.getElementById('tbPivMetBox').hidden=!piv;
   TB_METS.forEach(g=>{
     const t=document.createElement('div'); t.className='tb-grp'; t.textContent=g.g; host.appendChild(t);
     g.items.forEach(([k,l])=>{
       const lab=document.createElement('label'); lab.className='tb-op';
-      lab.innerHTML=`<input type="checkbox" ${TBS.mets.includes(k)?'checked':''}><span>${l}</span>`;
+      lab.innerHTML=`<input type="checkbox" ${TBS.mets.includes(k)?'checked':''} ${piv?'disabled':''}><span>${l}</span>`;
       lab.querySelector('input').addEventListener('change',e=>{
         if(e.target.checked){ if(!TBS.mets.includes(k)) TBS.mets.push(k); }
         else TBS.mets=TBS.mets.filter(x=>x!==k);
@@ -1321,6 +1400,31 @@ function tbBuildMets(){
       host.appendChild(lab);
     });
   });
+}
+function tbBuildFnList(){
+  const host=document.getElementById('tbFnList'); host.innerHTML='';
+  const fn=tbFnSet(), q=_cnorm(TBS.qfn||'');
+  M.fgrp.forEach((grp,gi)=>{
+    const idx=M.func.map((f,i)=>[f,i]).filter(([f,i])=>M.func_grupo[i]===gi &&
+      (!q || _cnorm(f+' '+grp).includes(q)));
+    if(!idx.length) return;
+    const todos=idx.every(([,i])=>fn.has(i));
+    const t=document.createElement('div'); t.className='tb-grp tb-grpsel';
+    t.innerHTML=`<span>${grp}</span><button type="button">${todos?'quitar':'marcar'} grupo</button>`;
+    t.querySelector('button').addEventListener('click',()=>{
+      idx.forEach(([,i])=>todos?fn.delete(i):fn.add(i)); tbBuildFnList(); tbRenderPrev(); });
+    host.appendChild(t);
+    idx.forEach(([f,i])=>{
+      const lab=document.createElement('label'); lab.className='tb-op';
+      lab.innerHTML=`<input type="checkbox" ${fn.has(i)?'checked':''}><span>${f}</span>`;
+      lab.querySelector('input').addEventListener('change',e=>{
+        if(e.target.checked) fn.add(i); else fn.delete(i);
+        tbBuildFnList(); tbRenderPrev();
+      });
+      host.appendChild(lab);
+    });
+  });
+  if(!host.children.length) host.innerHTML='<div class="tb-empty">(sin coincidencias)</div>';
 }
 function tbBuildEEList(){
   const host=document.getElementById('tbEeList'); host.innerHTML='';
@@ -1348,8 +1452,18 @@ function tbUpdChips(){
     host.appendChild(b);
   });
 }
-function tbSetPreset(dims,mets){ TBS.dims=dims.slice(); TBS.mets=mets.slice(); TBS.sort=null; TBS.dir=1;
-  tbBuildDims(); tbBuildMets(); tbRenderPrev(); }
+function tbFnGrupo(nombre){
+  const gi=M.fgrp.indexOf(nombre);
+  TBS.fn=new Set(M.func.map((_,i)=>i).filter(i=>M.func_grupo[i]===gi));
+}
+function tbRefresh(){ tbBuildDims(); tbBuildMets(); tbBuildFnList(); tbRenderPrev(); }
+function tbSetPreset(dims,mets,piv,pivMet){
+  TBS.dims=dims.slice(); TBS.mets=mets.slice();
+  TBS.pivot=piv||''; if(pivMet) TBS.pivotMet=pivMet;
+  document.getElementById('tbPivot').value=TBS.pivot;
+  document.getElementById('tbPivMet').value=TBS.pivotMet;
+  TBS.sort=null; TBS.dir=1; tbRefresh();
+}
 
 function buildTabla(){
   if(tbInit){ tbRenderPrev(); return; }
@@ -1364,23 +1478,39 @@ function buildTabla(){
     [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));
     e.target.classList.add('on'); TBS.rem=e.target.dataset.v; tbRenderPrev();
   });
+  document.getElementById('tbPivot').addEventListener('change',e=>{
+    TBS.pivot=e.target.value; TBS.sort=null; TBS.dir=1; tbRefresh(); });
+  document.getElementById('tbPivMet').innerHTML =
+    TB_METS.flatMap(g=>g.items).map(([k,l])=>`<option value="${k}">${l}</option>`).join('');
+  document.getElementById('tbPivMet').value=TBS.pivotMet;
+  document.getElementById('tbPivMet').addEventListener('change',e=>{TBS.pivotMet=e.target.value;tbRenderPrev();});
   document.getElementById('tbQee').addEventListener('input',e=>{TBS.qee=e.target.value;tbBuildEEList();});
+  document.getElementById('tbQfn').addEventListener('input',e=>{TBS.qfn=e.target.value;tbBuildFnList();});
   document.getElementById('tbEeAll').addEventListener('click',()=>{TBS.ee=new Set(EST.map((_,i)=>i));tbBuildEEList();tbUpdChips();tbRenderPrev();});
   document.getElementById('tbEeNone').addEventListener('click',()=>{TBS.ee=new Set();tbBuildEEList();tbUpdChips();tbRenderPrev();});
   document.getElementById('tbEeFromF').addEventListener('click',()=>{
     TBS.ee=new Set(EST.map((e,i)=>[e,i]).filter(([e])=>estabOK(e)).map(([,i])=>i));
     tbBuildEEList();tbUpdChips();tbRenderPrev();
   });
+  document.getElementById('tbFnAll').addEventListener('click',()=>{TBS.fn=new Set(M.func.map((_,i)=>i));tbBuildFnList();tbRenderPrev();});
+  document.getElementById('tbFnNone').addEventListener('click',()=>{TBS.fn=new Set();tbBuildFnList();tbRenderPrev();});
+  document.getElementById('tbFnEpp').addEventListener('click',()=>{
+    tbFnGrupo('Servicios, aseo y mantención'); tbBuildFnList(); tbRenderPrev(); });
   document.getElementById('tbMetAll').addEventListener('click',()=>{
     TBS.mets=TB_METS.flatMap(g=>g.items.map(it=>it[0]));tbBuildMets();tbRenderPrev();});
   document.getElementById('tbMetNone').addEventListener('click',()=>{TBS.mets=[];tbBuildMets();tbRenderPrev();});
   document.getElementById('tbMetBase').addEventListener('click',()=>{TBS.mets=TB_MET_BASE.slice();tbBuildMets();tbRenderPrev();});
-  document.getElementById('tbPreset1').addEventListener('click',()=>tbSetPreset(['rbd'],['personas','nombr','horas','jce','doc','asi','cdt']));
-  document.getElementById('tbPreset2').addEventListener('click',()=>tbSetPreset(['comuna'],['personas','nombr','horas','jce','doc','asi','cdt']));
-  document.getElementById('tbPreset3').addEventListener('click',()=>tbSetPreset(['rbd','fgrp'],['personas','nombr','horas']));
+  document.getElementById('tbPreset1').addEventListener('click',()=>{
+    TBS.fn=new Set(M.func.map((_,i)=>i)); tbSetPreset(['rbd'],['personas','nombr','horas','jce','doc','asi','cdt'],''); });
+  document.getElementById('tbPreset2').addEventListener('click',()=>{
+    TBS.fn=new Set(M.func.map((_,i)=>i)); tbSetPreset(['comuna'],['personas','nombr','horas','jce','doc','asi','cdt'],''); });
+  document.getElementById('tbPreset3').addEventListener('click',()=>{
+    TBS.fn=new Set(M.func.map((_,i)=>i)); tbSetPreset(['rbd'],[],'func','personas'); });
+  document.getElementById('tbPreset4').addEventListener('click',()=>{
+    tbFnGrupo('Servicios, aseo y mantención'); tbSetPreset(['rbd'],[],'func','personas'); });
   document.getElementById('tbXlsx').addEventListener('click',tbXlsx);
   document.getElementById('tbCsv').addEventListener('click',tbCsv);
-  tbBuildDims(); tbBuildMets(); tbBuildEEList(); tbUpdChips(); tbRenderPrev();
+  tbBuildEEList(); tbUpdChips(); tbRefresh();
 }
 
 /* ---- pestañas ---- */
