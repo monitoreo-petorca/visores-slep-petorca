@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor de Flujos — Monitoreo y Dotación · SLEP Petorca</title>
+<style>
+:root{
+  --blue:#1f6fd0; --navy:#0b3d6b; --ink:#16202b; --ink2:#5a6472; --bd:#e2e6ec;
+  --bg:#f6f8fa; --panel:#ffffff;
+  --n-root:#12b26a; --n-head:#f4626e; --n-item:#3d8fdd; --n-sub:#6aaee8;
+  --n-proc:#f2a43c; --n-dec:#ef9427; --n-yes:#12907d; --n-no:#f4626e;
+  --n-teal:#0f7d70; --n-out:#0d6a5f; --n-lane:#12314e; 
+  --edge:#5c7186;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.hub-back{display:block;background:#0b3d6b;color:#fff;text-decoration:none;font:600 13px/1.3 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:8px 20px;letter-spacing:.2px}
+.hub-back:hover{background:#0a3155}
+
+/* ---------- header ---------- */
+header.top{background:linear-gradient(115deg,#2a95d5,#4fb3e8 55%,#6cc6f0);color:#fff;padding:20px 24px 18px}
+header.top h1{margin:0;font-size:21px;letter-spacing:.3px}
+header.top p{margin:6px 0 0;font-size:13px;opacity:.95;max-width:760px;line-height:1.5}
+.tabs{background:#fff;border-bottom:1px solid var(--bd);padding:0 16px;display:flex;gap:2px;position:sticky;top:0;z-index:60;overflow-x:auto}
+.tabs button{background:none;border:none;border-bottom:3px solid transparent;padding:13px 16px;font:600 14px system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.tabs button:hover{color:var(--navy)}
+.tabs button.on{color:var(--navy);border-bottom-color:var(--blue)}
+
+.wrap{max-width:1440px;margin:0 auto;padding:20px 20px 70px}
+.pane{display:none}.pane.on{display:block}
+
+/* ---------- inicio ---------- */
+.hero{background:#fff;border:1px solid var(--bd);border-radius:14px;padding:22px 24px;margin-bottom:22px}
+.hero h2{margin:0 0 8px;font-size:17px;color:var(--navy)}
+.hero p{margin:0 0 6px;font-size:13.5px;line-height:1.6;color:#3d4854;max-width:900px}
+.sec{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink2);margin:24px 0 12px;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:1080px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.card{display:block;text-align:left;width:100%;background:#fff;border:1px solid var(--bd);border-radius:13px;padding:16px 17px;cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s;font-family:inherit}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(10,40,70,.09);border-color:#c9d6e4}
+.card h3{margin:0 0 5px;font-size:14.5px;color:var(--navy);line-height:1.35}
+.card p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.card .tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-radius:20px;padding:2px 9px;margin-bottom:8px}
+.t-flujo{background:#fdeee1;color:#c9761a}.t-org{background:#e6f2fb;color:#1f6fd0}.t-base{background:#e6f6ef;color:#0d8a56}.t-asig{background:#fdeaec;color:#c9414f}
+
+/* ---------- sub nav ---------- */
+.layout{display:grid;grid-template-columns:250px 1fr;gap:20px;align-items:start}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.side{background:#fff;border:1px solid var(--bd);border-radius:13px;padding:10px;position:sticky;top:60px;max-height:calc(100vh - 80px);overflow-y:auto}
+@media(max-width:900px){.side{position:static;max-height:none}}
+.side .gl{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:#93a0ae;font-weight:700;padding:12px 10px 5px}
+.side button{display:block;width:100%;text-align:left;background:none;border:none;border-radius:8px;padding:8px 10px;font:500 13px system-ui,-apple-system,'Segoe UI',sans-serif;color:#3d4854;cursor:pointer;line-height:1.35}
+.side button:hover{background:#eff4f9}
+.side button.on{background:var(--navy);color:#fff;font-weight:600}
+.view{min-width:0}
+.subpane{display:none}.subpane.on{display:block}
+
+/* ---------- diagram frame ---------- */
+.dg{background:#fff;border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.dg-head{padding:16px 20px 14px;border-bottom:1px solid var(--bd);background:linear-gradient(115deg,#3ba3dd,#5fbdec)}
+.dg-head h2{margin:0;font-size:16.5px;color:#fff;letter-spacing:.3px;text-transform:uppercase;font-weight:800}
+.dg-head p{margin:5px 0 0;font-size:12.5px;color:#eaf7ff;line-height:1.5;max-width:900px}
+.dg-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd);background:#fbfcfd}
+.zbtn{background:#fff;border:1px solid var(--bd);border-radius:8px;width:30px;height:30px;cursor:pointer;font:700 14px system-ui;color:var(--ink2);line-height:1}
+.zbtn:hover{border-color:var(--navy);color:var(--navy)}
+.zlab{font-size:11.5px;color:var(--ink2);min-width:42px;text-align:center;font-variant-numeric:tabular-nums}
+.chip{border:1px solid var(--bd);background:#fff;border-radius:20px;padding:4px 11px;font:600 11.5px system-ui;color:#4b5763;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip i{width:9px;height:9px;border-radius:50%;display:inline-block;font-style:normal}
+.chip.off{opacity:.4}
+.chip:hover{border-color:#b9c6d4}
+.spacer{flex:1}
+.hint{font-size:11.5px;color:#93a0ae}
+.canvaswrap{overflow:auto;padding:26px 22px 30px;background:#fdfbf7}
+.canvas{position:relative;transform-origin:0 0}
+.canvas svg.edges{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.gridnodes{display:grid;position:relative;z-index:2;gap:26px 14px}
+
+/* ---------- nodes ---------- */
+.nd{border-radius:11px;padding:8px 11px;font-size:12px;line-height:1.32;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:600;color:#fff;position:relative;transition:box-shadow .15s,opacity .15s}
+.nd small{display:block;font-weight:500;font-size:11px;opacity:.95;margin-top:2px}
+.nd ul{margin:5px 0 0;padding:0 0 0 2px;list-style:none;text-align:left;font-weight:500;font-size:11px;line-height:1.4}
+.nd ul li{margin:3px 0;padding-left:11px;position:relative}
+.nd ul li:before{content:"";position:absolute;left:0;top:6px;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.8)}
+.nd.sel{box-shadow:0 0 0 3px #12314e,0 0 0 6px rgba(18,49,78,.22);z-index:5}
+.nd.dim{opacity:.22}
+.nd.hit{box-shadow:0 0 0 3px #ffd24a,0 0 0 7px rgba(255,210,74,.35);z-index:5}
+.n-root{background:var(--n-root)}
+.n-head{background:var(--n-head)}
+.n-item{background:var(--n-item)}
+.n-sub{background:var(--n-sub)}
+.n-proc{background:var(--n-proc)}
+.n-dec{background:var(--n-dec);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.n-yes{background:var(--n-yes);border-radius:20px;font-size:11.5px;font-weight:800;letter-spacing:.5px;padding:6px 10px}
+.n-no{background:var(--n-no);border-radius:20px;font-size:11.5px;font-weight:800;letter-spacing:.5px;padding:6px 10px}
+.n-teal{background:var(--n-teal)}
+.n-out{background:var(--n-out)}
+.n-neg{background:var(--n-no)}
+.n-ok{background:var(--n-root)}
+.n-yes,.n-no{align-self:center;justify-self:center;min-width:52px}
+.n-lane{background:var(--n-lane);border-radius:20px;font-size:11.5px;font-weight:800;letter-spacing:.6px}
+.n-note{background:#fce8ea;color:#b23b48;font-weight:600;font-style:italic;box-shadow:inset 0 0 0 1px #f6c6cb}
+.n-band{background:var(--n-root);border-radius:22px;font-size:12.5px;font-style:italic}
+.n-pill{background:#e8f4fd;color:#1b5fa8;border-radius:20px;font-size:11.5px;font-weight:700;box-shadow:inset 0 0 0 1px #bcdcf5}
+.n-ghost{background:#fff;color:#43505e;box-shadow:inset 0 0 0 1.5px #d7dfe8;font-weight:600}
+.nd .own{position:absolute;top:-8px;right:8px;background:#12314e;color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.4px;border-radius:20px;padding:2px 7px;line-height:1.3}
+.nd.clk{cursor:pointer}
+
+/* ---------- tabla campos ---------- */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{background:#f4626e;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:left;font-weight:800}
+.tbl td{border-bottom:1px solid #eceff3;padding:11px 12px;vertical-align:top;line-height:1.5}
+.tbl tr:last-child td{border-bottom:none}
+.tbl .arch{background:#f4626e;color:#fff;border-radius:9px;padding:6px 10px;font-weight:700;font-style:italic;display:inline-block;font-size:12px}
+.tbl .prop{background:#fbe3e6;color:#c03d4b;border-radius:9px;padding:5px 11px;font-weight:800;display:inline-block;font-size:11.5px}
+.tbl ol{margin:0;padding-left:18px;columns:2;column-gap:26px}
+@media(max-width:760px){.tbl ol{columns:1}}
+.tbl ol li{margin:2px 0;break-inside:avoid}
+.tbl .vacio{color:#a4aeb9;font-style:italic}
+.tblwrap{overflow-x:auto;padding:4px 0}
+
+/* ---------- panel detalle ---------- */
+.detail{margin-top:14px;background:#fff;border:1px solid var(--bd);border-radius:13px;padding:0;overflow:hidden;display:none}
+.detail.on{display:block}
+.detail .dh{padding:12px 16px;background:#f2f6fa;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.detail .dh b{font-size:13px;color:var(--navy)}
+.detail .dh button{background:#fff;border:1px solid var(--bd);border-radius:7px;width:26px;height:26px;cursor:pointer;color:#7a8695;font-size:13px;line-height:1}
+.detail .db{padding:14px 16px;font-size:13px;line-height:1.6;color:#3d4854}
+.detail .db .row{display:flex;gap:10px;margin:0 0 8px;flex-wrap:wrap}
+.detail .db .k{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#93a0ae;font-weight:800;min-width:96px;padding-top:2px}
+.detail .db .v{flex:1;min-width:180px}
+.detail .db .lst{margin:2px 0 0;padding-left:18px}
+.detail .db .lst li{margin:3px 0}
+
+/* ---------- notas ---------- */
+.note{background:#fff8e9;border:1px solid #f5e0b5;border-radius:11px;padding:12px 15px;font-size:12.5px;line-height:1.6;color:#7a5a19;margin:14px 0 0}
+.note b{color:#5f4510}
+.foot{color:#93a0ae;font-size:11.5px;text-align:center;padding:26px 20px 10px;line-height:1.6}
+
+/* ---------- buscador ---------- */
+.searchbox{position:relative;margin:0 0 4px}
+.searchbox input{width:100%;border:1px solid var(--bd);border-radius:10px;padding:9px 12px 9px 34px;font:400 13px system-ui,-apple-system,'Segoe UI',sans-serif;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2393a0ae' stroke-width='2'><circle cx='11' cy='11' r='7'/><path d='M20 20l-3.5-3.5'/></svg>") no-repeat 9px center/15px}
+.searchbox input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(31,111,208,.12)}
+.results{margin:10px 0 0;border:1px solid var(--bd);border-radius:11px;background:#fff;overflow:hidden;display:none}
+.results.on{display:block}
+.results .rh{padding:9px 14px;background:#f2f6fa;border-bottom:1px solid var(--bd);font-size:11.5px;color:var(--ink2);font-weight:700}
+.results button{display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid #f0f3f6;padding:10px 14px;cursor:pointer;font:inherit;font-size:12.5px;color:#3d4854;line-height:1.45}
+.results button:last-child{border-bottom:none}
+.results button:hover{background:#f7fafc}
+.results button span{display:block;font-size:11px;color:#93a0ae;margin-top:2px}
+.results mark{background:#ffe9a8;color:inherit;border-radius:3px;padding:0 1px}
+
+/* ---------- FAB ayuda ---------- */
+.hlpx-fab{position:fixed;right:20px;bottom:20px;z-index:9998;width:52px;height:52px;border-radius:50%;background:#0b3d6b;color:#fff;border:none;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;font:700 22px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;display:flex;align-items:center;justify-content:center}
+.hlpx-fab:hover{background:#0a3155}
+.hlpx-fab span{margin-top:-2px}
+.hlpx-tip{position:fixed;right:20px;bottom:80px;z-index:9998;background:#0b3d6b;color:#fff;font:600 12px/1.3 system-ui,-apple-system,sans-serif;padding:7px 11px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:180px;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
+.hlpx-fab:hover + .hlpx-tip{opacity:1;transform:translateY(0)}
+.hlpx-back{position:fixed;inset:0;z-index:9999;background:rgba(15,23,35,.55);display:none;align-items:flex-start;justify-content:center;padding:36px 16px;overflow-y:auto}
+.hlpx-back.on{display:flex}
+.hlpx-modal{background:#fff;color:#1a1a1a;border-radius:16px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.hlpx-head{position:sticky;top:0;background:#fff;border-bottom:1px solid #e8e8e5;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0}
+.hlpx-head h2{margin:0;font-size:18px;font-weight:700;color:#0b3d6b}
+.hlpx-close{background:#f3f3f0;border:1px solid #e2e2df;color:#555;border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:15px;line-height:1;flex:none}
+.hlpx-close:hover{border-color:#0b3d6b;color:#0b3d6b}
+.hlpx-body{padding:20px 22px 26px}
+.hlpx-body h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:#0b6cc2;margin:22px 0 8px;font-weight:700}
+.hlpx-body h3:first-child{margin-top:0}
+.hlpx-body p{font-size:13.5px;line-height:1.6;color:#43433f;margin:0 0 10px}
+.hlpx-body b{color:#1a1a1a}
+.hlpx-body dl{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;margin:0 0 8px}
+@media(max-width:560px){.hlpx-body dl{grid-template-columns:1fr;gap:2px 0}.hlpx-body dd{margin-bottom:9px}}
+.hlpx-body dt{font-weight:670;font-size:13px;color:#1a1a1a;white-space:nowrap}
+.hlpx-body dd{margin:0;font-size:13px;color:#43433f}
+@media print{.tabs,.side,.dg-bar,.hlpx-fab,.hlpx-tip,.hub-back{display:none}.canvaswrap{overflow:visible}}
+</style></head>
+<body>
+<a class="hub-back" href="index.html">← Volver a los visores</a>
+<header class="top">
+  <h1>Visor de Flujos — Monitoreo y Seguimiento · Dotación</h1>
+  <p>Organigrama de la línea de Monitoreo y Seguimiento (UATP) y flujos de gestión de dotación del SLEP Petorca. Reconstruido a partir del documento institucional «Flujos Monitoreo / Dotación / DPD».</p>
+</header>
+<nav class="tabs">
+  <button data-tab="inicio" class="on">Inicio</button>
+  <button data-tab="mon">Organigrama Monitoreo y Seguimiento</button>
+  <button data-tab="dot">Flujos de Dotación</button>
+</nav>
+<div class="wrap">
+
+<section id="pane-inicio" class="pane on">
+  <div class="hero">
+    <h2>¿Qué encontrarás aquí?</h2>
+    <p>Este visor reúne dos cosas distintas. Por un lado, <b>quién hace qué</b> dentro de la línea de Monitoreo y Seguimiento de la UATP: el organigrama funcional del área y el detalle de sus tres componentes (Desarrollo Profesional Docente, Dotación, y Procesos y Resultados Educativos).</p>
+    <p>Por otro, <b>cómo se tramita cada solicitud de dotación</b>: los siete flujos que hoy operan entre UATP, Gestión de Personas, Planificación y Control de Gestión, Administración y Finanzas, Jurídica y Gabinete, más las fuentes de información que alimentan la consolidación y la orden de trabajo.</p>
+    <p style="color:#93a0ae;font-size:12.5px;margin-top:12px">Los diagramas son navegables: haz clic en cualquier caja para ver su detalle y resaltar sus conexiones. Usa el buscador para ir directo a un paso.</p>
+    <div class="searchbox" style="margin-top:16px;max-width:560px">
+      <input id="q" type="search" placeholder="Buscar un paso, una unidad o un documento… (ej. «CDP», «test de idoneidad», «Planner»)" autocomplete="off">
+    </div>
+    <div class="results" id="res"></div>
+  </div>
+
+  <div class="sec">Flujos de dotación — los más consultados</div>
+  <div class="grid" id="cards-flujos"></div>
+
+  <div class="sec">Organigrama de Monitoreo y Seguimiento</div>
+  <div class="grid" id="cards-org"></div>
+
+  <div class="sec">Línea base e insumos de dotación</div>
+  <div class="grid" id="cards-base"></div>
+</section>
+
+<section id="pane-mon" class="pane">
+  <div class="layout">
+    <aside class="side" id="side-mon"></aside>
+    <div class="view" id="view-mon"></div>
+  </div>
+</section>
+
+<section id="pane-dot" class="pane">
+  <div class="layout">
+    <aside class="side" id="side-dot"></aside>
+    <div class="view" id="view-dot"></div>
+  </div>
+</section>
+
+<div class="foot">Visor generado para el equipo de Monitoreo y Seguimiento — UATP, SLEP Petorca.<br>Fuente: documento institucional «Flujos Monitoreo / Dotación / DPD». Los diagramas son una reconstrucción navegable, no reemplazan la normativa ni los procedimientos formales.</div>
+</div>
+<style>
+.n-note2{background:#fbdfe2;color:#b23b48;font-weight:600;box-shadow:inset 0 0 0 1px #f3c3c9}
+.n-dark{background:#12314e}
+.n-dark2{background:#1b4a70}
+.n-okline{background:#fff;color:#0d8a56;box-shadow:inset 0 0 0 2px #12b26a;font-weight:700;font-style:italic}
+.n-bandlite{background:#5fbdec;border-radius:22px;font-size:12px}
+</style>
+<script>
+/* ============ DATOS ============ */
+var DIAG = {};
+
+/* ---- ORGANIGRAMA GENERAL ---- */
+DIAG['org-general'] = {
+ title:'UATP — Monitoreo y Seguimiento',
+ sub:'Organigrama funcional de la línea de Monitoreo y Seguimiento: sus tres componentes principales, las funciones transversales y las plataformas y compromisos que las cruzan.',
+ cols:12, W:1300,
+ nodes:[
+  {id:'root',t:'Monitoreo y Seguimiento',c:5,w:4,r:1,k:'root'},
+  {id:'h1',t:'Desarrollo Profesional Docente',c:1,w:2,r:2,k:'head'},
+  {id:'h2',t:'Procesos y Resultados Educativos',c:3,w:2,r:2,k:'head'},
+  {id:'h3',t:'Dotación',c:5,w:2,r:2,k:'head'},
+  {id:'h4',t:'Redes',c:7,w:2,r:2,k:'item'},
+  {id:'h5',t:'Rendiciones',c:9,w:2,r:2,k:'item'},
+  {id:'h6',t:'Sistema de Admisión Escolar',c:11,w:2,r:2,k:'item'},
+
+  {id:'a1',t:'Carrera Docente y Parvularia',c:1,w:2,r:3,k:'item'},
+  {id:'a2',t:'ADECO',c:1,w:2,r:4,k:'item'},
+  {id:'a3',t:'Formación y Desarrollo 02',c:1,w:2,r:5,k:'item'},
+  {id:'a4',t:'Plan Local de Formación',c:1,w:2,r:6,k:'item'},
+  {id:'a5',t:'BRP / BRP EP',c:1,w:2,r:7,k:'item'},
+
+  {id:'b1',t:'Resultados estandarizados',s:'DIA · SIMCE - IDPS · PAES',c:3,w:2,r:3,h:2,k:'item'},
+  {id:'b2',t:'Eficiencia interna',s:'Asistencia, matrícula, retiros, repitencia, deserción, titulación',c:3,w:2,r:5,h:2,k:'item'},
+  {id:'b3',t:'Reportabilidad UATP - SLEP - EE',c:3,w:2,r:7,k:'item'},
+
+  {id:'c1',t:'Gestión de Dotación',c:5,w:2,r:3,k:'item'},
+  {id:'c2',t:'Proyección 2027 - PAL',c:5,w:2,r:4,k:'item'},
+  {id:'c3',t:'Aumento Dotación / Horas',c:5,w:2,r:5,k:'item'},
+  {id:'c4',t:'Reposición Cupos',c:5,w:2,r:6,k:'item'},
+  {id:'c5',t:'Reemplazos',c:5,w:2,r:7,k:'item'},
+  {id:'c6',t:'Traslados',c:5,w:2,r:8,k:'item'},
+
+  {id:'d1',t:'Datos y Monitoreo DEP',c:7,w:2,r:3,k:'sub'},
+  {id:'d2',t:'Desarrollo Profesional Docente DEP',c:7,w:2,r:4,k:'sub'},
+  {id:'d3',t:'SAE',c:7,w:2,r:5,k:'sub'},
+
+  {id:'e1',t:'BRP',c:9,w:2,r:3,k:'sub'},
+  {id:'e2',t:'Asistencia',c:9,w:2,r:4,k:'sub'},
+  {id:'e3',t:'ADECO',c:9,w:2,r:5,k:'sub'},
+
+  {id:'f1',t:'Reportabilidad interna',c:11,w:2,r:3,k:'sub'},
+  {id:'f2',t:'Atención a público',c:11,w:2,r:4,k:'sub'},
+  {id:'f3',t:'Gestión de plataforma con EE y externos',c:11,w:2,r:5,k:'sub'},
+
+  {id:'g0',t:'Fuerzas de tarea y comisiones internas',c:7,w:2,r:7,h:2,k:'teal'},
+  {id:'g1',t:'Género',c:9,w:2,r:7,k:'teal'},
+  {id:'g2',t:'Riesgos',c:11,w:2,r:7,k:'teal'},
+  {id:'g3',t:'PEL',c:9,w:2,r:8,k:'teal'},
+  {id:'g4',t:'Seguridad de la Información',c:11,w:2,r:8,k:'teal'},
+
+  {id:'z1',t:'Formación interna · Cultura de uso de datos · Articulación con la academia y el tercer sector',c:1,w:12,r:9,k:'band'},
+  {id:'z2',t:'Reportabilidad de convenios y planes: PEL, PAL, CD D.E, CDC, Convenio Subdirector',c:1,w:12,r:10,k:'band'},
+  {id:'z3',t:'Plataformas: DocenteMás, Comunidad Escolar, SIGE, Gesparvu, SAE, IDEA, Carrera Docente, ChilePresente',c:1,w:12,r:11,k:'band'}
+ ],
+ buses:[{f:'root',to:['h1','h2','h3','h4','h5','h6']}],
+ trees:[{f:'h1',to:['a1','a2','a3','a4','a5']},{f:'h2',to:['b1','b2','b3']},{f:'h3',to:['c1','c2','c3','c4','c5','c6']},
+        {f:'h4',to:['d1','d2','d3']},{f:'h5',to:['e1','e2','e3']},{f:'h6',to:['f1','f2','f3']},
+        {f:'g0',to:['g1','g3']},{f:'g0',to:['g2','g4']}],
+ edges:[]
+};
+
+/* ---- DPD ---- */
+DIAG['org-dpd'] = {
+ title:'Desarrollo Profesional Docente',
+ sub:'Componente a cargo de Yenifer Leiva. Agrupa Carrera Docente, desarrollo directivo, docente y de asistentes de la educación, los planes de formación y la comunicación del área.',
+ cols:12, W:1300,
+ nodes:[
+  {id:'root',t:'Monitoreo y Seguimiento',c:5,w:4,r:1,k:'root'},
+  {id:'tit',t:'Desarrollo Profesional Docente — Yenifer Leiva',c:1,w:12,r:2,k:'head'},
+  {id:'b1',t:'Carrera Docente',c:1,w:2,r:3,h:3,k:'item'},
+  {id:'x1',t:'Gestión del Portafolio',c:4,w:5,r:3,k:'sub'},
+  {id:'x2',t:'Evaluación de Conocimientos Específicos y Pedagógicos',c:4,w:5,r:4,k:'sub'},
+  {id:'x3',t:'Gestión de casos con CPEIP',c:4,w:5,r:5,k:'sub'},
+  {id:'b2',t:'Desarrollo Directivo',c:1,w:2,r:6,h:2,k:'item'},
+  {id:'ad',t:'ADECO',c:4,w:2,r:6,h:2,k:'sub'},
+  {id:'x4',t:'Validación 2025',c:6,w:3,r:6,k:'sub'},
+  {id:'x5',t:'Gestión y acompañamiento 2026',c:6,w:3,r:7,k:'sub'},
+  {id:'b3',t:'Desarrollo docente y EEPP',c:1,w:2,r:8,k:'item'},
+  {id:'x6',t:'Formación y Desarrollo 02',c:4,w:5,r:8,k:'sub'},
+  {id:'b4',t:'Desarrollo AAEE',c:1,w:2,r:9,k:'item'},
+  {id:'x7',t:'Bono de Desempeño Laboral',c:4,w:5,r:9,k:'sub'},
+  {id:'b5',t:'Desarrollo del Establecimiento',c:1,w:2,r:10,k:'item'},
+  {id:'x8',t:'Plan Local de Formación',c:4,w:5,r:10,k:'sub'},
+  {id:'b6',t:'Desarrollo del 01',c:1,w:2,r:11,h:2,k:'item'},
+  {id:'x9',t:'Plan de Formación Directivo 01',c:4,w:5,r:11,k:'sub'},
+  {id:'x10',t:'Plan de Formación Funcionarios 02',c:4,w:5,r:12,k:'sub'},
+  {id:'k1',t:'Comunicación',c:10,w:3,r:3,k:'item'},
+  {id:'k2',t:'Boletines (semanales y mensuales)',c:10,w:3,r:4,k:'sub'},
+  {id:'k3',t:'Publicaciones en página',c:10,w:3,r:5,k:'sub'},
+  {id:'k4',t:'Informar en redes',c:10,w:3,r:6,k:'sub'},
+  {id:'k5',t:'Participación en Redes UATP',c:10,w:3,r:8,k:'item'},
+  {id:'k6',t:'Articulación con instituciones externas',c:10,w:3,r:9,h:2,k:'item'}
+ ],
+ buses:[{f:'root',to:['tit']}],
+ trees:[{f:'tit',to:['b1','b2','b3','b4','b5','b6']},{f:'tit',to:['k1','k5','k6'],right:true},
+        {f:'b1',to:['x1','x2','x3']},{f:'b2',to:['ad']},{f:'ad',to:['x4','x5']},
+        {f:'b3',to:['x6']},{f:'b4',to:['x7']},{f:'b5',to:['x8']},{f:'b6',to:['x9','x10']},
+        {f:'k1',to:['k2','k3','k4']}],
+ edges:[]
+};
+
+/* ---- DOTACION (Marcela) ---- */
+DIAG['org-dotacion'] = {
+ title:'Dotación de los establecimientos',
+ sub:'Componente a cargo de Marcela Ortega. Cuatro líneas de trabajo: la gestión cotidiana, la proyección para el Plan Anual Local, la gestión de la información y la atención funcionaria.',
+ cols:12, W:1300,
+ nodes:[
+  {id:'root',t:'Monitoreo y Seguimiento',c:5,w:4,r:1,k:'root'},
+  {id:'tit',t:'Dotación de los establecimientos — Marcela Ortega',c:1,w:12,r:2,k:'head'},
+  {id:'b1',t:'Gestión cotidiana de la dotación',c:1,w:2,r:3,k:'item'},
+  {id:'d1',t:'Reemplazos · Licencias · Traslados · Aumento y reducción de horas',c:4,w:4,r:3,k:'sub'},
+  {id:'d2',t:'Formularios Google: articulación con GDP. Planner: articulación con GDP, SAF, PyCG, Gabinete y Jurídica',c:9,w:4,r:3,k:'sub'},
+  {id:'b2',t:'Proyección (Plan Anual Local)',c:1,w:2,r:4,k:'item'},
+  {id:'d3',t:'Reuniones con 68 establecimientos · Revisión del Plan de Estudios y Dotación · Cuadratura',c:4,w:4,r:4,k:'sub'},
+  {id:'d4',t:'Sistematización de dotación y reportabilidad para el Plan Anual Local',c:9,w:4,r:4,k:'sub'},
+  {id:'b3',t:'Gestión de la información',c:1,w:2,r:5,k:'item'},
+  {id:'d5',t:'Visor Trayectoria 02: monitoreo de glosas, aprobaciones y fichas funcionarias · Planner · Matriz Plan de Estudios y Dotación · Formularios Google',c:4,w:9,r:5,k:'sub'},
+  {id:'b4',t:'Atención funcionaria',c:1,w:2,r:6,k:'item'},
+  {id:'d6',t:'Directivos, asistentes de la educación y docentes',c:4,w:9,r:6,k:'sub'}
+ ],
+ buses:[{f:'root',to:['tit']}],
+ trees:[{f:'tit',to:['b1','b2','b3','b4']}],
+ edges:[['b1','d1'],['d1','d2'],['b2','d3'],['d3','d4'],['b3','d5'],['b4','d6']]
+};
+
+/* ---- PROCESOS Y RESULTADOS ---- */
+DIAG['org-procesos'] = {
+ title:'Procesos y Resultados Educativos',
+ sub:'Componente a cargo de Mauricio Urrutia y Yenifer Leiva. Resultados estandarizados y no estandarizados, eficiencia interna, reportabilidad y cultura de uso de datos.',
+ cols:12, W:1300,
+ nodes:[
+  {id:'root',t:'Monitoreo y Seguimiento',c:5,w:4,r:1,k:'root'},
+  {id:'tit',t:'Procesos y Resultados Educativos — Mauricio Urrutia y Yenifer Leiva',c:1,w:12,r:2,k:'head'},
+  {id:'b1',t:'Resultados estandarizados y no estandarizados',c:1,w:2,r:3,h:2,k:'item'},
+  {id:'e1',t:'DIA: socioemocional, convivencia y académico — 3 ventanas de aplicación · SIMCE - IDPS — 1 ventana · PAES — 2 ventanas',c:4,w:9,r:3,k:'sub'},
+  {id:'e2',t:'DIA Educación Parvularia — 1 ventana de aplicación · DID y DID Profundiza — 1 ventana',c:4,w:9,r:4,k:'sub'},
+  {id:'b2',t:'Eficiencia interna',c:1,w:2,r:5,k:'item'},
+  {id:'e3',t:'Mensual: asistencia · matrícula · retiros',c:4,w:4,r:5,k:'sub'},
+  {id:'e4',t:'Anual: repitencia · deserción y desvinculación · titulación',c:9,w:4,r:5,k:'sub'},
+  {id:'b3',t:'Reportabilidad UATP - SLEP - EE',c:1,w:2,r:6,h:2,k:'item'},
+  {id:'e5',t:'Informes, minutas, visores y tableros de control',c:4,w:9,r:6,k:'sub'},
+  {id:'e6',t:'Visores: Trayectoria Estudiantes, Trayectoria 02, SIMCE, DIA, SAE',c:4,w:9,r:7,k:'sub'},
+  {id:'b4',t:'Cultura de uso de datos',c:1,w:2,r:8,k:'item'},
+  {id:'e7',t:'Webinar (02) · Talleres de uso de datos (01 y 02) · Presentación de resultados (01 y 02)',c:4,w:9,r:8,k:'sub'}
+ ],
+ buses:[{f:'root',to:['tit']}],
+ trees:[{f:'tit',to:['b1','b2','b3','b4']},{f:'b1',to:['e1','e2']},{f:'b3',to:['e5','e6']}],
+ edges:[['b2','e3'],['e3','e4'],['b4','e7']]
+};
+
+/* ---- FOCOS DE SUBDIRECCIONES ---- */
+DIAG['dot-focos'] = {
+ title:'Focos de las subdirecciones respecto a dotación',
+ sub:'Qué mira cada unidad del Servicio cuando se resuelve un caso de dotación. Explica por qué una misma solicitud pasa por varias manos antes de convertirse en orden de trabajo.',
+ cols:10, W:1240,
+ nodes:[
+  {id:'root',t:'Dotación',c:4,w:4,r:1,k:'root'},
+  {id:'h1',t:'Apoyo Técnico Pedagógico',c:1,w:2,r:2,k:'head'},
+  {id:'h2',t:'Gestión de Personas',c:3,w:2,r:2,k:'head'},
+  {id:'h3',t:'Gabinete',c:5,w:2,r:2,k:'head'},
+  {id:'h4',t:'Planificación y Control de Gestión',c:7,w:2,r:2,k:'head'},
+  {id:'h5',t:'Administración y Finanzas',c:9,w:2,r:2,k:'head'},
+  {id:'a1',t:'N° de docentes, AAEE y JJII.SSCC por establecimiento',c:1,w:2,r:3,k:'item'},
+  {id:'a2',t:'Perfiles de docentes, AAEE y JJII.SSCC',c:1,w:2,r:4,k:'item'},
+  {id:'a3',t:'Cumplimiento de la normativa del plan de estudios',c:1,w:2,r:5,k:'item'},
+  {id:'a4',t:'Gestión de formación profesional',c:1,w:2,r:6,k:'item'},
+  {id:'b1',t:'Remuneración',c:3,w:2,r:3,k:'item'},
+  {id:'b2',t:'Asignaciones',c:3,w:2,r:4,k:'item'},
+  {id:'b3',t:'Gestión de licencias, reemplazos y nuevas contrataciones',c:3,w:2,r:5,k:'item'},
+  {id:'b4',t:'Gestión de actos administrativos',c:3,w:2,r:6,k:'item'},
+  {id:'b5',t:'Valorización de contrataciones',c:3,w:2,r:7,k:'item'},
+  {id:'c1',t:'Pertinencia estratégica',c:5,w:2,r:3,k:'item'},
+  {id:'d1',t:'Presupuesto disponible',c:7,w:2,r:3,k:'item'},
+  {id:'d2',t:'Proyección del gasto',c:7,w:2,r:4,k:'item'},
+  {id:'d3',t:'Revisión de glosa presupuestaria',c:7,w:2,r:5,k:'item'},
+  {id:'e1',t:'Liberación de pagos',c:9,w:2,r:3,k:'item'},
+  {id:'e2',t:'Rendición de costos',c:9,w:2,r:4,k:'item'},
+  {id:'e3',t:'Disponibilidad de caja',c:9,w:2,r:5,k:'item'}
+ ],
+ buses:[{f:'root',to:['h1','h2','h3','h4','h5']}],
+ trees:[{f:'h1',to:['a1','a2','a3','a4']},{f:'h2',to:['b1','b2','b3','b4','b5']},{f:'h3',to:['c1']},
+        {f:'h4',to:['d1','d2','d3']},{f:'h5',to:['e1','e2','e3']}],
+ edges:[]
+};
+
+/* ---- INSUMOS ---- */
+DIAG['dot-insumos'] = {
+ title:'Gestión de información e insumos de dotación docente',
+ sub:'De dónde salen los datos, en qué instrumento se capturan y en qué productos terminan. Es el mapa que conecta los formularios y el Planner con el Visor Trayectoria 02.',
+ cols:12, W:1300,
+ nodes:[
+  {id:'n1',t:'REX Traspaso / Excel EE',c:1,w:2,r:1,k:'teal'},
+  {id:'n2',t:'Planilla Plan de Estudios / Registro de Docentes y Asistentes',c:3,w:3,r:1,k:'teal'},
+  {id:'n3',t:'Gestión de casos «cotidiana»',c:3,w:3,r:2,k:'teal'},
+  {id:'n4',t:'G. Forms + Planner + Excel de Valorizaciones',c:1,w:2,r:3,k:'item'},
+  {id:'n5',t:'G. Forms',c:4,w:2,r:3,k:'item'},
+  {id:'n6',t:'Aumento de horas de personal existente',c:1,w:2,r:4,k:'sub'},
+  {id:'n7',t:'Nueva contratación (reposición de cupo)',c:4,w:2,r:4,k:'sub'},
+  {id:'n8',t:'Nueva contratación (aumento de dotación)',c:1,w:2,r:5,k:'sub'},
+  {id:'n9',t:'Renuncia · desvinculación · traslado · jubilación · permisos sin goce',c:4,w:2,r:5,h:2,k:'sub'},
+  {id:'n10',t:'UATP · GDP · SAF · PyCG · Gabinete',c:1,w:2,r:6,k:'sub'},
+  {id:'n11',t:'Co-diseño de flujos con las unidades respectivas',c:1,w:5,r:7,k:'sub'},
+  {id:'m1',t:'Maestro de remuneraciones',c:7,w:3,r:2,k:'teal'},
+  {id:'p1',t:'Consolidado de licencias médicas',c:7,w:3,r:3,k:'root'},
+  {id:'p2',t:'Excel de Valorizaciones (aumento de horas y de dotación)',c:7,w:3,r:4,k:'root'},
+  {id:'p3',t:'Consolidado de traslados',c:7,w:3,r:5,k:'root'},
+  {id:'p4',t:'Asistencia CEM',c:7,w:3,r:6,k:'root'},
+  {id:'p5',t:'Asistencia GESPARVU',c:7,w:3,r:7,k:'root'},
+  {id:'p6',t:'Tablas de análisis de solicitudes de reemplazo',c:7,w:3,r:8,k:'root'},
+  {id:'p7',t:'Tablas de análisis de nuevas contrataciones (aumento de dotación y reposición de cupo)',c:7,w:3,r:9,k:'root'},
+  {id:'p8',t:'Directorio',c:7,w:3,r:10,k:'root'},
+  {id:'v1',t:'Visor Trayectoria 02',c:11,w:2,r:2,k:'dark'},
+  {id:'v2',t:'Visor web (Shiny)',c:11,w:2,r:3,k:'dark2'},
+  {id:'v3',t:'Exportable Excel',c:11,w:2,r:4,k:'dark2'},
+  {id:'v4',t:'Ficha PDF',c:11,w:2,r:5,k:'dark2'}
+ ],
+ buses:[],
+ trees:[{f:'n4',to:['n6','n8','n10']},{f:'n5',to:['n7','n9']},{f:'m1',to:['p1','p2','p3','p4','p5','p6','p7','p8']},{f:'v1',to:['v2','v3','v4']}],
+ merges:[{to:'v1',from:['p1','p2','p3','p4','p5','p6','p7','p8']}],
+ edges:[['n1','n2'],['n2','n3'],['n2','m1','dash'],['n3','n4'],['n3','n5']]
+};
+
+/* ---- CONSOLIDACION ---- */
+DIAG['dot-consolidacion'] = {
+ title:'Fuentes de información para la consolidación de dotación',
+ sub:'Los ocho archivos que, consolidados, forman la dotación del Servicio, y de qué documento nace cada uno.',
+ cols:16, W:1420,
+ nodes:[
+  {id:'dot',t:'Dotación',c:7,w:3,r:1,k:'root'},
+  {id:'pag',t:'Pagos',c:11,w:2,r:1,k:'okline'},
+  {id:'mae',t:'Maestro de remuneraciones',c:13,w:4,r:1,k:'root'},
+  {id:'cons',t:'Consolidación',c:7,w:3,r:2,k:'bandlite'},
+  {id:'band',t:'Docentes · Asistentes de la Educación · Funcionarias JJII.SSCC',c:1,w:16,r:3,k:'bandlite'},
+  {id:'h1',t:'Línea base',c:1,w:2,r:4,k:'head'},
+  {id:'h2',t:'Licencias',c:3,w:2,r:4,k:'head'},
+  {id:'h3',t:'Reemplazos',c:5,w:2,r:4,k:'head'},
+  {id:'h4',t:'Sumarios y suspensiones',c:7,w:2,r:4,k:'head'},
+  {id:'h5',t:'Traslados',c:9,w:2,r:4,k:'head'},
+  {id:'h6',t:'Nuevas contrataciones',c:11,w:2,r:4,k:'head'},
+  {id:'h7',t:'Renuncias / jubilaciones / destituciones',c:13,w:2,r:4,k:'head'},
+  {id:'h8',t:'Permisos sin goce de sueldo',c:15,w:2,r:4,k:'head'},
+  {id:'s1',t:'Planillas de establecimientos',c:1,w:2,r:5,k:'note2'},
+  {id:'s2',t:'Nóminas de proyección',c:1,w:2,r:6,k:'note2'},
+  {id:'s3',t:'Maestro de febrero',c:1,w:2,r:7,k:'note2'},
+  {id:'s4',t:'Traspaso',c:1,w:2,r:8,k:'note2'},
+  {id:'s5',t:'SIGE',c:1,w:2,r:9,k:'note2'},
+  {id:'s6',t:'Cambio de faena',c:5,w:2,r:5,k:'note2'},
+  {id:'s7',t:'Denuncia',c:7,w:2,r:5,k:'note2'},
+  {id:'s8',t:'Solicitud del funcionario',c:9,w:2,r:5,k:'note2'},
+  {id:'s9',t:'Propuesta del establecimiento',c:9,w:2,r:6,k:'note2'},
+  {id:'s10',t:'Extensión horaria',c:11,w:2,r:5,k:'note2'},
+  {id:'s11',t:'Cambio de funciones',c:11,w:2,r:6,k:'note2'},
+  {id:'s12',t:'Solicitud del funcionario/a',c:15,w:2,r:5,k:'note2'}
+ ],
+ buses:[],
+ trees:[{f:'h1',to:['s1','s2','s3','s4','s5'],up:true},{f:'h3',to:['s6'],up:true},{f:'h4',to:['s7'],up:true},
+        {f:'h5',to:['s8','s9'],up:true},{f:'h6',to:['s10','s11'],up:true},{f:'h8',to:['s12'],up:true}],
+ merges:[{to:'band',from:['h1','h2','h3','h4','h5','h6','h7','h8']}],
+ edges:[['band','cons'],['cons','dot'],['dot','pag'],['pag','mae']]
+};
+
+/* ---- ORDEN DE TRABAJO ---- */
+DIAG['dot-orden'] = {
+ title:'Fuentes de información y proceso para la orden de trabajo',
+ sub:'Los mismos ocho archivos, ahora con su unidad propietaria, y el camino que siguen hasta convertirse en orden de trabajo e ingreso del postulante.',
+ cols:16, W:1420,
+ nodes:[
+  {id:'dot',t:'Dotación',c:7,w:3,r:1,k:'root'},
+  {id:'pag',t:'Pagos',c:11,w:2,r:1,k:'okline'},
+  {id:'mae',t:'Maestro de remuneraciones',c:13,w:4,r:1,k:'root'},
+  {id:'cons',t:'Consolidación',c:7,w:3,r:2,k:'bandlite'},
+  {id:'band',t:'Docentes · Asistentes de la Educación · Funcionarias JJII.SSCC',c:1,w:16,r:3,k:'bandlite'},
+  {id:'h1',t:'Línea base',c:1,w:2,r:4,k:'head'},
+  {id:'h2',t:'Licencias',c:3,w:2,r:4,k:'head'},
+  {id:'h3',t:'Reemplazos',c:5,w:2,r:4,k:'head'},
+  {id:'h4',t:'Sumarios y suspensiones',c:7,w:2,r:4,k:'head'},
+  {id:'h5',t:'Traslados',c:9,w:2,r:4,k:'head'},
+  {id:'h6',t:'Nuevas contrataciones',c:11,w:2,r:4,k:'head'},
+  {id:'h7',t:'Renuncias / jubilaciones / destituciones',c:13,w:2,r:4,k:'head'},
+  {id:'h8',t:'Permisos sin goce de sueldo',c:15,w:2,r:4,k:'head'},
+  {id:'o1',t:'UATP',c:1,w:2,r:5,k:'note2'},
+  {id:'o2',t:'GDP',c:3,w:2,r:5,k:'note2'},
+  {id:'o3',t:'GDP',c:5,w:2,r:5,k:'note2'},
+  {id:'o4',t:'Jurídica',c:7,w:2,r:5,k:'note2'},
+  {id:'o5',t:'UATP',c:9,w:2,r:5,k:'note2'},
+  {id:'o6',t:'GDP',c:11,w:2,r:5,k:'note2'},
+  {id:'o7',t:'GDP',c:13,w:2,r:5,k:'note2'},
+  {id:'o8',t:'GDP',c:15,w:2,r:5,k:'note2'},
+  {id:'pf',t:'Plazo fijo y contratas nuevas',c:1,w:2,r:6,k:'note2'},
+  {id:'aut',t:'Automatización',c:7,w:3,r:7,k:'okline'},
+  {id:'ot',t:'Orden de trabajo',c:7,w:3,r:8,k:'root'},
+  {id:'av1',t:'Aviso al director',c:5,w:3,r:9,k:'root'},
+  {id:'av2',t:'Aviso al postulante',c:9,w:3,r:9,k:'root'},
+  {id:'ing',t:'Ingreso del postulante',c:7,w:3,r:10,k:'root'}
+ ],
+ buses:[],
+ trees:[],
+ merges:[{to:'aut',from:['o3','o4','o5','o6']},{to:'band',from:['h1','h2','h3','h4','h5','h6','h7','h8']}],
+ edges:[['h1','o1'],['h2','o2'],['h3','o3'],['h4','o4'],['h5','o5'],['h6','o6'],['h7','o7'],['h8','o8'],
+        ['o1','pf'],['pf','aut','dash'],['aut','ot'],['ot','av1'],['ot','av2'],['av1','ing'],['av2','ing'],
+        ['band','cons'],['cons','dot'],['dot','pag'],['pag','mae']],
+};
+
+/* ======== FLUJOS ======== */
+DIAG['f-reemplazo'] = {
+ title:'Flujo: solicitud de reemplazo — docente y asistente',
+ sub:'Desde la recepción del formulario hasta la orden de trabajo. Es el flujo más largo porque incorpora el chequeo de la licencia, la factibilidad financiera y la búsqueda del reemplazante.',
+ cols:12, W:1340, flow:true,
+ nodes:[
+  {id:'s',t:'Recepción de solicitud por formulario',c:2,w:4,r:1,k:'teal',own:'UATP'},
+  {id:'p1',t:'Revisión por parte del Área de Dotación',c:1,w:6,r:2,k:'proc',own:'UATP',
+   items:['Chequeo de existencia de licencia en BBDD de GDP','Chequeo de datos de la persona a reemplazar: función, horas, subvención','Chequeo de factibilidad financiera interna en Planner (SAF · PyCG · UATP · GDP)']},
+  {id:'d1',t:'¿Corresponde reemplazo? · ¿Hay disponibilidad presupuestaria?',c:1,w:6,r:3,k:'dec'},
+  {id:'no1',t:'NO',c:1,w:1,r:4,k:'no'},
+  {id:'si1',t:'SÍ · Total / Parcial',c:3,w:2,r:4,k:'yes'},
+  {id:'e1',t:'Notificar a director/a, P.E y/o requiriente, y a GDP',c:1,w:2,r:5,k:'neg'},
+  {id:'nt1',t:'La notificación se acompaña del respaldo técnico, financiero y administrativo',c:1,w:2,r:6,k:'note'},
+  {id:'p2',t:'Notificar a director/a, P.E y/o requiriente',c:3,w:4,r:5,k:'proc'},
+  {id:'p3',t:'Revisión por contraparte GDP',c:8,w:5,r:6,k:'proc',own:'GDP'},
+  {id:'p4',t:'Solicitud de emisión de CDP',c:8,w:2,r:7,k:'proc'},
+  {id:'p5',t:'Emisión de CDP',c:11,w:2,r:7,k:'proc',own:'PyCG'},
+  {id:'p6',t:'Revisar base de datos de interesados',c:3,w:4,r:6,k:'proc'},
+  {id:'d2',t:'¿Se encuentra el perfil necesario en la BBDD?',c:3,w:4,r:7,k:'dec'},
+  {id:'si2',t:'SÍ',c:3,w:1,r:8,k:'yes'},
+  {id:'no2',t:'NO',c:6,w:1,r:8,k:'no'},
+  {id:'r1a',t:'No es referido por el director',c:1,w:3,r:9,k:'ghost'},
+  {id:'r1b',t:'Es referido por el director',c:4,w:3,r:9,k:'ghost'},
+  {id:'d3',t:'Posible reemplazo: ¿aún alcanzaría a cubrir suficiente tiempo restante de licencia?',c:8,w:5,r:9,k:'dec'},
+  {id:'p7',t:'Verificar disponibilidad — enviar antecedentes a director/a o P.E (entre 1 y 3 candidatos) para entrevista',c:1,w:3,r:10,k:'proc'},
+  {id:'p8',t:'Director solicita test del candidato seleccionado a GDP',c:4,w:3,r:10,k:'proc'},
+  {id:'si3',t:'SÍ',c:8,w:1,r:10,k:'yes'},
+  {id:'no3',t:'NO',c:11,w:1,r:10,k:'no'},
+  {id:'d4',t:'¿Aprueba el test de idoneidad?',c:2,w:4,r:11,k:'dec'},
+  {id:'p9',t:'Publicar y difundir oferta',c:8,w:3,r:11,k:'teal'},
+  {id:'e2',t:'Notificar a director/a, P.E o requiriente',c:11,w:2,r:11,k:'neg'},
+  {id:'si4',t:'SÍ',c:2,w:1,r:12,k:'yes'},
+  {id:'no4',t:'NO',c:5,w:1,r:12,k:'no'},
+  {id:'d5',t:'¿Se consigue reemplazo? (la persona aprueba el proceso y acepta el ofrecimiento)',c:8,w:4,r:12,k:'dec'},
+  {id:'p10',t:'Elaboración y envío de la orden de trabajo · UATP',c:1,w:4,r:13,k:'proc',own:'UATP'},
+  {id:'si5',t:'SÍ',c:8,w:1,r:13,k:'yes'},
+  {id:'no5',t:'NO',c:10,w:1,r:13,k:'no'},
+  {id:'p11',t:'Tramitar habilitación si procede · UATP',c:1,w:4,r:14,k:'proc',own:'UATP'},
+  {id:'nt2',t:'Si la duración de la licencia es extensa',c:6,w:2,r:14,k:'note'},
+  {id:'e3',t:'Notificar a director/a, P.E o requiriente',c:10,w:3,r:14,k:'neg'},
+  {id:'o1',t:'Notificar a la persona seleccionada y solicitar la documentación para carpeta',c:1,w:6,r:15,k:'out'},
+  {id:'o2',t:'Notificar a director/a o requiriente la fecha de ingreso y los datos del reemplazante',c:1,w:6,r:16,k:'out'}
+ ],
+ edges:[['s','p1'],['p1','d1'],['d1','no1'],['d1','si1'],['no1','e1'],['e1','nt1','dash'],['si1','p2'],['si1','p3'],['p3','p4'],['p4','p5'],
+        ['p2','p6'],['p6','d2'],['d2','si2'],['d2','no2'],['si2','r1a'],['si2','r1b'],['no2','d3'],
+        ['r1a','p7'],['r1b','p8'],['p7','d4'],['p8','d4'],['d4','si4'],['d4','no4'],['no4','d3','dash'],
+        ['d3','si3'],['d3','no3'],['si3','p9'],['no3','e2'],['p9','d5'],['d5','si5'],['d5','no5'],['no5','e3'],
+        ['si4','p10'],['si5','p10'],['p10','p11'],['nt2','p11','dash']],
+ trees:[{f:'p11',to:['o1','o2']}]
+};
+
+DIAG['f-nuevo-cargo'] = {
+ title:'Flujo: solicitud de nuevo cargo — docente y asistente',
+ sub:'Aumento de dotación. A diferencia del reemplazo, exige valorización de la contratación y consulta de pertinencia estratégica a Gabinete antes de resolver.',
+ cols:12, W:1340, flow:true,
+ nodes:[
+  {id:'s',t:'Recepción de solicitud por formulario',c:2,w:4,r:1,k:'teal',own:'UATP'},
+  {id:'p1',t:'Revisión por parte del Área de Dotación de funciones y cargos en existencia',c:1,w:6,r:2,k:'proc',own:'UATP',
+   items:['Chequeo de factibilidad financiera interna en Planner','Valorización de la contratación','Consulta a Gabinete — pertinencia estratégica']},
+  {id:'d1',t:'¿Se justifica la contratación?',c:1,w:4,r:3,k:'dec'},
+  {id:'no1',t:'NO',c:1,w:1,r:4,k:'no'},
+  {id:'si1',t:'SÍ · Total / Parcial',c:3,w:2,r:4,k:'yes'},
+  {id:'e1',t:'Notificar a director/a, P.E y/o requiriente',c:1,w:2,r:5,k:'neg'},
+  {id:'nt1',t:'La notificación se acompaña del respaldo técnico, financiero y administrativo',c:1,w:2,r:6,k:'note'},
+  {id:'d2',t:'¿Hay factibilidad financiera?',c:3,w:4,r:5,k:'dec'},
+  {id:'no2',t:'NO',c:3,w:1,r:6,k:'no'},
+  {id:'si2',t:'SÍ',c:5,w:1,r:6,k:'yes'},
+  {id:'e2',t:'Notificar a director/a, P.E y/o requiriente',c:3,w:2,r:7,k:'neg'},
+  {id:'p2',t:'Revisión por contraparte GDP',c:6,w:4,r:7,k:'proc',own:'GDP'},
+  {id:'p3',t:'Solicitar CDP',c:6,w:2,r:8,k:'proc'},
+  {id:'p4',t:'Emisión de CDP',c:9,w:2,r:8,k:'proc',own:'PyCG'},
+  {id:'p5',t:'Revisar base de datos de interesados',c:1,w:4,r:9,k:'proc'},
+  {id:'d3',t:'¿Se encuentra el perfil necesario?',c:1,w:4,r:10,k:'dec'},
+  {id:'si3',t:'SÍ',c:1,w:1,r:11,k:'yes'},
+  {id:'no3',t:'NO',c:4,w:1,r:11,k:'no'},
+  {id:'r1a',t:'No es referido por el director',c:1,w:3,r:12,k:'ghost'},
+  {id:'r1b',t:'Es referido por el director',c:4,w:3,r:12,k:'ghost'},
+  {id:'p6',t:'Difundir oferta',c:8,w:3,r:12,k:'teal'},
+  {id:'p7',t:'Verificar disponibilidad — enviar antecedentes a director/a o P.E (entre 1 y 3 candidatos) para entrevista',c:1,w:3,r:13,k:'proc'},
+  {id:'p8',t:'Director solicita test del candidato seleccionado a GDP',c:4,w:3,r:13,k:'proc'},
+  {id:'d4',t:'¿Aprueba el test de idoneidad?',c:2,w:4,r:14,k:'dec'},
+  {id:'si4',t:'SÍ',c:2,w:1,r:15,k:'yes'},
+  {id:'no4',t:'NO',c:5,w:1,r:15,k:'no'},
+  {id:'e3',t:'Notificar a director/a, P.E o requiriente',c:8,w:4,r:15,k:'neg'},
+  {id:'p9',t:'Elaboración y envío de la orden de trabajo · UATP',c:1,w:4,r:16,k:'proc',own:'UATP'},
+  {id:'p10',t:'Tramitar habilitación si procede · UATP',c:1,w:4,r:17,k:'proc',own:'UATP'},
+  {id:'o1',t:'Notificar a la persona seleccionada su fecha de ingreso',c:1,w:6,r:18,k:'out'},
+  {id:'o2',t:'Notificar a director/a o requiriente la fecha de ingreso y los datos de la persona',c:1,w:6,r:19,k:'out'}
+ ],
+ edges:[['s','p1'],['p1','d1'],['d1','no1'],['d1','si1'],['no1','e1'],['e1','nt1','dash'],['si1','d2'],['d2','no2'],['d2','si2'],
+        ['no2','e2'],['si2','p2'],['p2','p3'],['p3','p4'],['p2','p5'],['p5','d3'],['d3','si3'],['d3','no3'],
+        ['no3','p6'],['p6','p7','dash'],['si3','r1a'],['si3','r1b'],['r1a','p7'],['r1b','p8'],['p7','d4'],['p8','d4'],
+        ['d4','si4'],['d4','no4'],['no4','e3'],['si4','p9'],['p9','p10']],
+ trees:[{f:'p10',to:['o1','o2']}]
+};
+
+DIAG['f-factibilidad'] = {
+ title:'Flujo: factibilidad — nuevo cargo y aumento de horas',
+ sub:'La cadena de aprobación que decide si una solicitud de aumento de dotación o de horas llega a «casos aprobados». Corre en paralelo al flujo de contratación. Los pasos se identifican por unidad responsable, no por persona.',
+ cols:13, W:1340, flow:true,
+ nodes:[
+  {id:'s',t:'Recepción de solicitud por formulario (aumento de dotación / aumento de horas)',c:1,w:4,r:1,k:'teal'},
+  {id:'ord',t:'Orden de revisión: 1) Apoyo Técnico Pedagógico · 2) Gabinete · 3) Remuneraciones (valorización) · 4) PyCG y SAF',c:9,w:5,r:1,h:2,k:'note'},
+  {id:'p1',t:'Revisión de pertinencia técnico-pedagógica',c:1,w:4,r:2,k:'proc',own:'ATP'},
+  {id:'ok1',t:'Aprobación de pertinencia técnico-pedagógica',c:1,w:2,r:3,k:'ok'},
+  {id:'rj1',t:'Rechazo de pertinencia técnico-pedagógica',c:3,w:2,r:3,k:'neg'},
+  {id:'p2',t:'Carga en Planner',c:1,w:2,r:4,k:'ok',own:'ATP'},
+  {id:'e1',t:'Avisar rechazo al requirente / informe técnico',c:3,w:3,r:4,k:'neg'},
+  {id:'a1',t:'Gabinete aprueba',c:1,w:2,r:5,k:'proc',own:'Gabinete'},
+  {id:'a2',t:'Valorización',c:3,w:2,r:5,k:'proc',own:'Remuneraciones'},
+  {id:'a3',t:'Revisión — PyCG y SAF',c:5,w:2,r:5,k:'proc'},
+  {id:'a4',t:'Gabinete rechaza',c:1,w:2,r:6,k:'proc',own:'Gabinete'},
+  {id:'e2',t:'Avisar rechazo al requirente / informe técnico',c:3,w:3,r:6,k:'neg'},
+  {id:'b1',t:'Ambos aprueban',c:5,w:2,r:7,k:'proc'},
+  {id:'c1',t:'Avisar aprobación al requirente',c:7,w:3,r:7,k:'proc'},
+  {id:'fin',t:'Apoyo Técnico Pedagógico mueve a «Casos aprobados» — continúa GDP',c:10,w:4,r:7,k:'ok',own:'ATP'},
+  {id:'b2',t:'Uno de los dos rechaza',c:5,w:2,r:8,h:2,k:'proc'},
+  {id:'d1',t:'Gabinete insiste en la aprobación',c:7,w:3,r:8,k:'proc',own:'Gabinete'},
+  {id:'f1',t:'Avisar aprobación al requirente',c:10,w:4,r:8,k:'ok'},
+  {id:'d2',t:'Gabinete no apela la decisión',c:7,w:3,r:9,k:'proc',own:'Gabinete'},
+  {id:'f2',t:'Avisar rechazo al requirente / informe técnico',c:10,w:4,r:9,k:'neg'}
+ ],
+ edges:[['s','p1'],['p1','ok1'],['p1','rj1'],['rj1','e1'],['ok1','p2'],['p2','a1'],['p2','a4'],['a1','a2'],['a2','a3'],
+        ['a4','e2'],['a3','b1'],['a3','b2'],['b1','c1'],['c1','fin'],['b2','d1'],['b2','d2'],['d1','f1'],['d2','f2']]
+};
+
+DIAG['f-reposicion'] = {
+ title:'Flujo: nueva contratación por reposición de función',
+ sub:'Cuando el cargo ya existe y se repone. Mismo recorrido que el nuevo cargo, pero sin valorización de la contratación ni emisión de CDP.',
+ cols:12, W:1340, flow:true,
+ nodes:[
+  {id:'s',t:'Recepción de solicitud por formulario',c:2,w:4,r:1,k:'teal',own:'UATP'},
+  {id:'p1',t:'Revisión por parte del Área de Dotación de funciones y cargos en existencia',c:1,w:6,r:2,k:'proc',own:'UATP',
+   items:['Chequeo de factibilidad financiera interna en Planner','Consulta a Gabinete — pertinencia estratégica']},
+  {id:'d1',t:'¿Se justifica la contratación?',c:1,w:4,r:3,k:'dec'},
+  {id:'no1',t:'NO',c:1,w:1,r:4,k:'no'},
+  {id:'si1',t:'SÍ · Total / Parcial',c:3,w:2,r:4,k:'yes'},
+  {id:'e1',t:'Notificar a director/a, P.E y/o requiriente',c:1,w:2,r:5,k:'neg'},
+  {id:'nt1',t:'La notificación se acompaña del respaldo técnico, financiero y administrativo',c:1,w:2,r:6,k:'note'},
+  {id:'d2',t:'¿Hay factibilidad financiera?',c:3,w:4,r:5,k:'dec'},
+  {id:'no2',t:'NO',c:3,w:1,r:6,k:'no'},
+  {id:'si2',t:'SÍ',c:5,w:1,r:6,k:'yes'},
+  {id:'e2',t:'Notificar a director/a, P.E y/o requiriente',c:3,w:2,r:7,k:'neg'},
+  {id:'p2',t:'Revisión por contraparte GDP',c:6,w:4,r:7,k:'proc',own:'GDP'},
+  {id:'p5',t:'Revisar base de datos de interesados',c:1,w:4,r:8,k:'proc'},
+  {id:'d3',t:'¿Se encuentra el perfil necesario?',c:1,w:4,r:9,k:'dec'},
+  {id:'si3',t:'SÍ',c:1,w:1,r:10,k:'yes'},
+  {id:'no3',t:'NO',c:4,w:1,r:10,k:'no'},
+  {id:'r1a',t:'No es referido por el director',c:1,w:3,r:11,k:'ghost'},
+  {id:'r1b',t:'Es referido por el director',c:4,w:3,r:11,k:'ghost'},
+  {id:'p6',t:'Difundir oferta',c:8,w:3,r:11,k:'teal'},
+  {id:'p7',t:'Verificar disponibilidad — enviar antecedentes a director/a o P.E (entre 1 y 3 candidatos) para entrevista',c:1,w:3,r:12,k:'proc'},
+  {id:'p8',t:'Director solicita test del candidato seleccionado a GDP',c:4,w:3,r:12,k:'proc'},
+  {id:'d4',t:'¿Aprueba el test de idoneidad?',c:2,w:4,r:13,k:'dec'},
+  {id:'si4',t:'SÍ',c:2,w:1,r:14,k:'yes'},
+  {id:'no4',t:'NO',c:5,w:1,r:14,k:'no'},
+  {id:'e3',t:'Notificar a director/a, P.E o requiriente',c:8,w:4,r:14,k:'neg'},
+  {id:'p9',t:'Elaboración y envío de la orden de trabajo · UATP',c:1,w:4,r:15,k:'proc',own:'UATP'},
+  {id:'p10',t:'Tramitar habilitación si procede · UATP',c:1,w:4,r:16,k:'proc',own:'UATP'},
+  {id:'o1',t:'Notificar a la persona seleccionada su fecha de ingreso',c:1,w:6,r:17,k:'out'},
+  {id:'o2',t:'Notificar a director/a o requiriente la fecha de ingreso y los datos de la persona',c:1,w:6,r:18,k:'out'}
+ ],
+ edges:[['s','p1'],['p1','d1'],['d1','no1'],['d1','si1'],['no1','e1'],['e1','nt1','dash'],['si1','d2'],['d2','no2'],['d2','si2'],
+        ['no2','e2'],['si2','p2'],['p2','p5'],['p5','d3'],['d3','si3'],['d3','no3'],
+        ['no3','p6'],['p6','p7','dash'],['si3','r1a'],['si3','r1b'],['r1a','p7'],['r1b','p8'],['p7','d4'],['p8','d4'],
+        ['d4','si4'],['d4','no4'],['no4','e3'],['si4','p9'],['p9','p10']],
+ trees:[{f:'p10',to:['o1','o2']}]
+};
+
+DIAG['f-traslado'] = {
+ title:'Flujo: solicitud de traslado — docente y asistente',
+ sub:'Se inicia por solicitud del propio funcionario. La pregunta que ordena el flujo es si hay cupo en el establecimiento de destino y si las horas son excedentes.',
+ cols:12, W:1340, flow:true,
+ nodes:[
+  {id:'s',t:'Recepción de solicitud por funcionario',c:1,w:4,r:1,k:'teal',own:'UATP'},
+  {id:'p1',t:'Revisión por parte del Área de Dotación: funciones, cargos en existencia y motivos',c:1,w:4,r:2,k:'proc',own:'UATP'},
+  {id:'nt1',t:'Condiciones base (por revisar)',c:6,w:3,r:2,k:'note'},
+  {id:'d1',t:'¿Son horas excedentes?',c:1,w:4,r:3,k:'dec'},
+  {id:'si1',t:'SÍ',c:1,w:1,r:4,k:'yes'},
+  {id:'no1',t:'NO',c:3,w:1,r:4,k:'no'},
+  {id:'p2',t:'Para todas las subvenciones: cotejo con finanzas — presupuesto',c:1,w:4,r:5,k:'proc'},
+  {id:'d2',t:'¿Se justifica el traslado? · ¿Hay cupo en el establecimiento de destino propuesto por el requiriente u otro?',c:1,w:6,r:6,k:'dec'},
+  {id:'no2',t:'NO',c:1,w:1,r:7,k:'no'},
+  {id:'si2',t:'SÍ · Total / Parcial',c:3,w:2,r:7,k:'yes'},
+  {id:'e1',t:'Notificar a director/a, P.E y/o requiriente',c:1,w:2,r:8,k:'neg'},
+  {id:'p3',t:'Notificar a director/a, P.E y/o requiriente',c:3,w:4,r:8,k:'proc'},
+  {id:'d3',t:'¿El requiriente acepta la propuesta?',c:3,w:4,r:9,k:'dec'},
+  {id:'si3',t:'SÍ',c:3,w:1,r:10,k:'yes'},
+  {id:'no3',t:'NO',c:6,w:1,r:10,k:'no'},
+  {id:'p4',t:'Elaboración y envío de la orden de trabajo · UATP',c:1,w:4,r:11,k:'proc',own:'UATP'},
+  {id:'e2',t:'Notificar a director/a, P.E o requiriente',c:6,w:4,r:11,k:'neg'},
+  {id:'o1',t:'Notificar a Gestión de Personas mediante orden de trabajo',c:1,w:6,r:12,k:'out'},
+  {id:'o2',t:'Notificar a la persona seleccionada su fecha de ingreso',c:1,w:6,r:13,k:'out'},
+  {id:'o3',t:'Notificar a director/a o profesor/a encargado/a la fecha de retiro en el EE de origen',c:1,w:6,r:14,k:'out'},
+  {id:'o4',t:'Notificar a director/a o profesor/a encargado/a la fecha de ingreso',c:1,w:6,r:15,k:'out'}
+ ],
+ edges:[['s','p1'],['p1','nt1','dash'],['p1','d1'],['d1','si1'],['d1','no1'],['si1','p2'],['p2','d2'],['no1','d2'],
+        ['d2','no2'],['d2','si2'],['no2','e1'],['si2','p3'],['p3','d3'],['d3','si3'],['d3','no3'],['no3','e2'],
+        ['si3','p4']],
+ trees:[{f:'p4',to:['o1','o2','o3','o4']}]
+};
+
+DIAG['f-aumento-horas'] = {
+ title:'Flujo: solicitud de aumento de horas — docente y asistente',
+ sub:'También se inicia por el funcionario. Cuando el aumento se financia con horas SEP o PIE, se coteja con finanzas antes de resolver.',
+ cols:13, W:1340, flow:true,
+ nodes:[
+  {id:'s',t:'Recepción de solicitud por funcionario',c:1,w:4,r:1,k:'teal',own:'UATP'},
+  {id:'p1',t:'Revisión por parte del Área de Dotación: funciones, cargos en existencia y motivos',c:1,w:4,r:2,k:'proc',own:'UATP'},
+  {id:'d1',t:'¿Se justifica el aumento?',c:6,w:4,r:2,k:'dec'},
+  {id:'p2',t:'Aumento con horas SEP o PIE: cotejo con finanzas — presupuesto',c:1,w:4,r:3,k:'proc'},
+  {id:'no1',t:'NO',c:6,w:1,r:3,k:'no'},
+  {id:'si1',t:'SÍ · Total / Parcial',c:8,w:2,r:3,k:'yes'},
+  {id:'e1',t:'Notificar a director/a, P.E y/o requiriente',c:6,w:3,r:4,k:'neg'},
+  {id:'p3',t:'Notificar a director/a, P.E y/o requiriente',c:10,w:4,r:4,k:'proc'},
+  {id:'p4',t:'Revisión por contraparte GDP de antecedentes',c:10,w:4,r:5,k:'proc',own:'GDP'},
+  {id:'p5',t:'Solicitud de CDP a Presupuestos',c:10,w:4,r:6,k:'proc',own:'PyCG'},
+  {id:'d2',t:'¿El requiriente acepta la propuesta?',c:4,w:4,r:7,k:'dec'},
+  {id:'si2',t:'SÍ',c:4,w:1,r:8,k:'yes'},
+  {id:'no2',t:'NO',c:7,w:1,r:8,k:'no'},
+  {id:'p6',t:'Elaboración y envío de la orden de trabajo · UATP',c:1,w:4,r:9,k:'proc',own:'UATP'},
+  {id:'e2',t:'Notificar a director/a o profesor/a encargado/a',c:7,w:4,r:9,k:'neg'},
+  {id:'o1',t:'Notificar a la persona seleccionada su fecha de ingreso',c:1,w:5,r:10,k:'out'},
+  {id:'o2',t:'Notificar a director/a o profesor/a encargado/a la modificación de horas',c:1,w:5,r:11,k:'out'}
+ ],
+ edges:[['s','p1'],['p1','p2'],['p1','d1'],['d1','no1'],['d1','si1'],['no1','e1'],['si1','p3'],['si1','p4'],
+        ['p4','p5'],['p3','d2'],['p5','d2','dash'],['d2','si2'],['d2','no2'],['no2','e2'],['si2','p6']],
+ trees:[{f:'p6',to:['o1','o2']}]
+};
+
+DIAG['f-renuncia'] = {
+ title:'Flujo: renuncia y reducción de horas — docente y asistente',
+ sub:'Separa dos caminos: la salida total, que se acusa recibo y se registra, y la reducción parcial, que exige un nuevo nombramiento con horas reducidas.',
+ cols:12, W:1340, flow:true,
+ nodes:[
+  {id:'s',t:'Recepción de renuncia',c:1,w:4,r:1,k:'teal',own:'UATP'},
+  {id:'a1',t:'Asistente de la Educación',c:1,w:3,r:2,k:'teal'},
+  {id:'a2',t:'Docente',c:5,w:3,r:2,k:'teal'},
+  {id:'t1',t:'Total por RBD',c:1,w:2,r:3,k:'proc'},
+  {id:'t2',t:'Total',c:3,w:2,r:3,k:'proc'},
+  {id:'t3',t:'Parcial',c:5,w:2,r:3,k:'proc'},
+  {id:'p1',t:'Acuso recibo desde el SLEP',c:1,w:4,r:4,k:'proc'},
+  {id:'q1',t:'Notificación a director o P. Encargado',c:1,w:4,r:5,k:'proc'},
+  {id:'q2',t:'Notificación a GDP',c:5,w:3,r:5,k:'proc',own:'GDP'},
+  {id:'q3',t:'Registro en listado de renuncias',c:5,w:3,r:6,k:'proc'},
+  {id:'p2',t:'Revisión por parte del Área de Dotación: funciones, cargos en existencia y motivos',c:8,w:5,r:4,k:'proc',own:'UATP'},
+  {id:'p3',t:'Revisión por contraparte GDP de antecedentes',c:8,w:3,r:5,k:'proc',own:'GDP'},
+  {id:'p4',t:'Notificar a director/a, P.E y/o requiriente',c:11,w:2,r:5,k:'proc'},
+  {id:'p5',t:'Registro del caso',c:8,w:3,r:6,k:'proc'},
+  {id:'p6',t:'Elaboración de nuevo nombramiento con horas reducidas',c:8,w:5,r:7,k:'proc'},
+  {id:'o1',t:'Notificar al requiriente el inicio de la reducción de horas',c:1,w:5,r:8,k:'out'},
+  {id:'o2',t:'Notificar a director/a o profesor/a encargado/a la fecha de inicio de la reducción',c:7,w:5,r:8,k:'out'}
+ ],
+ edges:[['s','a1'],['s','a2'],['a1','t1'],['a1','t2'],['a2','t2'],['a2','t3'],['t1','p1'],['t2','p1'],['t3','p2'],
+        ['p1','q1'],['p1','q2'],['q2','q3'],['p2','p3'],['p2','p4'],['p3','p5'],['p5','p6'],['p6','o1'],['p6','o2']]
+};
+
+DIAG['asig-ruta'] = {
+ title:'Asignaciones de asistentes de la educación — ruta',
+ sub:'Cómo se resuelve si una asignación heredada del traspaso municipal se paga, se estudia o no corresponde.',
+ cols:14, W:1340, flow:true,
+ nodes:[
+  {id:'as',t:'Asignación',c:1,w:2,r:1,h:4,k:'proc'},
+  {id:'ej',t:'Ejemplo: bienios',c:1,w:2,r:5,k:'note'},
+  {id:'c1',t:'1) Conforme a normativa · 2) Tiene respaldo legal · 3) Es mayor a 6 meses pre traspaso',c:4,w:5,r:1,k:'ok'},
+  {id:'c2',t:'No se encuentra entre las asignaciones normadas',c:4,w:5,r:2,k:'neg'},
+  {id:'c3',t:'Asignada menos de 6 meses antes del traspaso',c:4,w:5,r:3,k:'neg'},
+  {id:'c4',t:'De experiencia: mayor al estatuto municipal',c:4,w:5,r:4,k:'neg'},
+  {id:'mid',t:'No hay certeza: se debe verificar y solicitar antecedentes',c:10,w:2,r:2,h:2,k:'note2'},
+  {id:'r1',t:'Se paga la asignación',c:12,w:3,r:1,k:'ok'},
+  {id:'r2',t:'Se estudiará la situación',c:12,w:3,r:2,h:2,k:'proc'},
+  {id:'r3',t:'No se paga la asignación, no corresponde',c:12,w:3,r:4,k:'neg'}
+ ],
+ edges:[['as','c1'],['as','c2'],['as','c3'],['as','c4'],['c1','r1'],['c2','mid'],['c3','mid'],['mid','r2'],['c4','r3']]
+};
+
+DIAG['asig-duda'] = {
+ title:'Asignaciones — ante una asignación en duda',
+ sub:'Qué hacer cuando no hay certeza: pagar preventivamente o no, y qué ocurre después según lo que se determine.',
+ cols:12, W:1200, flow:true,
+ nodes:[
+  {id:'d0',t:'Asignación en duda',c:1,w:3,r:1,k:'proc'},
+  {id:'d1',t:'¿Se genera el pago?',c:1,w:3,r:2,k:'dec'},
+  {id:'n1',t:'No, de manera preventiva',c:1,w:3,r:3,k:'teal'},
+  {id:'s1',t:'Sí',c:5,w:2,r:3,k:'no'},
+  {id:'d2',t:'¿Correspondía finalmente?',c:5,w:4,r:4,k:'dec'},
+  {id:'y1',t:'SÍ',c:5,w:1,r:5,k:'yes'},
+  {id:'y2',t:'NO',c:8,w:1,r:5,k:'no'},
+  {id:'ok1',t:'No hay acción posterior',c:1,w:4,r:6,k:'ok'},
+  {id:'ok2',t:'Pedir reintegro del monto',c:7,w:4,r:6,k:'neg'}
+ ],
+ edges:[['d0','d1'],['d1','n1'],['d1','s1'],['s1','d2'],['d2','y1'],['d2','y2'],['y1','ok1'],['n1','ok1'],['y2','ok2']]
+};
+
+DIAG['asig-nopago'] = {
+ title:'Asignaciones — motivos de no pago',
+ sub:'Los cuatro motivos por los que una asignación no se paga y la ruta de resolución hasta el depósito o la reliquidación del 6 de febrero.',
+ cols:12, W:1200, flow:true,
+ nodes:[
+  {id:'m1',t:'Falta de antecedentes',c:1,w:2,r:1,k:'teal'},
+  {id:'m2',t:'Rechazo',c:3,w:2,r:1,k:'teal'},
+  {id:'m3',t:'Pago inferior',c:5,w:2,r:1,k:'teal'},
+  {id:'m4',t:'Dudas generales',c:7,w:2,r:1,k:'teal'},
+  {id:'r1',t:'Registrar en formulario',c:3,w:3,r:2,k:'proc'},
+  {id:'r2',t:'Solicitar antecedentes',c:3,w:3,r:3,k:'proc'},
+  {id:'rv',t:'Revisar antecedentes',c:3,w:3,r:4,k:'ok'},
+  {id:'d1',t:'¿Corresponde el pago?',c:3,w:3,r:5,k:'dec'},
+  {id:'si',t:'SÍ',c:3,w:1,r:6,k:'yes'},
+  {id:'no',t:'NO',c:6,w:1,r:6,k:'no'},
+  {id:'e1',t:'Notificar a la persona',c:6,w:4,r:7,k:'neg'},
+  {id:'d2',t:'¿El no pago fue por rechazo?',c:1,w:4,r:7,k:'dec'},
+  {id:'y1',t:'SÍ',c:1,w:1,r:8,k:'yes'},
+  {id:'y2',t:'NO',c:3,w:1,r:8,k:'no'},
+  {id:'p1',t:'Notificar a la persona',c:1,w:2,r:9,k:'proc'},
+  {id:'p2',t:'Notificar a la persona',c:3,w:3,r:9,k:'proc'},
+  {id:'o1',t:'Depositar pago del 6 de febrero',c:1,w:2,r:10,k:'ok'},
+  {id:'o2',t:'Reliquidar pagos del 6 de febrero',c:3,w:3,r:10,k:'ok'}
+ ],
+ edges:[['m2','r1'],['m3','r1'],['m1','r2'],['m4','r2'],['r1','rv'],['r2','rv'],['rv','d1'],['d1','si'],['d1','no'],
+        ['no','e1'],['si','d2'],['d2','y1'],['d2','y2'],['y1','p1'],['y2','p2'],['p1','o1'],['p2','o2']]
+};
+</script>
+<script>
+DIAG['tabla-campos'] = {
+ tabla:true,
+ title:'Campos mínimos por archivo',
+ sub:'Qué información debe traer cada archivo para que la consolidación y la automatización de la orden de trabajo funcionen. La columna de campos deseables quedó abierta en el documento original.',
+ rows:[
+  {a:'Línea base',p:'UATP',f:['RUT','RBD','Estamento','Comuna','Horas Básica','Horas Media','Horas Totales','Bienios','Título','Mención','Tramo','Función','Jefatura de Curso','Horas por Subvención','Nombre','Apellido 1','Apellido 2','Correo']},
+  {a:'Licencias',p:'GDP',f:['RUT','RBD','Comuna','Estamento','Horas Totales','Horas por Subvención','Nombre','Apellido 1','Apellido 2','Tipo de Licencia','Fecha de Inicio de Licencia','Fecha de Término de Licencia']},
+  {a:'Reemplazos',p:'GDP',f:['RUT','RBD de ingreso','Comuna','RUT a reemplazar','Estamento','Horas a cubrir','Función a cumplir','Período a reemplazar']},
+  {a:'Sumarios y suspensiones',p:'Jurídica',f:['RUT','RBD del caso','Comuna','Inicio de Sumario','Estado de Sumario','Estamento','Nombre','Apellido 1','Apellido 2']},
+  {a:'Traslados',p:'UATP',f:['RUT','RBD de origen','RBD de destino','Comuna de origen','Comuna de destino','Horas a trasladar','Tipo de hora','Subvenciones','Horas Totales','Nombre','Apellido 1','Apellido 2']},
+  {a:'Nuevas contrataciones',p:'GDP',f:['RUT','RBD de ingreso','Comuna','Estamento','Cargo','Horas Totales','Subvenciones','Tramo','Bienios','Nombre','Apellido 1','Apellido 2']},
+  {a:'Renuncias',p:'GDP',f:['RUT','RBD de salida','Comuna','Fecha de renuncia','Estamento','Cargo','Nombre','Apellido 1','Apellido 2']},
+  {a:'Permisos sin goce de sueldo',p:'GDP',f:['RUT','RBD','Comuna','Nombre','Apellido 1','Apellido 2']}
+ ]
+};
+
+var SEC_MON = [
+ {g:'Organigrama'},
+ {k:'org-general', n:'Visión general del área'},
+ {k:'org-dpd', n:'Desarrollo Profesional Docente'},
+ {k:'org-dotacion', n:'Dotación de los establecimientos'},
+ {k:'org-procesos', n:'Procesos y Resultados Educativos'}
+];
+var SEC_DOT = [
+ {g:'Marco y línea base'},
+ {k:'dot-focos', n:'Focos de las subdirecciones'},
+ {k:'dot-insumos', n:'Insumos e información'},
+ {k:'dot-consolidacion', n:'Fuentes para la consolidación'},
+ {k:'dot-orden', n:'Proceso para la orden de trabajo'},
+ {k:'tabla-campos', n:'Campos mínimos por archivo'},
+ {g:'Flujos de solicitud'},
+ {k:'f-reemplazo', n:'Reemplazo'},
+ {k:'f-nuevo-cargo', n:'Nuevo cargo (aumento de dotación)'},
+ {k:'f-factibilidad', n:'Factibilidad y aprobación'},
+ {k:'f-reposicion', n:'Reposición de función'},
+ {k:'f-traslado', n:'Traslado'},
+ {k:'f-aumento-horas', n:'Aumento de horas'},
+ {k:'f-renuncia', n:'Renuncia y reducción de horas'},
+ {g:'Asignaciones AAEE'},
+ {k:'asig-ruta', n:'Ruta de la asignación'},
+ {k:'asig-duda', n:'Asignación en duda'},
+ {k:'asig-nopago', n:'Motivos de no pago'}
+];
+var CARDS_FLUJOS = ['f-reemplazo','f-nuevo-cargo','f-factibilidad','f-reposicion','f-traslado','f-aumento-horas','f-renuncia'];
+var CARDS_ORG = ['org-general','org-dpd','org-dotacion','org-procesos'];
+var CARDS_BASE = ['dot-focos','dot-insumos','dot-consolidacion','dot-orden','tabla-campos','asig-ruta','asig-duda','asig-nopago'];
+var TABOF = {}; CARDS_ORG.forEach(function(k){TABOF[k]='mon';}); SEC_DOT.forEach(function(s){if(s.k)TABOF[s.k]='dot';});
+
+/* ============ RENDER ============ */
+var OWC={'UATP':'#1f6fd0','GDP':'#12907d','PyCG':'#f2a43c','Jurídica':'#f4626e','Gabinete':'#8a63d2','ATP':'#0d8a56','SAF':'#c9761a','Remuneraciones':'#1b7fa8','Monitoreo':'#1f6fd0'};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function nodeHTML(n){
+  var st='grid-column:'+n.c+' / span '+(n.w||1)+';grid-row:'+n.r+' / span '+(n.h||1)+';';
+  var h='<div class="nd n-'+n.k+' clk" data-id="'+n.id+'" style="'+st+'">';
+  h+='<div>'+esc(n.t);
+  if(n.s) h+='<small>'+esc(n.s)+'</small>';
+  if(n.items){h+='<ul>';n.items.forEach(function(i){h+='<li>'+esc(i)+'</li>';});h+='</ul>';}
+  h+='</div>';
+  if(n.own) h+='<span class="own">'+esc(n.own)+'</span>';
+  h+='</div>';
+  return h;
+}
+
+function tablaHTML(d){
+  var h='<div class="tblwrap"><table class="tbl"><thead><tr><th style="width:150px">Archivo</th><th style="width:110px">Propietario</th><th>Campos mínimos</th><th style="width:150px">Campos deseables</th></tr></thead><tbody>';
+  d.rows.forEach(function(r){
+    h+='<tr><td><span class="arch">'+esc(r.a)+'</span></td><td><span class="prop">'+esc(r.p)+'</span></td><td><ol>';
+    r.f.forEach(function(f){h+='<li>'+esc(f)+'</li>';});
+    h+='</ol></td><td class="vacio">por definir</td></tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+
+function diagramHTML(key){
+  var d=DIAG[key];
+  var h='<div class="dg" id="dg-'+key+'"><div class="dg-head"><h2>'+esc(d.title)+'</h2><p>'+esc(d.sub)+'</p></div>';
+  if(d.tabla) return h+tablaHTML(d)+'</div>';
+  var owners=[]; d.nodes.forEach(function(n){if(n.own&&owners.indexOf(n.own)<0)owners.push(n.own);});
+  h+='<div class="dg-bar"><button class="zbtn" data-z="-1">−</button><span class="zlab">100%</span><button class="zbtn" data-z="1">+</button><button class="zbtn" data-z="0" title="Ajustar al ancho">⤢</button>';
+  if(owners.length){h+='<span style="width:10px"></span>';owners.forEach(function(o){h+='<button class="chip ow" data-own="'+esc(o)+'"><i style="background:'+(OWC[o]||'#12314e')+'"></i>'+esc(o)+'</button>';});}
+  h+='<span class="spacer"></span><span class="hint">Haz clic en una caja para ver su detalle</span></div>';
+  var W=(d.W||1300)+44;
+  h+='<div class="canvaswrap"><div class="cvbox"><div class="canvas" style="width:'+W+'px"><svg class="edges"></svg><div class="gridnodes" style="grid-template-columns:repeat('+d.cols+',1fr);padding:0 22px">';
+  d.nodes.forEach(function(n){h+=nodeHTML(n);});
+  h+='</div></div></div></div>';
+  h+='<div class="detail"><div class="dh"><b></b><button class="dclose">✕</button></div><div class="db"></div></div>';
+  return h+'</div>';
+}
+
+/* --- geometría --- */
+function rectOf(el){return {l:el.offsetLeft,t:el.offsetTop,r:el.offsetLeft+el.offsetWidth,b:el.offsetTop+el.offsetHeight,
+  cx:el.offsetLeft+el.offsetWidth/2, cy:el.offsetTop+el.offsetHeight/2};}
+function rnd(pts,rad){
+  rad=rad||9; var p=pts.filter(function(v,i){return i===0||v[0]!==pts[i-1][0]||v[1]!==pts[i-1][1];});
+  if(p.length<2) return '';
+  var d='M'+p[0][0]+','+p[0][1];
+  for(var i=1;i<p.length-1;i++){
+    var a=p[i-1],b=p[i],c=p[i+1];
+    var d1=Math.hypot(b[0]-a[0],b[1]-a[1]), d2=Math.hypot(c[0]-b[0],c[1]-b[1]);
+    var r=Math.min(rad,d1/2,d2/2);
+    if(r<2){d+=' L'+b[0]+','+b[1];continue;}
+    var p1=[b[0]+(a[0]-b[0])*r/d1, b[1]+(a[1]-b[1])*r/d1];
+    var p2=[b[0]+(c[0]-b[0])*r/d2, b[1]+(c[1]-b[1])*r/d2];
+    d+=' L'+p1[0]+','+p1[1]+' Q'+b[0]+','+b[1]+' '+p2[0]+','+p2[1];
+  }
+  var L=p[p.length-1]; d+=' L'+L[0]+','+L[1];
+  return d;
+}
+function edgePts(a,b){
+  if(b.t>=a.b-1){var my=(a.b+b.t)/2;return [[a.cx,a.b],[a.cx,my],[b.cx,my],[b.cx,b.t]];}
+  if(a.t>=b.b-1){var my2=(b.b+a.t)/2;return [[a.cx,a.t],[a.cx,my2],[b.cx,my2],[b.cx,b.b]];}
+  if(b.l>=a.r-1){var mx=(a.r+b.l)/2;return [[a.r,a.cy],[mx,a.cy],[mx,b.cy],[b.l,b.cy]];}
+  if(a.l>=b.r-1){var mx2=(b.r+a.l)/2;return [[a.l,a.cy],[mx2,a.cy],[mx2,b.cy],[b.r,b.cy]];}
+  return [[a.cx,a.b],[a.cx,a.b+14],[b.cx,a.b+14],[b.cx,b.t]];
+}
+
+function drawEdges(key){
+  var d=DIAG[key]; if(!d||d.tabla) return;
+  var root=document.getElementById('dg-'+key); if(!root) return;
+  var canvas=root.querySelector('.canvas'), grid=root.querySelector('.gridnodes'), svg=root.querySelector('svg.edges');
+  var map={}; d.nodes.forEach(function(n){var el=grid.querySelector('[data-id="'+n.id+'"]'); if(el) map[n.id]=rectOf(el);});
+  var H=grid.offsetHeight, W=canvas.offsetWidth;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.setAttribute('width',W); svg.setAttribute('height',H);
+  canvas.style.height=H+'px';
+  var out='<defs><marker id="ar-'+key+'" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#5c7186"/></marker></defs>';
+  function line(pts,o){o=o||{};return '<path d="'+rnd(pts)+'" fill="none" stroke="'+(o.c||'#5c7186')+'" stroke-width="1.5"'+(o.dash?' stroke-dasharray="5 4"':'')+(o.arrow===false?'':' marker-end="url(#ar-'+key+')"')+(o.eid?' data-e="'+o.eid+'"':'')+' class="ed"/>';}
+
+  (d.edges||[]).forEach(function(e){
+    var a=map[e[0]],b=map[e[1]]; if(!a||!b) return;
+    out+=line(edgePts(a,b),{dash:e[2]==='dash',eid:e[0]+'>'+e[1]});
+  });
+  (d.buses||[]).forEach(function(bs){
+    var p=map[bs.f]; if(!p) return;
+    var ks=bs.to.map(function(i){return map[i];}).filter(Boolean); if(!ks.length) return;
+    var minT=Math.min.apply(null,ks.map(function(k){return k.t;}));
+    var y=(p.b+minT)/2;
+    out+=line([[p.cx,p.b],[p.cx,y]],{arrow:false});
+    var xs=ks.map(function(k){return k.cx;}).concat([p.cx]);
+    out+=line([[Math.min.apply(null,xs),y],[Math.max.apply(null,xs),y]],{arrow:false});
+    ks.forEach(function(k){out+=line([[k.cx,y],[k.cx,k.t]],{eid:bs.f+'>'+'_'});});
+  });
+  (d.merges||[]).forEach(function(mg){
+    var t=map[mg.to]; if(!t) return;
+    var ks=mg.from.map(function(i){return map[i];}).filter(Boolean); if(!ks.length) return;
+    var maxR=Math.max.apply(null,ks.map(function(k){return k.r;})), minL=Math.min.apply(null,ks.map(function(k){return k.l;}));
+    var maxB=Math.max.apply(null,ks.map(function(k){return k.b;})), minT=Math.min.apply(null,ks.map(function(k){return k.t;}));
+    if(t.l>=maxR-1 || t.r<=minL+1){
+      var rt = t.l>=maxR-1;
+      var x = rt ? (maxR+t.l)/2 : (t.r+minL)/2;
+      ks.forEach(function(k){out+=line([[rt?k.r:k.l,k.cy],[x,k.cy]],{arrow:false});});
+      var ys=ks.map(function(k){return k.cy;}).concat([t.cy]);
+      out+=line([[x,Math.min.apply(null,ys)],[x,Math.max.apply(null,ys)]],{arrow:false});
+      out+=line([[x,t.cy],[rt?t.l:t.r,t.cy]],{});
+    } else {
+      var down = t.t >= maxB-1;
+      var y = down ? (maxB+t.t)/2 : (t.b+minT)/2;
+      ks.forEach(function(k){out+=line([[k.cx, down?k.b:k.t],[k.cx,y]],{arrow:false});});
+      var xs=ks.map(function(k){return k.cx;}).concat([t.cx]);
+      out+=line([[Math.min.apply(null,xs),y],[Math.max.apply(null,xs),y]],{arrow:false});
+      out+=line([[t.cx,y],[t.cx, down?t.t:t.b]],{});
+    }
+  });
+  (d.trees||[]).forEach(function(tr){
+    var p=map[tr.f]; if(!p) return;
+    var ks=tr.to.map(function(i){return map[i];}).filter(Boolean); if(!ks.length) return;
+    var rightMode = ks.every(function(k){return k.l >= p.r-1;});
+    if(rightMode){
+      var x=p.r+11;
+      out+=line([[p.r,p.cy],[x,p.cy]],{arrow:false});
+      var ys=ks.map(function(k){return k.cy;}).concat([p.cy]);
+      out+=line([[x,Math.min.apply(null,ys)],[x,Math.max.apply(null,ys)]],{arrow:false});
+      ks.forEach(function(k){out+=line([[x,k.cy],[k.l,k.cy]],{});});
+    } else {
+      var x2=Math.max(6, Math.min.apply(null,ks.map(function(k){return k.l;}))-11);
+      var ys2=ks.map(function(k){return k.cy;});
+      if(tr.up){
+        out+=line([[x2,Math.min.apply(null,ys2)],[x2,Math.max.apply(null,ys2)]],{arrow:false});
+        ks.forEach(function(k){out+=line([[k.l,k.cy],[x2,k.cy]],{arrow:false});});
+        out+=line([[x2,Math.min.apply(null,ys2)],[x2,p.b+11],[p.cx,p.b+11],[p.cx,p.b]],{});
+      } else {
+        out+=line([[p.cx,p.b],[p.cx,p.b+11],[x2,p.b+11],[x2,Math.max.apply(null,ys2)]],{arrow:false});
+        ks.forEach(function(k){out+=line([[x2,k.cy],[k.l,k.cy]],{});});
+      }
+    }
+  });
+  svg.innerHTML=out;
+}
+
+/* --- zoom --- */
+var ZOOM={};
+function applyZoom(key){
+  var root=document.getElementById('dg-'+key); if(!root) return;
+  var canvas=root.querySelector('.canvas'), box=root.querySelector('.cvbox'), lab=root.querySelector('.zlab');
+  if(!canvas) return;
+  var z=ZOOM[key]||1;
+  canvas.style.transform='scale('+z+')';
+  box.style.width=(canvas.offsetWidth*z)+'px';
+  box.style.height=(canvas.offsetHeight*z)+'px';
+  if(lab) lab.textContent=Math.round(z*100)+'%';
+}
+function fitZoom(key){
+  var root=document.getElementById('dg-'+key); if(!root) return;
+  var wrap=root.querySelector('.canvaswrap'), canvas=root.querySelector('.canvas');
+  var avail=wrap.clientWidth-44;
+  ZOOM[key]=Math.min(1, Math.max(.55, avail/canvas.offsetWidth));
+  applyZoom(key);
+}
+function layout(key){ if(DIAG[key].tabla) return; drawEdges(key); if(ZOOM[key]===undefined){fitZoom(key);} else {applyZoom(key);} }
+
+/* --- detalle --- */
+function showDetail(key,id){
+  var d=DIAG[key], root=document.getElementById('dg-'+key);
+  var n=null; d.nodes.forEach(function(x){if(x.id===id)n=x;});
+  if(!n) return;
+  root.querySelectorAll('.nd').forEach(function(e){e.classList.remove('sel');e.classList.remove('dim');});
+  var rel={}; rel[id]=1;
+  var pre=[],post=[];
+  (d.edges||[]).forEach(function(e){
+    if(e[1]===id){pre.push(e[0]);rel[e[0]]=1;}
+    if(e[0]===id){post.push(e[1]);rel[e[1]]=1;}
+  });
+  (d.trees||[]).forEach(function(t){ if(t.f===id){t.to.forEach(function(x){post.push(x);rel[x]=1;});}
+    if(t.to.indexOf(id)>=0){pre.push(t.f);rel[t.f]=1;} });
+  (d.buses||[]).forEach(function(t){ if(t.f===id){t.to.forEach(function(x){post.push(x);rel[x]=1;});}
+    if(t.to.indexOf(id)>=0){pre.push(t.f);rel[t.f]=1;} });
+  (d.merges||[]).forEach(function(t){ if(t.to===id){t.from.forEach(function(x){pre.push(x);rel[x]=1;});}
+    if(t.from.indexOf(id)>=0){post.push(t.to);rel[t.to]=1;} });
+  function nm(x){var r='';d.nodes.forEach(function(y){if(y.id===x)r=y.t;});return r;}
+  function kd(x){var r='';d.nodes.forEach(function(y){if(y.id===x)r=y.k;});return r;}
+  var postL=[],preL=[];
+  post.forEach(function(x){
+    if(kd(x)==='yes'||kd(x)==='no'){
+      var got=false;
+      (d.edges||[]).forEach(function(e){ if(e[0]===x){ postL.push(nm(x)+' → '+nm(e[1])); rel[e[1]]=1; got=true; } });
+      if(!got) postL.push(nm(x));
+    } else postL.push(nm(x));
+  });
+  pre.forEach(function(x){
+    if(kd(x)==='yes'||kd(x)==='no'){
+      var got2=false;
+      (d.edges||[]).forEach(function(e){ if(e[1]===x){ preL.push(nm(e[0])+' → '+nm(x)); rel[e[0]]=1; got2=true; } });
+      if(!got2) preL.push(nm(x));
+    } else preL.push(nm(x));
+  });
+  root.querySelectorAll('.nd').forEach(function(e){ if(!rel[e.getAttribute('data-id')]) e.classList.add('dim'); });
+  root.querySelector('[data-id="'+id+'"]').classList.add('sel');
+  var det=root.querySelector('.detail');
+  det.querySelector('.dh b').textContent=n.t;
+  var h='';
+  if(n.own) h+='<div class="row"><div class="k">Responsable</div><div class="v"><b>'+esc(n.own)+'</b></div></div>';
+  if(n.s) h+='<div class="row"><div class="k">Detalle</div><div class="v">'+esc(n.s)+'</div></div>';
+  if(n.items){h+='<div class="row"><div class="k">Incluye</div><div class="v"><ul class="lst">';n.items.forEach(function(i){h+='<li>'+esc(i)+'</li>';});h+='</ul></div></div>';}
+  if(preL.length){h+='<div class="row"><div class="k">Viene de</div><div class="v"><ul class="lst">';preL.forEach(function(p){h+='<li>'+esc(p)+'</li>';});h+='</ul></div></div>';}
+  if(postL.length){h+='<div class="row"><div class="k">Continúa en</div><div class="v"><ul class="lst">';postL.forEach(function(p){h+='<li>'+esc(p)+'</li>';});h+='</ul></div></div>';}
+  if(!h) h='<div class="v" style="color:#93a0ae">Sin detalle adicional registrado en el documento original.</div>';
+  det.querySelector('.db').innerHTML=h;
+  det.classList.add('on');
+}
+function clearDetail(key){
+  var root=document.getElementById('dg-'+key); if(!root) return;
+  root.querySelectorAll('.nd').forEach(function(e){e.classList.remove('sel');e.classList.remove('dim');e.classList.remove('hit');});
+  var det=root.querySelector('.detail'); if(det) det.classList.remove('on');
+}
+
+/* ============ NAVEGACIÓN ============ */
+function buildSide(paneId, secs, viewId){
+  var side=document.getElementById(paneId), view=document.getElementById(viewId), h='', vh='', first=null;
+  secs.forEach(function(s){
+    if(s.g){h+='<div class="gl">'+esc(s.g)+'</div>';return;}
+    if(!first) first=s.k;
+    h+='<button data-k="'+s.k+'">'+esc(s.n)+'</button>';
+    vh+='<div class="subpane" id="sp-'+s.k+'">'+diagramHTML(s.k)+'</div>';
+  });
+  side.innerHTML=h; view.innerHTML=vh;
+  return first;
+}
+function openSection(tab,key,nodeId){
+  document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-tab')===tab);});
+  document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('on',p.id==='pane-'+tab);});
+  if(key){
+    var sideId = tab==='mon'?'side-mon':'side-dot';
+    document.querySelectorAll('#'+sideId+' button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-k')===key);});
+    document.querySelectorAll('#pane-'+tab+' .subpane').forEach(function(p){p.classList.toggle('on',p.id==='sp-'+key);});
+    layout(key);
+    setTimeout(function(){ if(document.getElementById('sp-'+key).classList.contains('on')) drawEdges(key); },320);
+    var dg=document.getElementById('dg-'+key);
+    if(dg) window.scrollTo({top:Math.max(0,dg.getBoundingClientRect().top+window.scrollY-70),behavior:'smooth'});
+    if(nodeId){
+      clearDetail(key);
+      var el=dg&&dg.querySelector('[data-id="'+nodeId+'"]');
+      if(el){ el.classList.add('hit'); showDetail(key,nodeId);
+        setTimeout(function(){ el.scrollIntoView({block:'center',inline:'center',behavior:'smooth'}); },260); }
+    }
+  } else { window.scrollTo({top:0,behavior:'smooth'}); }
+}
+
+/* ============ TARJETAS ============ */
+function cardHTML(k,tag,cls){
+  var d=DIAG[k];
+  var sub=d.sub.length>128?d.sub.slice(0,126).replace(/[ ,.;]+$/,'')+'…':d.sub;
+  return '<button class="card" data-k="'+k+'"><span class="tag '+cls+'">'+tag+'</span><h3>'+esc(d.title.replace(/^Flujo: /,''))+'</h3><p>'+esc(sub)+'</p></button>';
+}
+document.getElementById('cards-flujos').innerHTML=CARDS_FLUJOS.map(function(k){return cardHTML(k,'Flujo','t-flujo');}).join('');
+document.getElementById('cards-org').innerHTML=CARDS_ORG.map(function(k){return cardHTML(k,'Organigrama','t-org');}).join('');
+document.getElementById('cards-base').innerHTML=CARDS_BASE.map(function(k){
+  return cardHTML(k, k.indexOf('asig')===0?'Asignaciones':'Línea base', k.indexOf('asig')===0?'t-asig':'t-base');}).join('');
+
+buildSide('side-mon',SEC_MON,'view-mon');
+buildSide('side-dot',SEC_DOT,'view-dot');
+
+document.querySelectorAll('.tabs button').forEach(function(b){
+  b.addEventListener('click',function(){
+    var t=b.getAttribute('data-tab');
+    if(t==='inicio'){openSection('inicio');return;}
+    var secs = t==='mon'?SEC_MON:SEC_DOT;
+    var cur=document.querySelector('#pane-'+t+' .subpane.on');
+    var k = cur ? cur.id.slice(3) : secs.filter(function(s){return s.k;})[0].k;
+    openSection(t,k);
+  });
+});
+document.querySelectorAll('.side button').forEach(function(b){
+  b.addEventListener('click',function(){
+    var k=b.getAttribute('data-k');
+    openSection(TABOF[k],k);
+  });
+});
+document.querySelectorAll('.card').forEach(function(b){
+  b.addEventListener('click',function(){var k=b.getAttribute('data-k');openSection(TABOF[k],k);});
+});
+document.body.addEventListener('click',function(ev){
+  var nd=ev.target.closest('.nd'); 
+  if(nd){var dg=nd.closest('.dg'); if(dg){var k=dg.id.slice(3); showDetail(k,nd.getAttribute('data-id'));} return;}
+  var cl=ev.target.closest('.dclose');
+  if(cl){var dg2=cl.closest('.dg'); if(dg2) clearDetail(dg2.id.slice(3)); return;}
+  var z=ev.target.closest('.zbtn');
+  if(z){var dg3=z.closest('.dg'); var k3=dg3.id.slice(3); var v=+z.getAttribute('data-z');
+    if(v===0){fitZoom(k3);} else {ZOOM[k3]=Math.min(2.2,Math.max(.35,(ZOOM[k3]||1)+v*.15));applyZoom(k3);} return;}
+  var ow=ev.target.closest('.chip.ow');
+  if(ow){var dg4=ow.closest('.dg'); ow.classList.toggle('off');
+    var offs=[]; dg4.querySelectorAll('.chip.ow.off').forEach(function(c){offs.push(c.getAttribute('data-own'));});
+    var k4=dg4.id.slice(3), dd=DIAG[k4];
+    dg4.querySelectorAll('.nd').forEach(function(e){e.classList.remove('dim');});
+    if(offs.length){ dd.nodes.forEach(function(n){ if(n.own && offs.indexOf(n.own)>=0){
+        var el=dg4.querySelector('[data-id="'+n.id+'"]'); if(el) el.classList.add('dim'); } }); }
+    return;}
+});
+
+/* ============ BUSCADOR ============ */
+var INDEX=[];
+Object.keys(DIAG).forEach(function(k){
+  var d=DIAG[k];
+  if(d.tabla){ d.rows.forEach(function(r){ INDEX.push({k:k,id:null,t:r.a+' — '+r.p+': '+r.f.join(', '),ctx:d.title}); }); return; }
+  d.nodes.forEach(function(n){
+    var t=n.t+(n.s?' — '+n.s:'')+(n.items?' — '+n.items.join(' · '):'');
+    if(['yes','no'].indexOf(n.k)>=0) return;
+    INDEX.push({k:k,id:n.id,t:t,ctx:d.title});
+  });
+});
+var qEl=document.getElementById('q'), resEl=document.getElementById('res');
+function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+qEl.addEventListener('input',function(){
+  var q=norm(qEl.value.trim());
+  if(q.length<2){resEl.classList.remove('on');resEl.innerHTML='';return;}
+  var hits=INDEX.filter(function(i){return norm(i.t).indexOf(q)>=0 || norm(i.ctx).indexOf(q)>=0;}).slice(0,40);
+  if(!hits.length){resEl.classList.add('on');resEl.innerHTML='<div class="rh">Sin resultados para «'+esc(qEl.value)+'»</div>';return;}
+  var h='<div class="rh">'+hits.length+' resultado'+(hits.length>1?'s':'')+'</div>';
+  hits.forEach(function(i,ix){
+    var t=esc(i.t), rx=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');
+    var disp=t; try{ var plain=norm(t); var p=plain.indexOf(q);
+      if(p>=0) disp=esc(i.t.slice(0,p))+'<mark>'+esc(i.t.slice(p,p+q.length))+'</mark>'+esc(i.t.slice(p+q.length)); }catch(e){}
+    h+='<button data-i="'+ix+'">'+disp+'<span>'+esc(i.ctx)+'</span></button>';
+  });
+  resEl.innerHTML=h; resEl.classList.add('on');
+  resEl.querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click',function(){
+      var i=hits[+b.getAttribute('data-i')];
+      resEl.classList.remove('on'); qEl.value='';
+      openSection(TABOF[i.k]||'dot', i.k, i.id);
+    });
+  });
+});
+
+window.addEventListener('resize',function(){
+  var cur=document.querySelector('.pane.on .subpane.on');
+  if(cur) layout(cur.id.slice(3));
+});
+openSection('inicio');
+if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){var c=document.querySelector('.pane.on .subpane.on');if(c)layout(c.id.slice(3));});}
+</script>
+<style>.cvbox{position:relative}.canvas{transform-origin:0 0}</style>
+<button class="hlpx-fab" id="hlpxFab" aria-haspopup="dialog" aria-label="Ayuda: cómo usar este visor"><span>?</span></button>
+<div class="hlpx-tip">¿Cómo usar este visor?</div>
+<div class="hlpx-back" id="hlpxBack" role="dialog" aria-modal="true" aria-labelledby="hlpxTitle">
+  <div class="hlpx-modal">
+    <div class="hlpx-head"><h2 id="hlpxTitle">Cómo usar el visor de flujos</h2><button class="hlpx-close" id="hlpxClose" aria-label="Cerrar">&#10005;</button></div>
+    <div class="hlpx-body">
+<h3>¿Qué es este visor?</h3>
+<p>Es la versión navegable del documento institucional <b>«Flujos Monitoreo / Dotación / DPD»</b>. Reúne el organigrama funcional de la línea de <b>Monitoreo y Seguimiento</b> de la UATP y los <b>flujos de gestión de dotación</b> que hoy operan entre las unidades del Servicio.</p>
+<h3>Las dos pestañas</h3>
+<dl>
+  <dt>Organigrama Monitoreo y Seguimiento</dt><dd>Quién hace qué. La visión general del área y el desglose de sus tres componentes: Desarrollo Profesional Docente, Dotación de los establecimientos, y Procesos y Resultados Educativos.</dd>
+  <dt>Flujos de Dotación</dt><dd>Cómo se tramita cada caso. Primero el marco (focos de cada subdirección, insumos, fuentes de la consolidación y campos mínimos) y luego los siete flujos de solicitud, más las asignaciones de asistentes de la educación.</dd>
+</dl>
+<h3>Cómo leer un diagrama</h3>
+<p>Cada caja es un paso. <b>Haz clic en cualquier caja</b> y el visor atenúa el resto del diagrama para dejar visible sólo ese paso y sus conexiones; abajo se abre un panel que indica de dónde viene, en qué continúa y qué unidad es responsable.</p>
+<dl>
+  <dt>Cajas verde oscuro</dt><dd>Inicio del flujo y notificaciones finales (las que llevan visto bueno son el cierre del proceso).</dd>
+  <dt>Cajas naranjas</dt><dd>Pasos de gestión y preguntas de decisión.</dd>
+  <dt>Píldoras SÍ / NO</dt><dd>La salida de cada decisión. Sigue la que corresponda a tu caso.</dd>
+  <dt>Cajas rojas</dt><dd>Salidas negativas: la solicitud no continúa y se notifica al requiriente.</dd>
+  <dt>Etiquetas de unidad</dt><dd>La unidad responsable de ese paso. Los botones de la barra superior permiten atenuar los pasos de una unidad para ver sólo el resto.</dd>
+</dl>
+<h3>Zoom y desplazamiento</h3>
+<p>Los botones <b>−</b>, <b>+</b> y <b>⤢</b> de cada diagrama ajustan el tamaño; <b>⤢</b> encaja el diagrama al ancho de la pantalla. Los diagramas más anchos se desplazan lateralmente dentro de su marco.</p>
+<h3>Buscador</h3>
+<p>En la pestaña <b>Inicio</b> hay un buscador que recorre todos los pasos, unidades y documentos del visor. Al elegir un resultado, el visor abre el diagrama correspondiente y resalta el paso exacto.</p>
+<h3>Qué no es este visor</h3>
+<p>Es una reconstrucción de trabajo para socializar los procesos dentro del equipo. <b>No reemplaza la normativa ni los procedimientos formales</b> del Servicio, y los flujos pueden ajustarse a medida que avanza el co-diseño con cada unidad.</p>
+<h3>Qué quedó fuera</h3>
+<p>Las láminas de <b>«principales tareas de corto y mediano plazo»</b> del documento original no se incluyeron: eran compromisos con fecha, no procesos permanentes.</p>
+</div>
+  </div>
+</div>
+<script>
+(function(){var b=document.getElementById('hlpxBack'),f=document.getElementById('hlpxFab'),c=document.getElementById('hlpxClose');
+function op(){b.classList.add('on');document.body.style.overflow='hidden';}
+function cl(){b.classList.remove('on');document.body.style.overflow='';}
+f.addEventListener('click',op);c.addEventListener('click',cl);
+b.addEventListener('click',function(e){if(e.target===b)cl();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')cl();});})();
+</script>
+</body>
+</html>
