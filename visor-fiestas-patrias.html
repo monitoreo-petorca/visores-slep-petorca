@@ -392,22 +392,39 @@ function renderCal(rows){
 }
 function renderAgenda(rows){
   const el=$('#agView');
-  if(!rows.length){el.innerHTML='<div class="empty">No hay actividades con estos filtros.</div>';return;}
+  const tools='<div class="res-tools">'+personSelect('agBy')+'</div>';
+  if(!rows.length){el.innerHTML=tools+'<div class="empty">No hay actividades con estos filtros.</div>';bindPersonSelect('#agBy');return;}
   const by={};
-  rows.forEach(e=>{const p=e.atp||'Sin contraparte ATP asignada';(by[p]=by[p]||[]).push(e);});
-  const names=Object.keys(by).sort((a,b)=>a.localeCompare(b,'es'));
-  el.innerHTML='<div class="agenda">'+names.map(p=>{
+  rows.forEach(e=>{const p=personKey(e);(by[p]=by[p]||[]).push(e);});
+  const names=Object.keys(by).sort((a,b)=>by[b].length-by[a].length||a.localeCompare(b,'es'));
+  el.innerHTML=tools+'<div class="agenda">'+names.map(p=>{
     const evs=by[p].slice().sort((a,b)=>((a.iso||'zzzz')+(a.hora||'99:99')).localeCompare((b.iso||'zzzz')+(b.hora||'99:99')));
     const km=evs.filter(e=>e.dist).reduce((a,e)=>a+(+e.dist||0),0);
-    const items=evs.map(e=>'<li><b>'+esc(horaTxt(e))+'</b> · '+esc(e.name)+'<br><span class="w">'+
+    const items=evs.map(e=>'<li><b>'+esc(horaTxt(e))+'</b> · '+esc(e.name)+
+      (e.fuente==='plan'?' <span class="chip warn">sin confirmar</span>':'')+'<br><span class="w">'+
       (e.iso?esc(e.diasem+' '+e.dia+'/'+pad(e.mesnum)):'fecha por definir')+' · '+esc(e.act)+
       (e.dist?' · '+e.dist+' km':'')+'</span></li>').join('');
     return '<div class="pcard"><h4>'+esc(p)+'<span class="n">'+evs.length+' act. · '+Math.round(km)+' km</span></h4><ol>'+items+'</ol></div>';
   }).join('')+'</div>'+
-  '<div class="cal-legend"><span>Agrupado por <b>Apoyo Técnico Pedagógico</b> (contraparte del directorio). Usa el filtro de Gestión de Apoyo a Establecimientos para acotar.</span></div>';
+  '<div class="cal-legend"><span>Agrupado por <b>'+PERSON_LBL[PERSON_BY]+'</b> (contraparte del directorio), '+
+  'de mayor a menor carga. Los filtros de arriba siguen aplicando.</span></div>';
+  bindPersonSelect('#agBy');
 }
 /* ── RESUMEN + descargas ──────────────────────────────────────────────────── */
-let RES_BY='atp';                       // agrupador de la tabla por persona
+/* Agrupador de personas COMPARTIDO por «Agenda por persona» y «Resumen»:
+   cambiarlo en una vista lo cambia en la otra. */
+let PERSON_BY='atp';
+const PERSON_LBL={atp:'Apoyo Técnico Pedagógico',gda:'Gestión de Apoyo a Establecimientos'};
+function personKey(e){return e[PERSON_BY]||('Sin contraparte de '+PERSON_LBL[PERSON_BY]);}
+function personSelect(id){
+  return '<div class="field"><label for="'+id+'">Agrupar personas por</label><select id="'+id+'">'+
+    '<option value="atp"'+(PERSON_BY==='atp'?' selected':'')+'>Apoyo Técnico Pedagógico</option>'+
+    '<option value="gda"'+(PERSON_BY==='gda'?' selected':'')+'>Gestión de Apoyo a Establecimientos</option>'+
+  '</select></div>';
+}
+function bindPersonSelect(sel){
+  const s=$(sel);if(s)s.addEventListener('change',function(){PERSON_BY=this.value;render();});
+}
 const CSVSEP=';';                       // separador de lista de Excel es-CL
 const CSVBUF={};                        // tablas armadas en el último render
 function csvCell(c){c=String(c==null?'':c);return /["\n\r;]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}
@@ -445,17 +462,13 @@ function tbl(key,title,sub,head,body,foot,file,rowsCsv){
 function renderRes(rows){
   const el=$('#resView');
   if(!rows.length){el.innerHTML='<div class="empty">No hay actividades con estos filtros.</div>';return;}
-  const LBL={atp:'Apoyo Técnico Pedagógico',gda:'Gestión de Apoyo a Establecimientos'};
   const comunas=[...new Set(rows.map(e=>e.comuna))].sort((a,b)=>a.localeCompare(b,'es'));
   let out='<div class="res-tools">'+
-    '<div class="field"><label for="resBy">Agrupar personas por</label><select id="resBy">'+
-      '<option value="atp"'+(RES_BY==='atp'?' selected':'')+'>Apoyo Técnico Pedagógico</option>'+
-      '<option value="gda"'+(RES_BY==='gda'?' selected':'')+'>Gestión de Apoyo a Establecimientos</option>'+
-    '</select></div>'+
+    personSelect('resBy')+
     '<button class="dl" onclick="dlDetalle()">⤓ Descargar detalle completo (CSV)</button></div>';
 
   /* — Tabla 1: personas × comuna — */
-  const key=e=>e[RES_BY]||'Sin contraparte asignada';
+  const key=personKey;
   const personas=[...new Set(rows.map(key))].sort((a,b)=>a.localeCompare(b,'es'));
   const pdata=personas.map(p=>{const r=rows.filter(e=>key(e)===p);
     return {p:p,r:r,act:r.length,ee:new Set(r.map(e=>e.code)).size,
@@ -466,7 +479,7 @@ function renderRes(rows){
     .sort((a,b)=>b.act-a.act||a.p.localeCompare(b.p,'es'));
   const maxAct=Math.max.apply(null,pdata.map(d=>d.act));
   const SHOWBAR1=pdata.length>1;
-  const h1='<th>'+LBL[RES_BY]+'</th>'+comunas.map(c=>'<th class="n">'+esc(c)+'</th>').join('')+
+  const h1='<th>'+PERSON_LBL[PERSON_BY]+'</th>'+comunas.map(c=>'<th class="n">'+esc(c)+'</th>').join('')+
     '<th class="n">Activ.</th><th class="n">EE</th><th class="n">Días</th><th class="n">Alimentos</th><th class="n">300+ asist.</th><th class="n">Piden apoyo</th><th class="n">Km (ida)</th>'+(SHOWBAR1?'<th>Carga</th>':'');
   const b1=pdata.map(d=>'<tr><td class="name">'+esc(d.p)+'</td>'+
     d.byc.map(n=>'<td class="n'+(n?'':' z')+'">'+n+'</td>').join('')+
@@ -478,7 +491,7 @@ function renderRes(rows){
     '<td class="n">'+new Set(rows.filter(e=>e.iso).map(e=>e.iso)).size+'</td>'+
     '<td class="n">'+rows.filter(e=>e.alimentos==='Sí').length+'</td><td class="n">'+rows.filter(e=>e.afmax>=300).length+'</td>'+
     '<td class="n">'+rows.filter(e=>e.apoyos&&e.apoyos.length).length+'</td><td class="n">'+Math.round(sum(rows,e=>e.dist))+'</td>'+(SHOWBAR1?'<td></td>':'');
-  const csv1=[[LBL[RES_BY]].concat(comunas).concat(['Actividades','Establecimientos','Días','Con alimentos','300+ asistentes','Piden apoyo','Km (ida)'])]
+  const csv1=[[PERSON_LBL[PERSON_BY]].concat(comunas).concat(['Actividades','Establecimientos','Días','Con alimentos','300+ asistentes','Piden apoyo','Km (ida)'])]
     .concat(pdata.map(d=>[d.p].concat(d.byc).concat([d.act,d.ee,d.dias,d.alim,d.big,d.apo,d.km])))
     .concat([['Total'].concat(comunas.map(c=>rows.filter(e=>e.comuna===c).length))
       .concat([rows.length,new Set(rows.map(e=>e.code)).size,new Set(rows.filter(e=>e.iso).map(e=>e.iso)).size,
@@ -527,7 +540,7 @@ function renderRes(rows){
     '<b>EE</b> cuenta establecimientos distintos (un establecimiento puede tener más de una actividad). '+
     'Los CSV se abren directamente en Excel.</div>';
   el.innerHTML=out;
-  $('#resBy').addEventListener('change',function(){RES_BY=this.value;render();});
+  bindPersonSelect('#resBy');
 }
 
 /* ── COBERTURA DEL FORMULARIO ─────────────────────────────────────────────── */
@@ -643,7 +656,7 @@ initFilters();render();
 <dl>
   <dt>Lista</dt><dd>Actividades agrupadas por día, con ficha completa de cada una. Cada bloque de día se puede plegar.</dd>
   <dt>Calendario</dt><dd>Septiembre completo, con fines de semana y feriados del 18 y 19. Un clic en una actividad la agrega a Outlook.</dd>
-  <dt>Agenda por persona</dt><dd>Las mismas actividades reordenadas por profesional de Apoyo Técnico Pedagógico, con total de kilómetros, para revisar la carga del despliegue.</dd>
+  <dt>Agenda por persona</dt><dd>Las mismas actividades reordenadas por profesional, con total de kilómetros, para revisar la carga del despliegue. El selector <b>«Agrupar personas por»</b> alterna entre Apoyo Técnico Pedagógico y Gestión de Apoyo a Establecimientos, y es el mismo que usa la vista Resumen: si lo cambias en una, cambia en la otra.</dd>
   <dt>Resumen</dt><dd>Tres tablas para cuantificar: carga por persona y comuna, resumen por comuna y resumen por día. Cada una se descarga en CSV, más un detalle completo actividad por actividad.</dd>
   <dt>Cobertura</dt><dd>Quién respondió el formulario y quién no, por comuna, con el listado nominado de los establecimientos pendientes y a qué profesional le toca ir a buscarlos. Esta vista siempre muestra el universo completo, sin importar los filtros.</dd>
 </dl>
