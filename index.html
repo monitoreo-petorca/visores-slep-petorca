@@ -37,6 +37,15 @@ a.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
   border-radius:20px;padding:5px 12px;cursor:pointer;transition:.12s}
 .chipf:hover{border-color:var(--blue);color:var(--blue)}
 .chipf[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.intacc{margin-top:12px;padding-top:10px;border-top:1px dashed var(--bd)}
+.intlink{border:0;background:none;color:var(--ink2);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:2px 0;text-decoration:underline;text-underline-offset:3px}
+.intlink:hover{color:var(--blue)}
+.intform{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.intform input{width:auto;min-width:180px;font:inherit;font-size:13.5px;padding:8px 12px;border:1px solid #d7d7d2;border-radius:9px;background:#fcfcfb;color:var(--ink)}
+.intform input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(31,111,208,.14)}
+.intgo{font:inherit;font-size:13px;font-weight:600;color:#fff;background:var(--blue);border:0;border-radius:9px;padding:8px 14px;cursor:pointer}
+.intx{border:0;background:none;color:#9b9a95;font-size:18px;cursor:pointer;line-height:1;padding:2px 6px}
+.intmsg{font-size:12.5px;color:#c0392b;font-weight:600}
 .cnt{font-size:12.5px;color:var(--ink2);margin-top:10px}
 .cnt b{color:var(--ink)}
 .nores{display:none;background:#fff;border:1px dashed #d7d7d2;border-radius:14px;padding:22px;text-align:center;
@@ -67,9 +76,19 @@ footer{color:#898781;font-size:12px;text-align:center;padding:20px}
       <button class="chipf" type="button" data-f="estab" aria-pressed="false">Establecimientos</button>
     </div>
     <div class="cnt" id="cnt"></div>
+    <div class="intacc" id="intacc" style="display:none">
+      <button type="button" class="intlink" id="intToggle">🔒 Ver análisis internos</button>
+      <form class="intform" id="intForm" hidden>
+        <input id="intKey" type="password" autocomplete="off" placeholder="Clave del equipo">
+        <button type="submit" class="intgo">Entrar</button>
+        <button type="button" class="intx" id="intCancel" aria-label="Cancelar">×</button>
+        <span class="intmsg" id="intMsg"></span>
+      </form>
+    </div>
   </div>
   <div class="sec">Visores disponibles</div>
   <div class="grid">
+    <a class="card" data-internal="1" data-t="dotacion estab" data-k="combinacion cursos fusion letras multigrado proyeccion dotacion aula fusionar" href="visor-combinacion-cursos.html" target="_blank"><span class="badge b-act">Interno</span><h3>Combinación de cursos</h3><p>Proyección de fusión de letras y multigrado para dimensionar dotación (uso interno del equipo).</p><span class="go">Abrir visor ↗</span></a>
     <a class="card" href="visor-directorio.html" target="_blank" rel="noopener" data-t="estab procesos" data-k="directorio establecimientos rbd contrapartes equipo directivo director matricula comuna cobertura pie ficha contacto telefono jardin">
       <div class="badge b-act">Disponible</div>
       <h3>Directorio</h3>
@@ -171,26 +190,40 @@ footer{color:#898781;font-size:12px;text-align:center;padding:20px}
   cards.forEach(function(c){
     c._hay=norm(c.textContent+" "+(c.getAttribute("data-k")||"")+" "+(c.getAttribute("data-t")||""));
     c._t=(c.getAttribute("data-t")||"");
+    c._int=(c.getAttribute("data-internal")==="1");
   });
+  var KEY="Monitoreo.2026", STORE="slepPetorcaInternos";
+  var unlocked=false; try{ unlocked = localStorage.getItem(STORE)==="1"; }catch(e){}
   var q=document.getElementById("q"), clr=document.getElementById("clr"),
       cnt=document.getElementById("cnt"), nores=document.getElementById("nores"),
       chips=[].slice.call(document.querySelectorAll(".chipf"));
+  var iWrap=document.getElementById("intacc"), iToggle=document.getElementById("intToggle"),
+      iForm=document.getElementById("intForm"), iKey=document.getElementById("intKey"),
+      iCancel=document.getElementById("intCancel"), iMsg=document.getElementById("intMsg");
+  var hasInt=cards.some(function(c){return c._int;});
   var filtro="todos";
   function apply(){
     var terms=norm(q.value).split(/\s+/).filter(function(w){return w.length>1;});
-    var vis=0;
+    var avail=0, vis=0;
     cards.forEach(function(c){
+      var isAvail = !c._int || unlocked;      // tarjeta interna oculta hasta ingresar la clave
+      if(isAvail) avail++;
       var okT = (filtro==="todos") || (" "+c._t+" ").indexOf(" "+filtro+" ")>=0;
       var okQ = terms.every(function(w){return c._hay.indexOf(w)>=0;});
-      var show = okT && okQ;
+      var show = isAvail && okT && okQ;
       c.style.display = show ? "" : "none";
       if(show) vis++;
     });
     clr.style.display = q.value ? "block" : "none";
     nores.style.display = vis ? "none" : "block";
     cnt.innerHTML = (filtro==="todos" && !terms.length)
-      ? "Mostrando los <b>"+cards.length+"</b> visores."
-      : "Mostrando <b>"+vis+"</b> de "+cards.length+" visores.";
+      ? "Mostrando los <b>"+avail+"</b> visores."
+      : "Mostrando <b>"+vis+"</b> de "+avail+" visores.";
+  }
+  function paintToggle(){
+    if(!iWrap) return;
+    iWrap.style.display = hasInt ? "" : "none";   // el enlace solo aparece si hay visores internos
+    iToggle.textContent = unlocked ? "\ud83d\udd13 An\u00e1lisis internos visibles \u2014 ocultar" : "\ud83d\udd12 Ver an\u00e1lisis internos";
   }
   q.addEventListener("input",apply);
   q.addEventListener("keydown",function(e){ if(e.key==="Escape"){ q.value=""; apply(); } });
@@ -202,6 +235,27 @@ footer{color:#898781;font-size:12px;text-align:center;padding:20px}
       apply();
     });
   });
+  if(iToggle){
+    iToggle.addEventListener("click",function(){
+      if(unlocked){                                 // re-ocultar los internos
+        unlocked=false; try{localStorage.removeItem(STORE);}catch(e){}
+        paintToggle(); apply(); return;
+      }
+      var abrir=iForm.hidden;
+      iForm.hidden=!abrir;
+      if(abrir){ iMsg.textContent=""; iKey.value=""; iKey.focus(); }
+    });
+    iForm.addEventListener("submit",function(e){
+      e.preventDefault();
+      if(iKey.value===KEY){
+        unlocked=true; try{localStorage.setItem(STORE,"1");}catch(e){}
+        iForm.hidden=true; iMsg.textContent="";
+        paintToggle(); apply();
+      } else { iMsg.textContent="Clave incorrecta."; iKey.select(); }
+    });
+    iCancel.addEventListener("click",function(){ iForm.hidden=true; iMsg.textContent=""; });
+  }
+  paintToggle();
   apply();
 })();
 </script>

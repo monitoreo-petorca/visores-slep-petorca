@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proyección de combinación de cursos · SLEP Petorca — Agosto 2026</title>
+<style>
+
+:root{
+  --surface-1:#fcfcfb; --plane:#f3f3f0; --text-primary:#0b0b0b; --text-secondary:#52514e;
+  --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b; --okText:#006300;
+  --seq1:#cde2fb;--seq2:#9ec5f4;--seq3:#6da7ec;--seq4:#3987e5;--seq5:#256abf;--seq6:#184f95;--seq7:#0d366b;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){ :root:where(:not([data-theme="light"])){
+  --surface-1:#1a1a19; --plane:#0d0d0d; --text-primary:#fff; --text-secondary:#c3c2b7;
+  --muted:#898781; --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9;
+  --okText:#0ca30c; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --surface-1:#1a1a19; --plane:#0d0d0d; --text-primary:#fff; --text-secondary:#c3c2b7;
+  --muted:#898781; --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9;
+  --okText:#0ca30c; color-scheme:dark; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--text-primary);
+ font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1360px;margin:0 auto;padding:0 18px 60px}
+header{background:var(--surface-1);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:40}
+.hd{max-width:1360px;margin:0 auto;padding:13px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+h1{font-size:19px;margin:0;font-weight:650;letter-spacing:-.2px}
+.sub{font-size:12.5px;color:var(--text-secondary);margin-top:2px}
+.spacer{flex:1}
+.btn{background:var(--surface-1);border:1px solid var(--border);color:var(--text-primary);
+ border-radius:8px;padding:6px 11px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.btn:hover{background:var(--plane)}
+.btn.pri{background:var(--s1);color:#fff;border-color:transparent}
+.mespick{display:flex;align-items:center;gap:8px;background:var(--plane);border:1px solid var(--border);
+ border-radius:9px;padding:4px 6px 4px 10px}
+.mespick span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.mespick button{background:none;border:none;color:var(--text-secondary);font-family:inherit;font-size:13px;
+ padding:4px 10px;border-radius:6px;cursor:pointer}
+.mespick button[aria-pressed=true]{background:var(--s1);color:#fff;font-weight:600}
+.mespick button.ref{border-right:1px solid var(--border);border-radius:6px 0 0 6px;margin-right:4px;font-style:italic}
+.mespick button.ref[aria-pressed=true]{background:var(--muted)}
+nav{display:flex;gap:4px;overflow-x:auto;padding:0 18px;max-width:1360px;margin:0 auto;
+ border-bottom:1px solid var(--border);background:var(--surface-1)}
+nav button{background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);
+ padding:10px 13px;font-size:13.5px;cursor:pointer;white-space:nowrap;font-family:inherit}
+nav button[aria-selected="true"]{color:var(--text-primary);border-bottom-color:var(--s1);font-weight:600}
+section[role=tabpanel]{display:none;padding-top:18px}
+section[role=tabpanel].on{display:block}
+.card{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 3px;font-weight:640}
+.card .note{font-size:12px;color:var(--muted);margin:0 0 14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+.kpi .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.kpi .v{font-size:27px;font-weight:660;letter-spacing:-.6px;margin-top:3px;line-height:1.1}
+.kpi .v.sm{font-size:19px;letter-spacing:-.2px;line-height:1.25}
+.kpi .d{font-size:11.5px;color:var(--text-secondary);margin-top:3px}
+.kpi .dl{font-size:11.5px;margin-top:3px;font-weight:600}
+.kpi.alert{border-color:var(--crit)} .kpi.alert .v{color:var(--crit)}
+.up{color:var(--okText)} .dn{color:var(--crit)} .fl{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.bar-row{display:grid;grid-template-columns:150px 1fr 118px;gap:10px;align-items:center;margin-bottom:7px;font-size:12.5px}
+.bar-row .lab{color:var(--text-secondary);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{background:var(--grid);border-radius:4px;height:15px;position:relative;overflow:hidden}
+.bar-fill{height:100%;border-radius:0 4px 4px 0}
+.bar-row .val{font-variant-numeric:tabular-nums;color:var(--text-primary);font-weight:600}
+.bar-row .val small{font-weight:400;color:var(--muted)}
+.bar-row .val small.s2{display:block;font-size:11px;line-height:1.35}
+.bar-row.clk{cursor:pointer;border-radius:7px;padding:3px 6px;margin:-3px -6px 4px;transition:background .12s}
+.bar-row.clk:hover{background:var(--plane)}
+.bar-row.clk:focus-visible{outline:2px solid var(--s1);outline-offset:1px}
+.bar-row.dimd{opacity:.38}
+.bar-row.act{background:color-mix(in srgb,var(--s1) 9%,transparent)}
+.bar-row.act .lab{color:var(--text-primary);font-weight:600}
+.stk i{cursor:pointer;transition:opacity .12s}
+.stk i:hover{opacity:.72}
+.stk i.dimd{opacity:.28}
+.fbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface-1);
+ border:1px solid var(--border);border-left:3px solid var(--s1);border-radius:10px;
+ padding:9px 13px;margin-bottom:15px;font-size:12.5px;color:var(--text-secondary)}
+.fchip{display:inline-flex;align-items:center;gap:7px;background:var(--plane);border:1px solid var(--border);
+ border-radius:999px;padding:3px 10px;cursor:pointer;font-weight:600;color:var(--text-primary)}
+.fchip:hover{border-color:var(--crit);color:var(--crit)}
+.fchip i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.kpi[data-tip]{cursor:help}
+.kpi[data-tip]:hover{border-color:var(--axis)}
+.stk{display:flex;height:22px;border-radius:4px;overflow:hidden;background:var(--grid);gap:2px}
+.stk i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:12px;color:var(--text-secondary)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--grid);vertical-align:middle}
+th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;
+ position:sticky;top:0;background:var(--surface-1);cursor:pointer;white-space:nowrap;z-index:2}
+th.nos{cursor:default}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--plane)}
+#dT td:nth-child(1),#dT td:nth-child(3),#dT td:nth-child(6){white-space:nowrap}
+#dT td:nth-child(2),#dT td:nth-child(5){max-width:270px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scroll{max-height:620px;overflow:auto;border:1px solid var(--border);border-radius:10px}
+.filters{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:13px}
+select,input[type=search]{background:var(--surface-1);border:1px solid var(--border);color:var(--text-primary);
+ border-radius:8px;padding:6px 9px;font-size:12.5px;font-family:inherit}
+input[type=search]{min-width:210px}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill.ok{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--okText)}
+.pill.no{background:color-mix(in srgb,var(--crit) 15%,transparent);color:var(--crit)}
+.pill.wa{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--text-primary)}
+.pill.nt{background:var(--grid);color:var(--text-secondary)}
+.mtx{border-collapse:separate;border-spacing:2px;font-size:11px}
+.mtx th.v{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10.5px;padding:6px 3px;
+ text-align:left;height:172px;position:sticky;top:0;background:var(--surface-1);
+ text-transform:none;letter-spacing:0;color:var(--text-secondary);white-space:nowrap}
+.mtx td.c{width:26px;height:22px;text-align:center;border-radius:3px;font-variant-numeric:tabular-nums;font-size:10.5px}
+.mtx td.e{width:26px;height:22px;background:var(--plane);border-radius:3px}
+.mtx th.r{position:sticky;left:0;background:var(--surface-1);text-align:left;font-size:11px;
+ text-transform:none;letter-spacing:0;font-weight:500;color:var(--text-primary);
+ max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;z-index:1;cursor:default}
+.alertbox{border:1px solid var(--border);border-left:3px solid var(--crit);border-radius:9px;
+ padding:12px 14px;margin-bottom:10px;background:var(--surface-1)}
+.alertbox.w{border-left-color:var(--warn)} .alertbox.i{border-left-color:var(--s1)}
+.alertbox h3{margin:0 0 5px;font-size:13.5px;font-weight:640}
+.alertbox p{margin:0 0 6px;font-size:12.5px;color:var(--text-secondary)}
+.alertbox ul{margin:6px 0 0 16px;padding:0;font-size:12.5px;color:var(--text-secondary)}
+.alertbox li{margin-bottom:3px}
+dialog{border:1px solid var(--border);border-radius:14px;background:var(--surface-1);color:var(--text-primary);
+ max-width:720px;padding:22px 24px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{margin:0 0 10px;font-size:17px} dialog h3{margin:16px 0 5px;font-size:13.5px}
+dialog p,dialog li{font-size:13px;color:var(--text-secondary);line-height:1.55}
+.foot{font-size:11.5px;color:var(--muted);margin-top:26px;padding-top:14px;border-top:1px solid var(--border)}
+.tt{position:fixed;pointer-events:none;background:var(--surface-1);border:1px solid var(--border);
+ border-radius:8px;padding:7px 10px;font-size:12px;box-shadow:0 6px 20px rgba(0,0,0,.14);z-index:99;display:none;max-width:280px}
+.tt b{display:block;margin-bottom:2px;font-size:12.5px}
+.hint{font-size:11.5px;color:var(--muted);margin-top:8px}
+svg .gl{stroke:var(--grid);stroke-width:1}
+svg .ax{stroke:var(--axis);stroke-width:1}
+svg text{fill:var(--muted);font-size:11px}
+svg text.lbl{fill:var(--text-primary);font-size:11.5px;font-weight:600}
+svg .ln{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+svg .pt{stroke:var(--surface-1);stroke-width:2}
+.sparkwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+
+
+.filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:2px 0 16px}
+.filters select{background:var(--surface-1);border:1px solid var(--border);color:var(--text-primary);border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:inherit}
+.chk{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-secondary);background:var(--plane);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
+table.tbl{width:100%;border-collapse:collapse;font-size:12.8px}
+table.tbl th,table.tbl td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+table.tbl th{position:sticky;top:0;background:var(--surface-1);color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;font-size:11px;white-space:nowrap;cursor:pointer;user-select:none;z-index:2}
+table.tbl th.num,table.tbl td.num{text-align:right;white-space:nowrap}
+table.tbl tr:hover td{background:var(--plane)}
+.tblwrap{overflow:auto;max-height:74vh;border:1px solid var(--border);border-radius:12px;background:var(--surface-1)}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill.ok{background:rgba(12,163,12,.13);color:var(--okText)}
+.pill.warn{background:rgba(250,178,25,.16);color:#8a5b00}
+.pill.real{background:rgba(42,120,214,.13);color:var(--s1)}
+.pill.ver{background:rgba(236,131,90,.16);color:#a8461f}
+.pill.neu{background:var(--plane);color:var(--text-secondary)}
+.pill.hecha{background:rgba(12,163,12,.13);color:var(--okText)}
+.pill.pend{background:rgba(42,120,214,.12);color:var(--s1)}
+.mini{font-size:11.5px;color:var(--muted)}
+.gtag{display:inline-block;background:var(--plane);border:1px solid var(--border);border-radius:6px;padding:1px 7px;margin:0 3px 3px 0;font-size:12px;font-variant-numeric:tabular-nums}
+.gtag b{color:var(--text-primary)}
+.arrow{color:var(--muted);margin:0 4px}
+.barrow{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;margin:7px 0;font-size:12.5px}
+.barrow .lab{color:var(--text-secondary)}
+.bartrack{background:var(--plane);border-radius:6px;height:16px;overflow:hidden}
+.barfill{height:100%;border-radius:6px}
+.barrow .val{font-weight:640;font-variant-numeric:tabular-nums}
+.estcard{border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;background:var(--surface-1)}
+.estcard h3{margin:0 0 2px;font-size:14.5px}
+.estcard .meta{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+.prop{border-top:1px solid var(--border);padding:8px 0;font-size:12.8px}
+.prop:first-of-type{border-top:none}
+.big{font-size:26px;font-weight:670;letter-spacing:-.5px}
+.foco{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:760px){.foco{grid-template-columns:1fr}}
+.foco h3{font-size:13px;margin:0 0 8px;color:var(--text-primary)}
+details.q{border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:10px;background:var(--surface-1)}
+details.q summary{cursor:pointer;font-weight:600;font-size:13.5px}
+details.q p{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.note-box{background:var(--plane);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--text-secondary);margin-bottom:14px}
+
+</style></head>
+<body>
+<style>.hub-back{display:block;background:#0b3d6b;color:#fff;text-decoration:none;font:600 13px/1.3 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:8px 20px;letter-spacing:.2px}.hub-back:hover{background:#0a3155}</style>
+<a class="hub-back" href="index.html">← Volver a los visores</a>
+
+<header>
+  <div class="hd">
+    <div>
+      <h1>Proyección de combinación de cursos</h1>
+      <div class="sub">SLEP Petorca · Agosto 2026 · criterio: cursos con &lt;30 · fusión de letras hasta 45 · <b>multigrado hasta 22</b> · cruzado con el calendario de reuniones</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" id="themeBtn" title="Tema">◐</button>
+  </div>
+  <nav id="tabs">
+    <button aria-selected="true" data-t="pano">Panorama</button>
+    <button data-t="letras">Fusión de letras</button>
+    <button data-t="multi">Multigrado (básica)</button>
+    <button data-t="estab">Por establecimiento</button>
+    <button data-t="como">Cómo usar</button>
+  </nav>
+</header>
+<div class="wrap">
+
+<section role="tabpanel" class="on" data-p="pano">
+  <div class="note-box">Esta es una <b>proyección de gestión de dotación</b>: identifica dónde sería posible combinar cursos según la matrícula del boletín SIGE de agosto, y lo cruza con el <b>calendario de reuniones</b>. No es una decisión: cada propuesta debe validarse con criterios pedagógicos y normativos (JEC, plan de estudios, PIE, infraestructura, convivencia y normativa de cursos combinados).</div>
+  <div class="kpis" id="kpis"></div>
+  <div class="card">
+    <h2>Agenda — propuestas y reuniones</h2>
+    <p class="note">Cruce con el calendario de reuniones de dotación (solo establecimientos con <b>ahorro real</b>). Izquierda: reuniones <b>pendientes</b> que traen propuesta — para llevar a la mesa. Derecha: establecimientos <b>ya visitados</b> con propuesta — seguimiento.</p>
+    <div class="foco">
+      <div><h3>Próximas reuniones con propuesta</h3><div id="focoPend"></div></div>
+      <div><h3>Seguimiento post-reunión</h3><div id="focoReun"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Cursos que se podrían reducir, por comuna</h2>
+    <p class="note">Suma de reducción por fusión de letras + multigrado con ahorro real (escuelas "Curso por nivel").</p>
+    <div id="chartComuna"></div>
+  </div>
+  <div class="card">
+    <h2>Reducción por línea y nivel</h2>
+    <p class="note">Cursos-grupo que dejarían de existir en cada tipo de enseñanza.</p>
+    <div id="chartNivel"></div>
+  </div>
+</section>
+
+<section role="tabpanel" data-p="letras">
+  <div class="card">
+    <h2>Fusión de letras — juntar A, B, C… de un mismo grado</h2>
+    <p class="note">Grados con 2 o más letras donde la matrícula cabe en menos cursos. La propuesta usa el mínimo de cursos que respeta el máximo de 45; "ideal" si cada curso resultante queda en ≤30.</p>
+    <div class="filters">
+      <select id="fComL"></select>
+      <select id="fCalL"><option value="">Calidad: todas</option><option value="ideal">Solo ideal (≤30)</option><option value="aceptable">Solo aceptable (31–45)</option></select>
+      <select id="fReuL"><option value="">Reunión: todas</option><option value="reunidos">Ya reunidos</option><option value="pend">Pendientes</option></select>
+      <span class="mini" id="fResL"></span>
+    </div>
+    <div class="tblwrap"><table class="tbl" id="tblL"></table></div>
+  </div>
+</section>
+
+<section role="tabpanel" data-p="multi">
+  <div class="card">
+    <h2>Multigrado en básica — juntar niveles consecutivos</h2>
+    <p class="note">Grados de básica con un solo curso y &lt;30 estudiantes, combinados en el <b>mínimo de grupos consecutivos</b> posible, <b>sin superar 22 estudiantes por grupo</b> (tope de un multigrado). <b>Regla:</b> no se cruza entre 6° y 7° (7°+8° sí; el bloque 1°–6° solo cabe en un grupo si la suma no pasa de 22). En escuelas que ya declaran "Cursos Combinados" el ahorro suele ser nominal (ya combinan en aula): se marcan como <b>verificar</b>.</p>
+    <div class="filters">
+      <select id="fComM"></select>
+      <select id="fCalM"><option value="">Calidad: todas</option><option value="ideal">Solo ideal (≤30)</option><option value="aceptable">Solo aceptable (31–45)</option></select>
+      <select id="fReuM"><option value="">Reunión: todas</option><option value="reunidos">Ya reunidos</option><option value="pend">Pendientes</option></select>
+      <label class="chk"><input type="checkbox" id="fRealM"> Solo ahorro real</label>
+      <span class="mini" id="fResM"></span>
+    </div>
+    <div class="tblwrap"><table class="tbl" id="tblM"></table></div>
+  </div>
+</section>
+
+<section role="tabpanel" data-p="estab">
+  <div class="card">
+    <h2>Propuestas por establecimiento</h2>
+    <p class="note">Cada tarjeta resume la reducción total posible (ambas líneas) y el estado de reunión. Ordenadas por mayor ahorro real.</p>
+    <div class="filters">
+      <select id="fComE"></select>
+      <select id="fReuE"><option value="">Reunión: todas</option><option value="reunidos">Ya reunidos</option><option value="pend">Pendientes</option></select>
+      <span class="mini" id="fResE"></span>
+    </div>
+    <div id="estList"></div>
+  </div>
+</section>
+
+<section role="tabpanel" data-p="como">
+  <div class="card">
+    <h2>Cómo se construyó y cómo leerlo</h2>
+    <details class="q" open><summary>¿Qué hace este visor?</summary>
+      <p>Proyecta dos formas de combinar cursos para optimizar la dotación, a partir de la matrícula declarada en el boletín de asistencia SIGE de agosto 2026:<br>
+      <b>1. Fusión de letras:</b> cuando un grado tiene varias letras (4°A, 4°B…) cuya matrícula cabe en menos cursos.<br>
+      <b>2. Multigrado:</b> cuando varios niveles chicos y consecutivos de básica caben juntos, minimizando el número de grupos (hasta llenar 45 por grupo).<br>
+      Además, cruza cada establecimiento con el <b>calendario de reuniones de dotación</b> para saber si ya se visitó y cuándo.</p></details>
+    <details class="q"><summary>¿Qué criterios de tamaño usa?</summary>
+      <p>Se consideran candidatos los cursos con <b>menos de 30 estudiantes</b>. Una combinación es <b>ideal</b> si el grupo resultante queda en ≤30, y <b>aceptable</b> si queda entre 31 y 45. El 45 es un máximo de referencia por curso (fusión de letras) y debe validarse contra la normativa vigente. En <b>multigrado</b>, además, un grupo no debe superar <b>22 estudiantes</b>.</p></details>
+    <details class="q"><summary>Regla del multigrado (muro 6°–7°)</summary>
+      <p>Solo se combinan grados <b>consecutivos</b>, minimizando el número de grupos: se van llenando grupos <b>sin superar 22 estudiantes</b> (tope de un multigrado). <b>No se cruza el límite entre 6° y 7°</b>: 1°+2°+3° o incluso 1°–6° completo son válidos (según matrícula); 6°+7° no. 7° y 8° sí se pueden juntar entre sí. Cada grupo indica cuántos niveles agrupa, para conservar el criterio pedagógico.</p></details>
+    <details class="q"><summary>¿Por qué algunos multigrados dicen "verificar"?</summary>
+      <p>30 de los 55 establecimientos ya están marcados como <b>"Cursos Combinados"</b> en SIGE: son escuelas (mayormente rurales) que ya enseñan en aula multigrado aunque el boletín declare cada grado por separado. Ahí juntar los niveles no libera dotación adicional. El ahorro <b>real</b> se concentra en las escuelas "Curso por nivel".</p></details>
+    <details class="q"><summary>¿Qué significa "Reunidos" / "Pendiente"?</summary>
+      <p>Viene del calendario de reuniones de dotación: <b>Reunidos</b> = la reunión ya se marcó como realizada (con su fecha); <b>Pendiente</b> = aún programada. Sirve para llevar la propuesta a las reuniones que vienen y dar seguimiento a las ya hechas.</p></details>
+    <details class="q"><summary>Advertencia normativa y pedagógica</summary>
+      <p>Este es un insumo de planificación, no una recomendación normativa cerrada. Antes de proponer una combinación deben revisarse: régimen JEC y plan de estudios de cada nivel, integración (PIE), infraestructura y aforo de la sala, continuidad de trayectoria, convivencia, y la normativa específica de cursos combinados. Los umbrales de 30 y 45 son referenciales.</p></details>
+  </div>
+</section>
+
+</div>
+<script id="payload" type="application/json">{"mes":"Agosto 2026","ideal":30,"maxc":45,"mg_cap":22,"fusion":[{"rbd":"1121","nombre":"LICEO PULMAHUE DE LA LIGUA","comuna":"La Ligua","tipo_cursos":"Curso por nivel","nivel":"Media TP","cod":510,"curso":"3° medio","letras":["A","B"],"sizes":[17,18],"total":35,"n_actual":2,"prop":[35],"ahorro":1,"calidad":"aceptable"},{"rbd":"1121","nombre":"LICEO PULMAHUE DE LA LIGUA","comuna":"La Ligua","tipo_cursos":"Curso por nivel","nivel":"Media TP","cod":510,"curso":"4° medio","letras":["A","B"],"sizes":[16,17],"total":33,"n_actual":2,"prop":[33],"ahorro":1,"calidad":"aceptable"},{"rbd":"1126","nombre":"ESCUELA ESPECIAL SOL NACIENTE","comuna":"La Ligua","tipo_cursos":"Cursos Combinados","nivel":"Ed. Especial","cod":212,"curso":"Laboral 2 (Esp.)","letras":["A","B","C"],"sizes":[7,9,11],"total":27,"n_actual":3,"prop":[27],"ahorro":2,"calidad":"ideal"},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"7° básico","letras":["A","B"],"sizes":[14,16],"total":30,"n_actual":2,"prop":[30],"ahorro":1,"calidad":"ideal"},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","tipo_cursos":"Curso por nivel","nivel":"Adultos","cod":165,"curso":"Nivel Básico 3 (7°-8°)","letras":["A","B"],"sizes":[1,4],"total":5,"n_actual":2,"prop":[5],"ahorro":1,"calidad":"ideal"},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","tipo_cursos":"Curso por nivel","nivel":"Media HC","cod":310,"curso":"1° medio","letras":["A","B","C"],"sizes":[19,19,20],"total":58,"n_actual":3,"prop":[39,19],"ahorro":1,"calidad":"aceptable"},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","tipo_cursos":"Curso por nivel","nivel":"Media HC","cod":310,"curso":"2° medio","letras":["A","B","C"],"sizes":[18,18,20],"total":56,"n_actual":3,"prop":[38,18],"ahorro":1,"calidad":"aceptable"},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","tipo_cursos":"Curso por nivel","nivel":"Media HC","cod":310,"curso":"3° medio","letras":["A","B"],"sizes":[15,22],"total":37,"n_actual":2,"prop":[37],"ahorro":1,"calidad":"aceptable"},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","tipo_cursos":"Curso por nivel","nivel":"Media HC","cod":310,"curso":"4° medio","letras":["A","B"],"sizes":[18,24],"total":42,"n_actual":2,"prop":[42],"ahorro":1,"calidad":"aceptable"},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","tipo_cursos":"Curso por nivel","nivel":"Adultos","cod":363,"curso":"1er nivel (1°-2° medio)","letras":["A","B"],"sizes":[2,5],"total":7,"n_actual":2,"prop":[7],"ahorro":1,"calidad":"ideal"},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","tipo_cursos":"Curso por nivel","nivel":"Adultos","cod":363,"curso":"2do nivel (3°-4° medio)","letras":["A","B"],"sizes":[5,11],"total":16,"n_actual":2,"prop":[16],"ahorro":1,"calidad":"ideal"},{"rbd":"1167","nombre":"LICEO Y ESCUELA MUNICIPAL","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Media HC","cod":310,"curso":"1° medio","letras":["A","B","C","D","E"],"sizes":[20,21,22,22,23],"total":108,"n_actual":5,"prop":[45,43,20],"ahorro":2,"calidad":"aceptable"},{"rbd":"1167","nombre":"LICEO Y ESCUELA MUNICIPAL","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Adultos","cod":363,"curso":"1er nivel (1°-2° medio)","letras":["A","B"],"sizes":[17,19],"total":36,"n_actual":2,"prop":[36],"ahorro":1,"calidad":"aceptable"},{"rbd":"1168","nombre":"ESCUELA HANS WENKE MENGERS","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"1° básico","letras":["A","B"],"sizes":[11,14],"total":25,"n_actual":2,"prop":[25],"ahorro":1,"calidad":"ideal"},{"rbd":"1168","nombre":"ESCUELA HANS WENKE MENGERS","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"2° básico","letras":["A","B"],"sizes":[14,16],"total":30,"n_actual":2,"prop":[30],"ahorro":1,"calidad":"ideal"},{"rbd":"1168","nombre":"ESCUELA HANS WENKE MENGERS","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"3° básico","letras":["A","B"],"sizes":[18,20],"total":38,"n_actual":2,"prop":[38],"ahorro":1,"calidad":"aceptable"},{"rbd":"1168","nombre":"ESCUELA HANS WENKE MENGERS","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"4° básico","letras":["A","B"],"sizes":[17,17],"total":34,"n_actual":2,"prop":[34],"ahorro":1,"calidad":"aceptable"},{"rbd":"1168","nombre":"ESCUELA HANS WENKE MENGERS","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"5° básico","letras":["A","B"],"sizes":[17,19],"total":36,"n_actual":2,"prop":[36],"ahorro":1,"calidad":"aceptable"},{"rbd":"1168","nombre":"ESCUELA HANS WENKE MENGERS","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"6° básico","letras":["A","B"],"sizes":[18,19],"total":37,"n_actual":2,"prop":[37],"ahorro":1,"calidad":"aceptable"},{"rbd":"1168","nombre":"ESCUELA HANS WENKE MENGERS","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"7° básico","letras":["A","B"],"sizes":[15,15],"total":30,"n_actual":2,"prop":[30],"ahorro":1,"calidad":"ideal"},{"rbd":"14479","nombre":"ESCUELA BASICA MUNICIPAL ARAUCARIA","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"1° básico","letras":["A","B"],"sizes":[15,16],"total":31,"n_actual":2,"prop":[31],"ahorro":1,"calidad":"aceptable"},{"rbd":"14479","nombre":"ESCUELA BASICA MUNICIPAL ARAUCARIA","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"2° básico","letras":["A","B"],"sizes":[17,17],"total":34,"n_actual":2,"prop":[34],"ahorro":1,"calidad":"aceptable"},{"rbd":"14479","nombre":"ESCUELA BASICA MUNICIPAL ARAUCARIA","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"3° básico","letras":["A","B"],"sizes":[16,17],"total":33,"n_actual":2,"prop":[33],"ahorro":1,"calidad":"aceptable"},{"rbd":"14479","nombre":"ESCUELA BASICA MUNICIPAL ARAUCARIA","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"4° básico","letras":["A","B"],"sizes":[15,16],"total":31,"n_actual":2,"prop":[31],"ahorro":1,"calidad":"aceptable"},{"rbd":"14479","nombre":"ESCUELA BASICA MUNICIPAL ARAUCARIA","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"5° básico","letras":["A","B"],"sizes":[20,20],"total":40,"n_actual":2,"prop":[40],"ahorro":1,"calidad":"aceptable"},{"rbd":"14479","nombre":"ESCUELA BASICA MUNICIPAL ARAUCARIA","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"6° básico","letras":["A","B"],"sizes":[19,19],"total":38,"n_actual":2,"prop":[38],"ahorro":1,"calidad":"aceptable"},{"rbd":"14479","nombre":"ESCUELA BASICA MUNICIPAL ARAUCARIA","comuna":"Cabildo","tipo_cursos":"Curso por nivel","nivel":"Básica","cod":110,"curso":"8° básico","letras":["A","B"],"sizes":[22,23],"total":45,"n_actual":2,"prop":[45],"ahorro":1,"calidad":"aceptable"}],"multigrado":[{"rbd":"11206","nombre":"ESCUELA MUNICIPAL LAS PUERTAS","comuna":"Cabildo","area":"Rural","microcentro":"Valles de Cabildo","tipo_cursos":"Cursos Combinados","grados":[5,6],"detalle":[2,3],"total":5,"niveles":2,"ahorro":1,"real":false},{"rbd":"1129","nombre":"ESCUELA ANGEL MENAY","comuna":"La Ligua","area":"Rural","microcentro":"Sembrando Futuro","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4],"detalle":[1,2,4,2],"total":9,"niveles":4,"ahorro":3,"real":false},{"rbd":"1130","nombre":"ESC. BASICA LOS HORNOS DE HUAQUEN","comuna":"La Ligua","area":"Rural","microcentro":"Sembrando Futuro","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4],"detalle":[3,6,9,4],"total":22,"niveles":4,"ahorro":3,"real":false},{"rbd":"1130","nombre":"ESC. BASICA LOS HORNOS DE HUAQUEN","comuna":"La Ligua","area":"Rural","microcentro":"Sembrando Futuro","tipo_cursos":"Cursos Combinados","grados":[5,6],"detalle":[3,9],"total":12,"niveles":2,"ahorro":1,"real":false},{"rbd":"1131","nombre":"ESC. BASICA CASAS VIEJAS DE LONGOTOMA","comuna":"La Ligua","area":"Rural","microcentro":"Sembrando Futuro","tipo_cursos":"Cursos Combinados","grados":[1,2,3],"detalle":[4,10,5],"total":19,"niveles":3,"ahorro":2,"real":false},{"rbd":"1131","nombre":"ESC. BASICA CASAS VIEJAS DE LONGOTOMA","comuna":"La Ligua","area":"Rural","microcentro":"Sembrando Futuro","tipo_cursos":"Cursos Combinados","grados":[4,5,6],"detalle":[4,1,6],"total":11,"niveles":3,"ahorro":2,"real":false},{"rbd":"1133","nombre":"ESC.BASICA LAS CASAS DE HUAQUEN","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[3,4],"detalle":[7,12],"total":19,"niveles":2,"ahorro":1,"real":false},{"rbd":"1134","nombre":"CARMEN SANCHEZ ARAYA","comuna":"La Ligua","area":"Rural","microcentro":"Sembrando Futuro","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4,5,6],"detalle":[2,2,2,4,4,2],"total":16,"niveles":6,"ahorro":5,"real":false},{"rbd":"1135","nombre":"ESCUELA BASICA LOS MOLLES","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2],"detalle":[8,12],"total":20,"niveles":2,"ahorro":1,"real":false},{"rbd":"1135","nombre":"ESCUELA BASICA LOS MOLLES","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[3,4],"detalle":[8,12],"total":20,"niveles":2,"ahorro":1,"real":false},{"rbd":"1135","nombre":"ESCUELA BASICA LOS MOLLES","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[5,6],"detalle":[9,6],"total":15,"niveles":2,"ahorro":1,"real":false},{"rbd":"1136","nombre":"ESCUELA BASICA PUYANCON","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4],"detalle":[2,3,12,4],"total":21,"niveles":4,"ahorro":3,"real":false},{"rbd":"1136","nombre":"ESCUELA BASICA PUYANCON","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[5,6],"detalle":[8,8],"total":16,"niveles":2,"ahorro":1,"real":false},{"rbd":"1137","nombre":"ESCUELA BASICA HORTENCIA POWELL S.","comuna":"La Ligua","area":"Rural","microcentro":"Sembrando Futuro","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4,5],"detalle":[6,5,5,2,1],"total":19,"niveles":5,"ahorro":4,"real":false},{"rbd":"1139","nombre":"ESCUELA MINISTRO GOMEZ MILLAS","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2,3],"detalle":[6,5,9],"total":20,"niveles":3,"ahorro":2,"real":false},{"rbd":"1139","nombre":"ESCUELA MINISTRO GOMEZ MILLAS","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[4,5,6],"detalle":[3,4,4],"total":11,"niveles":3,"ahorro":2,"real":false},{"rbd":"1140","nombre":"ESCUELA BASICA CARLOS ARIZTIA RUIZ","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2,3],"detalle":[7,5,7],"total":19,"niveles":3,"ahorro":2,"real":false},{"rbd":"1140","nombre":"ESCUELA BASICA CARLOS ARIZTIA RUIZ","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[4,5],"detalle":[9,6],"total":15,"niveles":2,"ahorro":1,"real":false},{"rbd":"1140","nombre":"ESCUELA BASICA CARLOS ARIZTIA RUIZ","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[7,8],"detalle":[7,11],"total":18,"niveles":2,"ahorro":1,"real":false},{"rbd":"1142","nombre":"ESCUELA LA CANELA","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2,3],"detalle":[8,5,4],"total":17,"niveles":3,"ahorro":2,"real":false},{"rbd":"1142","nombre":"ESCUELA LA CANELA","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[4,5,6],"detalle":[7,7,3],"total":17,"niveles":3,"ahorro":2,"real":false},{"rbd":"1142","nombre":"ESCUELA LA CANELA","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[7,8],"detalle":[4,7],"total":11,"niveles":2,"ahorro":1,"real":false},{"rbd":"1143","nombre":"ESCUELA BASICA QUEBRADILLA","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4],"detalle":[4,5,6,6],"total":21,"niveles":4,"ahorro":3,"real":false},{"rbd":"1143","nombre":"ESCUELA BASICA QUEBRADILLA","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[5,6],"detalle":[9,2],"total":11,"niveles":2,"ahorro":1,"real":false},{"rbd":"1144","nombre":"ESCUELA BASICA PICHICUY","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2,3],"detalle":[10,7,2],"total":19,"niveles":3,"ahorro":2,"real":false},{"rbd":"1144","nombre":"ESCUELA BASICA PICHICUY","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[4,5,6],"detalle":[8,9,1],"total":18,"niveles":3,"ahorro":2,"real":false},{"rbd":"1145","nombre":"ESCUELA ENRIQUE DOLL ROJAS","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4],"detalle":[5,8,6,3],"total":22,"niveles":4,"ahorro":3,"real":false},{"rbd":"1145","nombre":"ESCUELA ENRIQUE DOLL ROJAS","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[5,6],"detalle":[6,10],"total":16,"niveles":2,"ahorro":1,"real":false},{"rbd":"1145","nombre":"ESCUELA ENRIQUE DOLL ROJAS","comuna":"La Ligua","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[7,8],"detalle":[6,7],"total":13,"niveles":2,"ahorro":1,"real":false},{"rbd":"1147","nombre":"ESCUELA FERNANDO GARCIA OLDINI","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[3,4],"detalle":[12,7],"total":19,"niveles":2,"ahorro":1,"real":true},{"rbd":"1147","nombre":"ESCUELA FERNANDO GARCIA OLDINI","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[5,6],"detalle":[14,6],"total":20,"niveles":2,"ahorro":1,"real":true},{"rbd":"1147","nombre":"ESCUELA FERNANDO GARCIA OLDINI","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[7,8],"detalle":[5,3],"total":8,"niveles":2,"ahorro":1,"real":true},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","area":"Urbano","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[1,2],"detalle":[4,11],"total":15,"niveles":2,"ahorro":1,"real":true},{"rbd":"1149","nombre":"LICEO CORDILLERA","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[1,2],"detalle":[10,9],"total":19,"niveles":2,"ahorro":1,"real":true},{"rbd":"1149","nombre":"LICEO CORDILLERA","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[3,4,5],"detalle":[7,10,4],"total":21,"niveles":3,"ahorro":2,"real":true},{"rbd":"1149","nombre":"LICEO CORDILLERA","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[7,8],"detalle":[13,7],"total":20,"niveles":2,"ahorro":1,"real":true},{"rbd":"1150","nombre":"ESCUELA BASICA NEFTALI REYES B.","comuna":"Petorca","area":"Rural","microcentro":"Incakán","tipo_cursos":"Cursos Combinados","grados":[2,3,4,5],"detalle":[2,1,1,3],"total":7,"niveles":4,"ahorro":3,"real":false},{"rbd":"1151","nombre":"ESCUELA BASICA VILLA SANTA ANA","comuna":"Petorca","area":"Rural","microcentro":"Incakán","tipo_cursos":"Cursos Combinados","grados":[2,3,4],"detalle":[1,1,2],"total":4,"niveles":3,"ahorro":2,"real":false},{"rbd":"1152","nombre":"ESCUELA EDUARDO FREI MONTALVA","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2],"detalle":[9,9],"total":18,"niveles":2,"ahorro":1,"real":false},{"rbd":"1152","nombre":"ESCUELA EDUARDO FREI MONTALVA","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[3,4],"detalle":[8,10],"total":18,"niveles":2,"ahorro":1,"real":false},{"rbd":"1152","nombre":"ESCUELA EDUARDO FREI MONTALVA","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[5,6],"detalle":[11,9],"total":20,"niveles":2,"ahorro":1,"real":false},{"rbd":"1153","nombre":"ESCUELA BASICA EL CRUCERO","comuna":"Petorca","area":"Rural","microcentro":"Incakán","tipo_cursos":"Cursos Combinados","grados":[5,6],"detalle":[1,1],"total":2,"niveles":2,"ahorro":1,"real":false},{"rbd":"1156","nombre":"ESCUELA BASICA G-24","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2,3],"detalle":[6,5,6],"total":17,"niveles":3,"ahorro":2,"real":false},{"rbd":"1156","nombre":"ESCUELA BASICA G-24","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[4,5,6],"detalle":[7,5,4],"total":16,"niveles":3,"ahorro":2,"real":false},{"rbd":"1156","nombre":"ESCUELA BASICA G-24","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[7,8],"detalle":[3,6],"total":9,"niveles":2,"ahorro":1,"real":false},{"rbd":"1157","nombre":"ESCUELA BASICA LOS ALAMOS EL SOBRANTE","comuna":"Petorca","area":"Rural","microcentro":"No aplica","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4,5],"detalle":[6,5,3,3,4],"total":21,"niveles":5,"ahorro":4,"real":false},{"rbd":"1158","nombre":"ESCUELA BASICA BENANCIO PEREZ","comuna":"Petorca","area":"Rural","microcentro":"Incakán","tipo_cursos":"Cursos Combinados","grados":[3,4,5,6],"detalle":[3,1,1,2],"total":7,"niveles":4,"ahorro":3,"real":false},{"rbd":"1160","nombre":"ESCUELA HOGAR FRONTERIZA DE CHALACO","comuna":"Petorca","area":"Rural","microcentro":"Incakán","tipo_cursos":"Cursos Combinados","grados":[1,2],"detalle":[4,1],"total":5,"niveles":2,"ahorro":1,"real":false},{"rbd":"1171","nombre":"ESCUELA BASICA LA FRONTERA DE ALICAHUE","comuna":"Cabildo","area":"Rural","microcentro":"Valles de Cabildo","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4,5,6],"detalle":[3,3,2,1,3,1],"total":13,"niveles":6,"ahorro":5,"real":false},{"rbd":"1173","nombre":"ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO","comuna":"Cabildo","area":"Rural","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[1,2],"detalle":[10,8],"total":18,"niveles":2,"ahorro":1,"real":true},{"rbd":"1174","nombre":"ESCUELA BASICA SAN LORENZO","comuna":"Cabildo","area":"Rural","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[1,2],"detalle":[10,7],"total":17,"niveles":2,"ahorro":1,"real":true},{"rbd":"1174","nombre":"ESCUELA BASICA SAN LORENZO","comuna":"Cabildo","area":"Rural","microcentro":"No aplica","tipo_cursos":"Curso por nivel","grados":[7,8],"detalle":[7,7],"total":14,"niveles":2,"ahorro":1,"real":true},{"rbd":"1176","nombre":"ESCUELA PABLO NERUDA","comuna":"Cabildo","area":"Rural","microcentro":"Valles de Cabildo","tipo_cursos":"Cursos Combinados","grados":[1,2,3,4],"detalle":[5,6,3,7],"total":21,"niveles":4,"ahorro":3,"real":false},{"rbd":"1181","nombre":"ESCUELA BASICA LOS ANGELES","comuna":"Cabildo","area":"Rural","microcentro":"Valles de Cabildo","tipo_cursos":"Cursos Combinados","grados":[4,5,6],"detalle":[1,1,2],"total":4,"niveles":3,"ahorro":2,"real":false},{"rbd":"1182","nombre":"ESCUELA BASICA G-47","comuna":"Cabildo","area":"Rural","microcentro":"Valles de Cabildo","tipo_cursos":"Cursos Combinados","grados":[4,5],"detalle":[2,5],"total":7,"niveles":2,"ahorro":1,"real":false},{"rbd":"12299","nombre":"ESCUELA BASICA ANEXO PICHILEMU","comuna":"La Ligua","area":"Rural","microcentro":"Sembrando Futuro","tipo_cursos":"Cursos Combinados","grados":[3,4],"detalle":[1,5],"total":6,"niveles":2,"ahorro":1,"real":false}],"n_estab":55,"kpis":{"fus_prop":27,"fus_red":29,"mg_grupos":56,"mg_red":100,"mg_red_real":11,"mg_estab_real":5,"prop_reunidos":18,"prop_pend":20,"pend_real":7},"reun":{"5401003":{"ejec":1,"fecha":"31/07/2026","iso":"2026-07-31","atp":"Verónica Díaz","gp":"Claudia Vargas"},"1132":{"ejec":1,"fecha":"31/07/2026","iso":"2026-07-31","atp":"Paula Cataldo","gp":"Maythiare Palma"},"1145":{"ejec":1,"fecha":"04/08/2026","iso":"2026-08-04","atp":"Leandro Ríos","gp":"Maythiare Palma"},"1137":{"ejec":1,"fecha":"04/08/2026","iso":"2026-08-04","atp":"Fabiola Bustos","gp":"Maythiare Palma"},"1170":{"ejec":1,"fecha":"05/08/2026","iso":"2026-08-05","atp":"Marjorie Gaete","gp":"Claudia Vargas"},"5402002":{"ejec":1,"fecha":"05/08/2026","iso":"2026-08-05","atp":"Verónica Díaz","gp":"Claudia Vargas"},"11196":{"ejec":1,"fecha":"06/08/2026","iso":"2026-08-06","atp":"Claudia Aguilera","gp":"Claudia Vargas"},"1126":{"ejec":1,"fecha":"06/08/2026","iso":"2026-08-06","atp":"Claudia Aguilera","gp":"Maythiare Palma"},"1125":{"ejec":1,"fecha":"07/08/2026","iso":"2026-08-07","atp":"Paula Cataldo","gp":"Maythiare Palma"},"5401002":{"ejec":1,"fecha":"07/08/2026","iso":"2026-08-07","atp":"Verónica Díaz","gp":"Claudia Vargas"},"5401007":{"ejec":1,"fecha":"11/08/2026","iso":"2026-08-11","atp":"Verónica Díaz","gp":"Claudia Vargas"},"40242":{"ejec":1,"fecha":"11/08/2026","iso":"2026-08-11","atp":"Leandro Ríos","gp":"Claudia Vargas"},"5404002":{"ejec":1,"fecha":"12/08/2026","iso":"2026-08-12","atp":"Verónica Díaz","gp":"Tamara Sierra"},"1161":{"ejec":1,"fecha":"12/08/2026","iso":"2026-08-12","atp":"Susan Ramírez","gp":"Tamara Sierra"},"1176":{"ejec":1,"fecha":"13/08/2026","iso":"2026-08-13","atp":"Fabiola Bustos","gp":"Claudia Vargas"},"1140":{"ejec":1,"fecha":"13/08/2026","iso":"2026-08-13","atp":"Leandro Ríos","gp":"Maythiare Palma"},"1181":{"ejec":1,"fecha":"14/08/2026","iso":"2026-08-14","atp":"Leandro Ríos","gp":"Claudia Vargas"},"1182":{"ejec":1,"fecha":"14/08/2026","iso":"2026-08-14","atp":"Susan Ramírez","gp":"Claudia Vargas"},"5401004":{"ejec":1,"fecha":"18/08/2026","iso":"2026-08-18","atp":"Verónica Díaz","gp":"Claudia Vargas"},"1174":{"ejec":1,"fecha":"18/08/2026","iso":"2026-08-18","atp":"Marjorie Gaete","gp":"Claudia Vargas"},"1151":{"ejec":1,"fecha":"19/08/2026","iso":"2026-08-19","atp":"Claudia Aguilera","gp":"Tamara Sierra"},"5404001":{"ejec":1,"fecha":"19/08/2026","iso":"2026-08-19","atp":"Verónica Díaz","gp":"Tamara Sierra"},"1156":{"ejec":1,"fecha":"19/08/2026","iso":"2026-08-19","atp":"Claudia Aguilera","gp":"Tamara Sierra"},"5404003":{"ejec":1,"fecha":"20/08/2026","iso":"2026-08-20","atp":"Verónica Díaz","gp":"Tamara Sierra"},"1178":{"ejec":1,"fecha":"20/08/2026","iso":"2026-08-20","atp":"Marjorie Gaete","gp":"Claudia Vargas"},"1158":{"ejec":1,"fecha":"21/08/2026","iso":"2026-08-21","atp":"Marjorie Gaete","gp":"Tamara Sierra"},"1153":{"ejec":1,"fecha":"21/08/2026","iso":"2026-08-21","atp":"Claudia Aguilera","gp":"Tamara Sierra"},"1149":{"ejec":1,"fecha":"21/08/2026","iso":"2026-08-21","atp":"Francisca Tapia","gp":"Tamara Sierra"},"1134":{"ejec":1,"fecha":"25/08/2026","iso":"2026-08-25","atp":"Fabiola Bustos","gp":"Maythiare Palma"},"1128":{"ejec":1,"fecha":"25/08/2026","iso":"2026-08-25","atp":"Susan Ramírez","gp":"Tamara Sierra"},"1130":{"ejec":1,"fecha":"26/08/2026","iso":"2026-08-26","atp":"Susan Ramírez","gp":"Maythiare Palma"},"11199":{"ejec":1,"fecha":"26/08/2026","iso":"2026-08-26","atp":"Claudia Aguilera","gp":"Maythiare Palma"},"11206":{"ejec":0,"fecha":"31/08/2026","iso":"2026-08-31","atp":"Leandro Ríos","gp":"Claudia Vargas"},"1160":{"ejec":1,"fecha":"28/08/2026","iso":"2026-08-28","atp":"Claudia Aguilera","gp":"Tamara Sierra"},"1157":{"ejec":1,"fecha":"28/08/2026","iso":"2026-08-28","atp":"Claudia Aguilera","gp":"Tamara Sierra"},"1152":{"ejec":1,"fecha":"28/08/2026","iso":"2026-08-28","atp":"Claudia Aguilera","gp":"Tamara Sierra"},"1142":{"ejec":0,"fecha":"01/09/2026","iso":"2026-09-01","atp":"Leandro Ríos","gp":"Maythiare Palma"},"5402004":{"ejec":0,"fecha":"01/09/2026","iso":"2026-09-01","atp":"Verónica Díaz","gp":"Claudia Vargas"},"1135":{"ejec":0,"fecha":"02/09/2026","iso":"2026-09-02","atp":"Paula Cataldo","gp":"Maythiare Palma"},"1173":{"ejec":0,"fecha":"02/09/2026","iso":"2026-09-02","atp":"Marjorie Gaete","gp":"Claudia Vargas"},"1129":{"ejec":0,"fecha":"03/09/2026","iso":"2026-09-03","atp":"Marjorie Gaete","gp":"Maythiare Palma"},"1168":{"ejec":0,"fecha":"03/09/2026","iso":"2026-09-03","atp":"Susan Ramírez","gp":"Claudia Vargas"},"1180":{"ejec":0,"fecha":"03/09/2026","iso":"2026-09-03","atp":"Marjorie Gaete","gp":"Claudia Vargas"},"1150":{"ejec":0,"fecha":"04/09/2026","iso":"2026-09-04","atp":"Marjorie Gaete","gp":"Tamara Sierra"},"1147":{"ejec":0,"fecha":"04/09/2026","iso":"2026-09-04","atp":"Claudia Aguilera","gp":"Tamara Sierra"},"1148":{"ejec":0,"fecha":"04/09/2026","iso":"2026-09-04","atp":"Francisca Tapia","gp":"Tamara Sierra"},"5403001":{"ejec":0,"fecha":"08/09/2026","iso":"2026-09-08","atp":"Verónica Díaz","gp":"Tamara Sierra"},"1139":{"ejec":0,"fecha":"08/09/2026","iso":"2026-09-08","atp":"Susan Ramírez","gp":"Maythiare Palma"},"5403002":{"ejec":0,"fecha":"09/09/2026","iso":"2026-09-09","atp":"Verónica Díaz","gp":"Tamara Sierra"},"1192":{"ejec":0,"fecha":"09/09/2026","iso":"2026-09-09","atp":"Paula Cataldo","gp":"Tamara Sierra"},"12299":{"ejec":0,"fecha":"10/09/2026","iso":"2026-09-10","atp":"Fabiola Bustos","gp":"Maythiare Palma"},"12336":{"ejec":0,"fecha":"10/09/2026","iso":"2026-09-10","atp":"Francisca Tapia","gp":"Claudia Vargas"},"1123":{"ejec":0,"fecha":"11/09/2026","iso":"2026-09-11","atp":"Francisca Tapia","gp":"Maythiare Palma"},"1131":{"ejec":0,"fecha":"11/09/2026","iso":"2026-09-11","atp":"Fabiola Bustos","gp":"Maythiare Palma"},"1121":{"ejec":0,"fecha":"25/09/2026","iso":"2026-09-25","atp":"Paula Cataldo","gp":"Maythiare Palma"},"1143":{"ejec":0,"fecha":"25/09/2026","iso":"2026-09-25","atp":"Susan Ramírez","gp":"Maythiare Palma"},"5401006":{"ejec":0,"fecha":"29/09/2026","iso":"2026-09-29","atp":"Verónica Díaz","gp":"Claudia Vargas"},"1122":{"ejec":0,"fecha":"29/09/2026","iso":"2026-09-29","atp":"Leandro Ríos","gp":"Maythiare Palma"},"40099":{"ejec":0,"fecha":"30/09/2026","iso":"2026-09-30","atp":"Paula Cataldo","gp":"Tamara Sierra"},"1144":{"ejec":0,"fecha":"30/09/2026","iso":"2026-09-30","atp":"Paula Cataldo","gp":"Maythiare Palma"},"1191":{"ejec":0,"fecha":"01/10/2026","iso":"2026-10-01","atp":"Susan Ramírez","gp":"Tamara Sierra"},"5401005":{"ejec":0,"fecha":"01/10/2026","iso":"2026-10-01","atp":"Verónica Díaz","gp":"Claudia Vargas"},"1167":{"ejec":0,"fecha":"02/10/2026","iso":"2026-10-02","atp":"Francisca Tapia","gp":"Claudia Vargas"},"1171":{"ejec":0,"fecha":"02/10/2026","iso":"2026-10-02","atp":"Fabiola Bustos","gp":"Claudia Vargas"},"1120":{"ejec":0,"fecha":"06/10/2026","iso":"2026-10-06","atp":"Paula Cataldo","gp":"Maythiare Palma"},"14479":{"ejec":0,"fecha":"29/09/2026","iso":"2026-09-29","atp":"Francisca Tapia","gp":"Claudia Vargas"},"1133":{"ejec":0,"fecha":"07/10/2026","iso":"2026-10-07","atp":"Susan Ramírez","gp":"Maythiare Palma"},"1136":{"ejec":0,"fecha":"07/10/2026","iso":"2026-10-07","atp":"Leandro Ríos","gp":"Maythiare Palma"}},"estab":[{"rbd":"1121","nombre":"LICEO PULMAHUE DE LA LIGUA","comuna":"La Ligua","tipo":"Curso por nivel","ejec":0,"fecha":"25/09/2026","iso":"2026-09-25","atp":"Paula Cataldo","gp":"Maythiare Palma","red_real":2,"red_total":2},{"rbd":"1126","nombre":"ESCUELA ESPECIAL SOL NACIENTE","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":1,"fecha":"06/08/2026","iso":"2026-08-06","atp":"Claudia Aguilera","gp":"Maythiare Palma","red_real":2,"red_total":2},{"rbd":"1148","nombre":"LICEO JOSE MANUEL BORGOÑO NUNEZ","comuna":"Petorca","tipo":"Curso por nivel","ejec":0,"fecha":"04/09/2026","iso":"2026-09-04","atp":"Francisca Tapia","gp":"Tamara Sierra","red_real":9,"red_total":9},{"rbd":"1167","nombre":"LICEO Y ESCUELA MUNICIPAL","comuna":"Cabildo","tipo":"Curso por nivel","ejec":0,"fecha":"02/10/2026","iso":"2026-10-02","atp":"Francisca Tapia","gp":"Claudia Vargas","red_real":3,"red_total":3},{"rbd":"1168","nombre":"ESCUELA HANS WENKE MENGERS","comuna":"Cabildo","tipo":"Curso por nivel","ejec":0,"fecha":"03/09/2026","iso":"2026-09-03","atp":"Susan Ramírez","gp":"Claudia Vargas","red_real":7,"red_total":7},{"rbd":"14479","nombre":"ESCUELA BASICA MUNICIPAL ARAUCARIA","comuna":"Cabildo","tipo":"Curso por nivel","ejec":0,"fecha":"29/09/2026","iso":"2026-09-29","atp":"Francisca Tapia","gp":"Claudia Vargas","red_real":7,"red_total":7},{"rbd":"11206","nombre":"ESCUELA MUNICIPAL LAS PUERTAS","comuna":"Cabildo","tipo":"Cursos Combinados","ejec":0,"fecha":"31/08/2026","iso":"2026-08-31","atp":"Leandro Ríos","gp":"Claudia Vargas","red_real":0,"red_total":1},{"rbd":"1129","nombre":"ESCUELA ANGEL MENAY","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"03/09/2026","iso":"2026-09-03","atp":"Marjorie Gaete","gp":"Maythiare Palma","red_real":0,"red_total":3},{"rbd":"1130","nombre":"ESC. BASICA LOS HORNOS DE HUAQUEN","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":1,"fecha":"26/08/2026","iso":"2026-08-26","atp":"Susan Ramírez","gp":"Maythiare Palma","red_real":0,"red_total":4},{"rbd":"1131","nombre":"ESC. BASICA CASAS VIEJAS DE LONGOTOMA","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"11/09/2026","iso":"2026-09-11","atp":"Fabiola Bustos","gp":"Maythiare Palma","red_real":0,"red_total":4},{"rbd":"1133","nombre":"ESC.BASICA LAS CASAS DE HUAQUEN","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"07/10/2026","iso":"2026-10-07","atp":"Susan Ramírez","gp":"Maythiare Palma","red_real":0,"red_total":1},{"rbd":"1134","nombre":"CARMEN SANCHEZ ARAYA","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":1,"fecha":"25/08/2026","iso":"2026-08-25","atp":"Fabiola Bustos","gp":"Maythiare Palma","red_real":0,"red_total":5},{"rbd":"1135","nombre":"ESCUELA BASICA LOS MOLLES","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"02/09/2026","iso":"2026-09-02","atp":"Paula Cataldo","gp":"Maythiare Palma","red_real":0,"red_total":3},{"rbd":"1136","nombre":"ESCUELA BASICA PUYANCON","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"07/10/2026","iso":"2026-10-07","atp":"Leandro Ríos","gp":"Maythiare Palma","red_real":0,"red_total":4},{"rbd":"1137","nombre":"ESCUELA BASICA HORTENCIA POWELL S.","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":1,"fecha":"04/08/2026","iso":"2026-08-04","atp":"Fabiola Bustos","gp":"Maythiare Palma","red_real":0,"red_total":4},{"rbd":"1139","nombre":"ESCUELA MINISTRO GOMEZ MILLAS","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"08/09/2026","iso":"2026-09-08","atp":"Susan Ramírez","gp":"Maythiare Palma","red_real":0,"red_total":4},{"rbd":"1140","nombre":"ESCUELA BASICA CARLOS ARIZTIA RUIZ","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":1,"fecha":"13/08/2026","iso":"2026-08-13","atp":"Leandro Ríos","gp":"Maythiare Palma","red_real":0,"red_total":4},{"rbd":"1142","nombre":"ESCUELA LA CANELA","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"01/09/2026","iso":"2026-09-01","atp":"Leandro Ríos","gp":"Maythiare Palma","red_real":0,"red_total":5},{"rbd":"1143","nombre":"ESCUELA BASICA QUEBRADILLA","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"25/09/2026","iso":"2026-09-25","atp":"Susan Ramírez","gp":"Maythiare Palma","red_real":0,"red_total":4},{"rbd":"1144","nombre":"ESCUELA BASICA PICHICUY","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"30/09/2026","iso":"2026-09-30","atp":"Paula Cataldo","gp":"Maythiare Palma","red_real":0,"red_total":4},{"rbd":"1145","nombre":"ESCUELA ENRIQUE DOLL ROJAS","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":1,"fecha":"04/08/2026","iso":"2026-08-04","atp":"Leandro Ríos","gp":"Maythiare Palma","red_real":0,"red_total":5},{"rbd":"1147","nombre":"ESCUELA FERNANDO GARCIA OLDINI","comuna":"Petorca","tipo":"Curso por nivel","ejec":0,"fecha":"04/09/2026","iso":"2026-09-04","atp":"Claudia Aguilera","gp":"Tamara Sierra","red_real":3,"red_total":3},{"rbd":"1149","nombre":"LICEO CORDILLERA","comuna":"Petorca","tipo":"Curso por nivel","ejec":1,"fecha":"21/08/2026","iso":"2026-08-21","atp":"Francisca Tapia","gp":"Tamara Sierra","red_real":4,"red_total":4},{"rbd":"1150","nombre":"ESCUELA BASICA NEFTALI REYES B.","comuna":"Petorca","tipo":"Cursos Combinados","ejec":0,"fecha":"04/09/2026","iso":"2026-09-04","atp":"Marjorie Gaete","gp":"Tamara Sierra","red_real":0,"red_total":3},{"rbd":"1151","nombre":"ESCUELA BASICA VILLA SANTA ANA","comuna":"Petorca","tipo":"Cursos Combinados","ejec":1,"fecha":"19/08/2026","iso":"2026-08-19","atp":"Claudia Aguilera","gp":"Tamara Sierra","red_real":0,"red_total":2},{"rbd":"1152","nombre":"ESCUELA EDUARDO FREI MONTALVA","comuna":"Petorca","tipo":"Cursos Combinados","ejec":1,"fecha":"28/08/2026","iso":"2026-08-28","atp":"Claudia Aguilera","gp":"Tamara Sierra","red_real":0,"red_total":3},{"rbd":"1153","nombre":"ESCUELA BASICA EL CRUCERO","comuna":"Petorca","tipo":"Cursos Combinados","ejec":1,"fecha":"21/08/2026","iso":"2026-08-21","atp":"Claudia Aguilera","gp":"Tamara Sierra","red_real":0,"red_total":1},{"rbd":"1156","nombre":"ESCUELA BASICA G-24","comuna":"Petorca","tipo":"Cursos Combinados","ejec":1,"fecha":"19/08/2026","iso":"2026-08-19","atp":"Claudia Aguilera","gp":"Tamara Sierra","red_real":0,"red_total":5},{"rbd":"1157","nombre":"ESCUELA BASICA LOS ALAMOS EL SOBRANTE","comuna":"Petorca","tipo":"Cursos Combinados","ejec":1,"fecha":"28/08/2026","iso":"2026-08-28","atp":"Claudia Aguilera","gp":"Tamara Sierra","red_real":0,"red_total":4},{"rbd":"1158","nombre":"ESCUELA BASICA BENANCIO PEREZ","comuna":"Petorca","tipo":"Cursos Combinados","ejec":1,"fecha":"21/08/2026","iso":"2026-08-21","atp":"Marjorie Gaete","gp":"Tamara Sierra","red_real":0,"red_total":3},{"rbd":"1160","nombre":"ESCUELA HOGAR FRONTERIZA DE CHALACO","comuna":"Petorca","tipo":"Cursos Combinados","ejec":1,"fecha":"28/08/2026","iso":"2026-08-28","atp":"Claudia Aguilera","gp":"Tamara Sierra","red_real":0,"red_total":1},{"rbd":"1171","nombre":"ESCUELA BASICA LA FRONTERA DE ALICAHUE","comuna":"Cabildo","tipo":"Cursos Combinados","ejec":0,"fecha":"02/10/2026","iso":"2026-10-02","atp":"Fabiola Bustos","gp":"Claudia Vargas","red_real":0,"red_total":5},{"rbd":"1173","nombre":"ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO","comuna":"Cabildo","tipo":"Curso por nivel","ejec":0,"fecha":"02/09/2026","iso":"2026-09-02","atp":"Marjorie Gaete","gp":"Claudia Vargas","red_real":1,"red_total":1},{"rbd":"1174","nombre":"ESCUELA BASICA SAN LORENZO","comuna":"Cabildo","tipo":"Curso por nivel","ejec":1,"fecha":"18/08/2026","iso":"2026-08-18","atp":"Marjorie Gaete","gp":"Claudia Vargas","red_real":2,"red_total":2},{"rbd":"1176","nombre":"ESCUELA PABLO NERUDA","comuna":"Cabildo","tipo":"Cursos Combinados","ejec":1,"fecha":"13/08/2026","iso":"2026-08-13","atp":"Fabiola Bustos","gp":"Claudia Vargas","red_real":0,"red_total":3},{"rbd":"1181","nombre":"ESCUELA BASICA LOS ANGELES","comuna":"Cabildo","tipo":"Cursos Combinados","ejec":1,"fecha":"14/08/2026","iso":"2026-08-14","atp":"Leandro Ríos","gp":"Claudia Vargas","red_real":0,"red_total":2},{"rbd":"1182","nombre":"ESCUELA BASICA G-47","comuna":"Cabildo","tipo":"Cursos Combinados","ejec":1,"fecha":"14/08/2026","iso":"2026-08-14","atp":"Susan Ramírez","gp":"Claudia Vargas","red_real":0,"red_total":1},{"rbd":"12299","nombre":"ESCUELA BASICA ANEXO PICHILEMU","comuna":"La Ligua","tipo":"Cursos Combinados","ejec":0,"fecha":"10/09/2026","iso":"2026-09-10","atp":"Fabiola Bustos","gp":"Maythiare Palma","red_real":0,"red_total":1}]}</script>
+<script>
+const P=JSON.parse(document.getElementById('payload').textContent);
+const nf=n=>Number(n).toLocaleString('es-CL');
+const gradosTxt=g=>g.map(x=>x+'°').join('+');
+const RE=P.reun||{};
+const reunOf=rbd=>RE[String(rbd)]||{ejec:0,fecha:'',iso:'',atp:'',gp:''};
+const reunBadge=rbd=>{const r=reunOf(rbd);return r.ejec?`<span class="pill hecha">Reunidos · ${r.fecha||'s/f'}</span>`:`<span class="pill pend">Pendiente · ${r.fecha||'s/f'}</span>`;};
+const passReu=(rbd,q)=>!q||(q==='reunidos'?reunOf(rbd).ejec:!reunOf(rbd).ejec);
+// tabs
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('section[role=tabpanel]').forEach(s=>s.classList.toggle('on',s.dataset.p===b.dataset.t));
+});
+document.getElementById('themeBtn').onclick=()=>{const r=document.documentElement,cur=r.getAttribute('data-theme');
+  const dark=cur?cur==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.setAttribute('data-theme',dark?'light':'dark');};
+function comunas(rows){return [...new Set(rows.map(r=>r.comuna))].sort((a,b)=>a.localeCompare(b));}
+function fillCom(sel,rows){sel.innerHTML='<option value="">Todas las comunas</option>'+comunas(rows).map(c=>`<option>${c}</option>`).join('');}
+const CSS_S=['--s1','--s2','--s3','--s4','--s5','--s6','--s7'];
+const cvar=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+// KPIs
+const k=P.kpis;
+document.getElementById('kpis').innerHTML=[
+ ['Fusión de letras','−'+nf(k.fus_red)+' cursos', nf(k.fus_prop)+' propuestas','--s1'],
+ ['Multigrado · ahorro real','−'+nf(k.mg_red_real)+' cursos', nf(k.mg_estab_real)+' escuelas "Curso por nivel"','--s3'],
+ ['Multigrado · a verificar','−'+nf(k.mg_red-k.mg_red_real)+' cursos', 'escuelas que ya combinan','--s2'],
+ ['Reducción real potencial','−'+nf(k.fus_red+k.mg_red_real)+' cursos', 'sumando ambas líneas','--s7'],
+ ['Reuniones con propuesta', nf(k.prop_reunidos)+' hechas · '+nf(k.prop_pend)+' pend.', nf(k.pend_real)+' pendientes con ahorro real','--s5'],
+].map(([l,v,d,c])=>`<div class="kpi" style="border-left:3px solid var(${c})"><div class="l">${l}</div><div class="v sm">${v}</div><div class="d">${d}</div></div>`).join('');
+
+// FOCO agenda
+const focoRow=e=>`<div class="prop"><span class="pill neu">−${e.red_real}</span> <b>${e.nombre}</b><br><span class="mini">${e.comuna} · ${e.fecha||'sin fecha'}${e.atp?' · ATP '+e.atp:''}</span></div>`;
+(function(){
+  const pend=P.estab.filter(e=>e.ejec===0&&e.red_real>0).sort((a,b)=>(a.iso||'9999').localeCompare(b.iso||'9999'));
+  const reun=P.estab.filter(e=>e.ejec===1&&e.red_real>0).sort((a,b)=>b.red_real-a.red_real);
+  document.getElementById('focoPend').innerHTML=pend.map(focoRow).join('')||'<p class="mini">Sin pendientes con ahorro real.</p>';
+  document.getElementById('focoReun').innerHTML=reun.map(focoRow).join('')||'<p class="mini">—</p>';
+})();
+
+// charts
+function barChart(el,items,color){const max=Math.max(1,...items.map(i=>i.v));
+  el.innerHTML=items.map((i,idx)=>{const c=color||cvar(CSS_S[idx%CSS_S.length]);
+    return `<div class="barrow"><div class="lab">${i.l}</div><div class="bartrack"><div class="barfill" style="width:${100*i.v/max}%;background:${c}"></div></div><div class="val">${nf(i.v)}</div></div>`;}).join('');}
+(function(){const agg={};P.fusion.forEach(f=>agg[f.comuna]=(agg[f.comuna]||0)+f.ahorro);
+  P.multigrado.forEach(m=>{if(m.real)agg[m.comuna]=(agg[m.comuna]||0)+m.ahorro;});
+  barChart(document.getElementById('chartComuna'),Object.entries(agg).map(([l,v])=>({l,v})).sort((a,b)=>b.v-a.v),cvar('--s1'));})();
+(function(){const agg={};P.fusion.forEach(f=>agg[f.nivel]=(agg[f.nivel]||0)+f.ahorro);
+  let mr=0;P.multigrado.forEach(m=>{if(m.real)mr+=m.ahorro;});agg['Básica · multigrado (real)']=(agg['Básica · multigrado (real)']||0)+mr;
+  barChart(document.getElementById('chartNivel'),Object.entries(agg).map(([l,v])=>({l,v})).sort((a,b)=>b.v-a.v));})();
+
+// sortable table
+function makeTable(tblId,cols,getRows,resEl,fmtCount){
+  let sortK=cols.find(c=>c.def)?.k||cols[0].k,sortDir=-1;
+  function render(){let rows=getRows();
+    rows.sort((a,b)=>{const x=a._s[sortK],y=b._s[sortK];return (x<y?-1:x>y?1:0)*sortDir;});
+    const th=cols.map(c=>`<th class="${c.num?'num':''}" data-k="${c.k}">${c.t}${sortK===c.k?(sortDir<0?' ▾':' ▴'):''}</th>`).join('');
+    const body=rows.map(r=>'<tr>'+cols.map(c=>`<td class="${c.num?'num':''}">${c.cell(r)}</td>`).join('')+'</tr>').join('');
+    document.getElementById(tblId).innerHTML='<thead><tr>'+th+'</tr></thead><tbody>'+body+'</tbody>';
+    if(resEl)resEl.textContent=fmtCount(rows);
+    document.querySelectorAll('#'+tblId+' th').forEach(h=>h.onclick=()=>{const kk=h.dataset.k;if(kk===sortK)sortDir*=-1;else{sortK=kk;sortDir=-1;}render();});}
+  return render;}
+const calBadge=c=>c==='ideal'?'<span class="pill ok">ideal ≤30</span>':'<span class="pill warn">aceptable</span>';
+const estBadge=m=>m.real?'<span class="pill real">Ahorro real</span>':'<span class="pill ver">Verificar · ya combina</span>';
+
+// LETRAS
+fillCom(document.getElementById('fComL'),P.fusion);
+const renderL=makeTable('tblL',[
+  {k:'nombre',t:'Establecimiento',cell:r=>r.nombre},
+  {k:'comuna',t:'Comuna',cell:r=>r.comuna},
+  {k:'nivel',t:'Nivel',cell:r=>r.nivel},
+  {k:'curso',t:'Grado',cell:r=>r.curso},
+  {k:'act',t:'Letras actuales',cell:r=>r.letras.map((L,i)=>`<span class="gtag">${L} <b>${r.sizes[i]}</b></span>`).join('')+` <span class="mini">= ${r.total}</span>`},
+  {k:'prop',t:'Propuesta',cell:r=>r.prop.map(s=>`<span class="gtag"><b>${s}</b></span>`).join('<span class="arrow">·</span>')+` <span class="mini">${r.prop.length} curso${r.prop.length>1?'s':''}</span>`},
+  {k:'ahorro',t:'−Cursos',num:1,def:1,cell:r=>'<b>−'+r.ahorro+'</b>'},
+  {k:'calidad',t:'Calidad',cell:r=>calBadge(r.calidad)},
+  {k:'reun',t:'Reunión',cell:r=>reunBadge(r.rbd)},
+],()=>{const c=document.getElementById('fComL').value,q=document.getElementById('fCalL').value,u=document.getElementById('fReuL').value;
+  return P.fusion.filter(r=>(!c||r.comuna===c)&&(!q||r.calidad===q)&&passReu(r.rbd,u))
+    .map(r=>({...r,_s:{nombre:r.nombre,comuna:r.comuna,nivel:r.nivel,curso:r.curso,ahorro:r.ahorro,calidad:r.calidad,act:r.total,prop:r.prop.length,reun:(reunOf(r.rbd).ejec)+(reunOf(r.rbd).iso||'')}}));
+},document.getElementById('fResL'),rows=>`${rows.length} propuestas · −${rows.reduce((a,r)=>a+r.ahorro,0)} cursos`);
+['fComL','fCalL','fReuL'].forEach(id=>document.getElementById(id).onchange=renderL);renderL();
+
+// MULTI
+fillCom(document.getElementById('fComM'),P.multigrado);
+const renderM=makeTable('tblM',[
+  {k:'nombre',t:'Establecimiento',cell:r=>r.nombre},
+  {k:'comuna',t:'Comuna',cell:r=>r.comuna},
+  {k:'area',t:'Área',cell:r=>r.area},
+  {k:'grados',t:'Grados a combinar',cell:r=>`<b>${gradosTxt(r.grados)}</b>`},
+  {k:'det',t:'Matrícula por grado',cell:r=>r.grados.map((g,i)=>`<span class="gtag">${g}° <b>${r.detalle[i]}</b></span>`).join('')+` <span class="mini">= ${r.total}</span>`},
+  {k:'ahorro',t:'−Cursos',num:1,def:1,cell:r=>'<b>−'+r.ahorro+'</b>'},
+  {k:'estado',t:'Estado',cell:r=>estBadge(r)},
+  {k:'reun',t:'Reunión',cell:r=>reunBadge(r.rbd)},
+],()=>{const c=document.getElementById('fComM').value,q=document.getElementById('fCalM').value,u=document.getElementById('fReuM').value,onlyR=document.getElementById('fRealM').checked;
+  return P.multigrado.filter(r=>(!c||r.comuna===c)&&(!q||r.calidad===q)&&(!onlyR||r.real)&&passReu(r.rbd,u))
+    .map(r=>({...r,_s:{nombre:r.nombre,comuna:r.comuna,area:r.area,grados:r.grados[0],ahorro:r.ahorro,estado:r.real?0:1,calidad:r.calidad,det:r.total,reun:(reunOf(r.rbd).ejec)+(reunOf(r.rbd).iso||'')}}));
+},document.getElementById('fResM'),rows=>{const real=rows.filter(r=>r.real);return `${rows.length} grupos · −${rows.reduce((a,r)=>a+r.ahorro,0)} cursos (real: −${real.reduce((a,r)=>a+r.ahorro,0)})`;});
+['fComM','fCalM','fReuM','fRealM'].forEach(id=>document.getElementById(id).onchange=renderM);renderM();
+
+// POR ESTABLECIMIENTO
+fillCom(document.getElementById('fComE'),[...P.fusion,...P.multigrado]);
+function renderE(){const c=document.getElementById('fComE').value,u=document.getElementById('fReuE').value;
+  const map={};
+  const ensure=r=>{if(!map[r.rbd])map[r.rbd]={rbd:r.rbd,nombre:r.nombre,comuna:r.comuna,tipo:r.tipo_cursos||'',fus:[],mg:[],red:0,redReal:0};return map[r.rbd];};
+  P.fusion.forEach(f=>{const e=ensure(f);e.fus.push(f);e.red+=f.ahorro;e.redReal+=f.ahorro;});
+  P.multigrado.forEach(m=>{const e=ensure(m);e.mg.push(m);e.red+=m.ahorro;if(m.real)e.redReal+=m.ahorro;});
+  let list=Object.values(map).filter(e=>(!c||e.comuna===c)&&passReu(e.rbd,u)).sort((a,b)=>b.redReal-a.redReal||b.red-a.red);
+  document.getElementById('fResE').textContent=`${list.length} establecimientos`;
+  document.getElementById('estList').innerHTML=list.map(e=>{
+    const fus=e.fus.map(f=>`<div class="prop"><b>${f.curso}</b> (${f.nivel}) — ${f.letras.length} letras <span class="arrow">→</span> ${f.prop.length} curso${f.prop.length>1?'s':''} de ${f.prop.join(' · ')} &nbsp;${calBadge(f.calidad)} <span class="pill neu">−${f.ahorro}</span></div>`).join('');
+    const mg=e.mg.map(m=>`<div class="prop">Multigrado <b>${gradosTxt(m.grados)}</b> = ${m.total} estud. ${estBadge(m)} <span class="pill neu">−${m.ahorro}</span></div>`).join('');
+    return `<div class="estcard"><h3>${e.nombre} <span class="big" style="float:right;color:var(--s1)">−${e.redReal}</span></h3>
+      <div class="meta">${e.comuna}${e.tipo?' · '+e.tipo:''} · ${reunBadge(e.rbd)} · reducción real ${e.redReal}${e.red!==e.redReal?` · potencial total ${e.red}`:''}</div>
+      ${fus}${mg}</div>`;}).join('')||'<p class="note">Sin propuestas para este filtro.</p>';}
+['fComE','fReuE'].forEach(id=>document.getElementById(id).onchange=renderE);renderE();
+</script>
+</body></html>
