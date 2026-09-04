@@ -46,7 +46,7 @@
   .combo-item .ci-com{color:var(--muted);font-size:12px}
   .combo-empty{padding:10px 11px;font-size:13px;color:var(--muted);font-style:italic}
   .ebadges{display:flex;flex-wrap:wrap;gap:7px;align-items:center;flex:1 1 100%}
-  .ebadge{font-size:12px;font-weight:600;padding:5px 10px;border-radius:20px;background:var(--paper-2);color:var(--ink);border:1px solid var(--line)}
+  .ebadge{font-size:12px;font-weight:500;padding:5px 10px;border-radius:20px;background:var(--paper-2);color:var(--ink);border:1px solid var(--line);cursor:default}
   .ebadge.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
   .ebadge.no{background:var(--falta-soft);color:var(--falta);border-color:var(--falta)}
   .ebadge.hi{background:var(--blue-soft);color:var(--blue);border-color:var(--blue)}
@@ -269,12 +269,20 @@
   .hlogo img{height:46px;display:block}
   @media(max-width:640px){.hwrap{flex-wrap:wrap;gap:14px}.hlogo img{height:38px}}
 
-  .ecrear{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .ecrear{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
   .asis-primary{background:var(--neet)!important;border-color:var(--neet)!important;color:#fff!important}
   .asis-primary:hover{background:#0f6155!important}
   .asis-status{flex:1 1 100%;font-size:12.5px;margin-top:6px;color:var(--muted);line-height:1.4}
   .asis-status.ok{color:var(--ok)} .asis-status.err{color:var(--falta)} .asis-status.warn{color:var(--neep)}
   .asis-status.load{color:var(--blue)}
+  .eficha-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;align-self:center;margin-right:2px}
+  .acc-head{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 10px;margin-bottom:2px}
+  .acc-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink);font-weight:700}
+  .acc-help{font-size:12px;color:var(--muted);font-style:italic}
+  .mg-toggle[title]{cursor:help}
+  .mg-toggle.asis-primary,.mg-toggle.pie-outline{cursor:pointer}
+  .mg-toggle.pie-outline{background:#fff;border-color:var(--neep);color:var(--neep)}
+  .mg-toggle.pie-outline:hover{background:var(--neep-soft)}
   .rowacts{display:flex;gap:2px;align-items:center}
   .clonebtn{border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;font-size:11.5px;font-weight:600;font-family:var(--font);border-radius:5px;padding:6px 9px;white-space:nowrap}
   .clonebtn:hover{border-color:var(--neet);color:var(--neet);background:var(--neet-soft)}
@@ -939,14 +947,14 @@ let estabMode='blank', estab=null, defaultMg=false;
 
 function badgesHtml(e){
   const b=[];
-  b.push('<span class="ebadge">'+(e.area==='R'?'Rural':'Urbano')+'</span>');
-  b.push('<span class="ebadge '+(e.pie?'ok':'no')+'">'+(e.pie?'Con convenio PIE':'Sin convenio PIE')+'</span>');
-  if(e.micro)b.push('<span class="ebadge">Microcentro: '+esc(e.micro)+'</span>');
-  if(e.comb)b.push('<span class="ebadge">Cursos combinados</span>');
-  if(e.prio!=null)b.push('<span class="ebadge '+(e.prio>=80?'hi':'')+'">'+e.prio+'% prioritarios'+(e.prio>=80?' · umbral 60/40':'')+'</span>');
-  if(e.gc)b.push('<span class="ebadge">'+e.gc+' grupos curso</span>');
-  if(e.mat!=null)b.push('<span class="ebadge">'+e.mat+' matrícula 2026</span>');
-  if(e.cob)b.push('<span class="ebadge">'+esc(e.cob)+'</span>');
+  b.push('<span class="ebadge" title="Ubicación del establecimiento">'+(e.area==='R'?'Rural':'Urbano')+'</span>');
+  b.push('<span class="ebadge '+(e.pie?'ok':'no')+'" title="Estado del convenio PIE del establecimiento">'+(e.pie?'Con convenio PIE':'Sin convenio PIE')+'</span>');
+  if(e.micro)b.push('<span class="ebadge" title="Microcentro rural al que pertenece">Microcentro: '+esc(e.micro)+'</span>');
+  if(e.comb)b.push('<span class="ebadge" title="El establecimiento tiene cursos combinados (multigrado)">Cursos combinados</span>');
+  if(e.prio!=null)b.push('<span class="ebadge '+(e.prio>=80?'hi':'')+'" title="Porcentaje de alumnos prioritarios. Desde 80% habilita el régimen 60/40 en 1°–4° básico.">'+e.prio+'% prioritarios'+(e.prio>=80?' · umbral 60/40':'')+'</span>');
+  if(e.gc)b.push('<span class="ebadge" title="Número de grupos curso declarados en el directorio">'+e.gc+' grupos curso</span>');
+  if(e.mat!=null)b.push('<span class="ebadge" title="Matrícula total del establecimiento (directorio 2026)">'+e.mat+' matrícula 2026</span>');
+  if(e.cob)b.push('<span class="ebadge" title="Cobertura: niveles que imparte el establecimiento">'+esc(e.cob)+'</span>');
   if(!e.pie)b.push('<div class="ewarn">Este establecimiento no está en convenio PIE: la simulación es hipotética.</div>');
   return b.join('');
 }
@@ -962,7 +970,15 @@ function renderEstab(){
       '<div class="combo"><input type="text" id="estabInput" class="estab-sel" autocomplete="off" placeholder="Escribe RBD, nombre o comuna..." value="'+val+'">'+
         '<div class="combo-list" id="comboList" style="display:none"></div></div></div>'+
     (estab
-      ? '<div class="ebadges">'+badgesHtml(estab)+'</div><div class="ecrear">'+'<button id="btnAsis" class="mg-toggle asis-primary">Traer grupos curso + matrícula (asistencia)</button>'+'<button id="btnRefresh" class="mg-toggle">↻ Actualizar matrícula</button>'+'<button id="prellenar" class="mg-toggle">Prellenar s/ cobertura</button>'+(PIEDATA.ee[String(estab.rbd)]?'<button id="prellenarPie" class="mg-toggle pie-primary">Cargar NEET/NEEP (base PIE jul 2026)</button>':'')+(estab.cob?'<span class="mg-help" style="margin-left:8px">Cobertura: '+esc(estab.cob)+(estab.comb?' · combinado':'')+'</span>':'')+'<div id="asisStatus" class="asis-status"></div></div>'
+      ? '<div class="ebadges"><span class="eficha-lbl">Ficha del EE</span>'+badgesHtml(estab)+'</div>'
+        +'<div class="ecrear">'
+          +'<div class="acc-head"><span class="acc-lbl">Cargar cursos y matrícula</span><span class="acc-help">Al elegir el EE esto ocurre solo. Usa estos botones para recargar o completar a mano (pasa el cursor por cada uno para ver qué hace).</span></div>'
+          +'<button id="btnAsis" class="mg-toggle asis-primary" title="Arma los grupos de curso, trae la matrícula del día desde el visor de asistencia y precarga el desglose NEET/NEEP desde la base PIE. Es la carga completa y se ejecuta sola al elegir el EE.">Traer grupos curso + matrícula (asistencia)</button>'
+          +'<button id="btnRefresh" class="mg-toggle" title="Vuelve a leer solo la matrícula del día desde el visor de asistencia, sin rearmar los cursos ya cargados.">↻ Actualizar matrícula</button>'
+          +'<button id="prellenar" class="mg-toggle" title="Genera los cursos según la cobertura del establecimiento, en blanco (sin matrícula ni NEET/NEEP), para llenarlos a mano. Úsalo si la asistencia no trae datos.">Prellenar s/ cobertura</button>'
+          +(PIEDATA.ee[String(estab.rbd)]?'<button id="prellenarPie" class="mg-toggle pie-outline" title="Carga los cursos y su desglose NEET/NEEP desde la base PIE de julio 2026. La matrícula total queda en 0 (complétala con «Traer matrícula»).">Cargar NEET/NEEP (base PIE jul 2026)</button>':'')
+          +(estab.cob?'<span class="mg-help" style="margin-left:8px">Cobertura: '+esc(estab.cob)+(estab.comb?' · combinado':'')+'</span>':'')
+          +'<div id="asisStatus" class="asis-status"></div></div>'
       : '<div class="ehint">Empieza a escribir para ver coincidencias por RBD, nombre o comuna.</div>');
 }
 function selectEstab(rbd){
