@@ -1279,6 +1279,54 @@ function person(role,nombre,correo){
 }
 function badge(txt,cls){return `<span class="b ${cls||''}">${esc(txt)}</span>`;}
 
+/* ===== Integración: Niveles y cursos (lectura en vivo del visor mensual) ===== */
+(function(){ if(document.getElementById('niv-css'))return; var s=document.createElement('style'); s.id='niv-css';
+  s.textContent='.nivmes{font-size:12px;color:var(--mut);font-weight:600;margin-left:6px}.nivtable-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:10px}.nivtable{border-collapse:collapse;width:100%;font-size:13px}.nivtable th{position:sticky;top:0;background:var(--azul);color:#fff;text-align:left;padding:7px 10px;font-size:12px}.nivtable td{padding:6px 10px;border-top:1px solid var(--line)}.nivtable tbody tr:nth-child(even){background:#f7f9fc}.nivtable tr.nohab{color:var(--mut)}.nivsrc{font-size:12px;color:var(--mut);margin-top:10px}';
+  document.head.appendChild(s);
+})();
+var NIVELES=null, _nivPromise=null;
+const NIV_URL='visor-niveles-cursos.html';
+function loadNiveles(){
+  if(NIVELES!==null) return Promise.resolve(NIVELES);
+  if(_nivPromise) return _nivPromise;
+  _nivPromise=fetch(NIV_URL,{cache:'no-cache'}).then(r=>{if(!r.ok)throw 0;return r.text();}).then(t=>{
+    const doc=new DOMParser().parseFromString(t,'text/html');
+    const el=doc.getElementById('payload'); const p=JSON.parse(el.textContent);
+    const cc={}; p.cols_c.forEach((n,i)=>cc[n]=i); p._cc=cc;
+    p._latest=Math.max.apply(null,p.meses.map(m=>m.p));
+    const ml=p.meses.find(m=>m.p===p._latest); p._mesLabel=ml?(ml.ll||ml.l):'';
+    NIVELES=p; return p;
+  }).catch(function(){ NIVELES=false; return false; });
+  return _nivPromise;
+}
+function fillNiveles(rbd){
+  const box=document.getElementById('p-niveles'); if(!box) return;
+  loadNiveles().then(p=>{
+    const b=document.getElementById('p-niveles'); if(!b) return;
+    if(!p){ b.innerHTML='<div class="sect"><h3>🎓 Niveles y cursos</h3><p class="empty">No se pudo cargar la información de Niveles y cursos. <a href="'+NIV_URL+'" target="_blank" rel="noopener">Abrir el visor ↗</a></p></div>'; return; }
+    const cc=p._cc;
+    const rows=p.c.filter(r=>String(r[cc.rbd])===String(rbd)&&r[cc.p]===p._latest)
+      .sort((a,b)=>(a[cc.co]-b[cc.co])||String(a[cc.letra]||'').localeCompare(String(b[cc.letra]||''),'es'));
+    if(!rows.length){ b.innerHTML='<div class="sect"><h3>🎓 Niveles y cursos</h3><p class="empty">Este establecimiento no registra Declaración de Asistencia SIGE por curso (por ejemplo, jardines VTF). <a href="'+NIV_URL+'" target="_blank" rel="noopener">Ver el visor de Niveles y cursos ↗</a></p></div>'; return; }
+    let totMat=0,aNum=0,aDen=0;
+    rows.forEach(r=>{const mat=+r[cc.mat]||0,as=+r[cc.asist]||0,nh=+r[cc.nohab]||0; totMat+=mat; if(!nh){aNum+=as;aDen+=mat;}});
+    const asProm= aDen? (aNum/aDen*100):null;
+    const body=rows.map(r=>{
+      const mat=+r[cc.mat]||0,as=+r[cc.asist]||0,nh=+r[cc.nohab]||0; const pct= mat?(as/mat*100):null;
+      return '<tr'+(nh?' class="nohab"':'')+'><td>'+esc(r[cc.curso])+(nh?' <span class="rolechip">no habilitado</span>':'')+'</td><td style="text-align:center">'+esc(r[cc.letra]||'—')+'</td><td style="text-align:right">'+mat+'</td><td style="text-align:right">'+(pct==null?'—':pct.toFixed(1)+'%')+'</td></tr>';
+    }).join('');
+    b.innerHTML='<div class="sect"><h3>🎓 Niveles y cursos <span class="nivmes">'+esc(p._mesLabel)+'</span></h3>'
+      +'<div class="tiles">'
+      + tile('Cursos', rows.length, p._mesLabel)
+      + tile('Matrícula (mes)', Number(totMat).toLocaleString('es-CL'), 'SIGE')
+      + tile('Asistencia promedio', asProm==null?'—':asProm.toFixed(1)+'%', 'del mes')
+      +'</div>'
+      +'<div class="nivtable-wrap"><table class="nivtable"><thead><tr><th>Curso</th><th>Letra</th><th style="text-align:right">Matrícula</th><th style="text-align:right">Asistencia</th></tr></thead><tbody>'+body+'</tbody></table></div>'
+      +'<p class="nivsrc">Fuente: Declaración de Asistencia SIGE, '+esc(p._mesLabel)+' · se actualiza mensualmente. <a href="'+NIV_URL+'" target="_blank" rel="noopener">Abrir visor de Niveles y cursos ↗</a></p>'
+      +'</div>';
+  });
+}
+
 function openFicha(rbd){
   const e = EE.find(x=>x.rbd===rbd); if(!e)return;
   state.sel=rbd; render();
@@ -1392,10 +1440,12 @@ function openFicha(rbd){
       <div class="tab on" data-p="general">General</div>
       <div class="tab" data-p="contrapartes">Contrapartes</div>
       <div class="tab" data-p="equipo">Equipo directivo</div>
+      <div class="tab" data-p="niveles">Niveles y cursos</div>
     </div>
     <div class="panel on" id="p-general">${general}</div>
     <div class="panel" id="p-contrapartes">${contrapartes}</div>
     <div class="panel" id="p-equipo">${equipo}</div>
+    <div class="panel" id="p-niveles"><div class="sect"><h3>🎓 Niveles y cursos</h3><p class="empty">Cargando…</p></div></div>
     <div class="faccion">
       <button class="btn pri" data-tip="Abre el diálogo de impresión para guardar la ficha como PDF o imprimirla en una hoja." onclick="window.print()">🖨 Imprimir ficha (one-pager)</button>
       <button class="btn" id="copyresumen" data-tip="Copia una ficha corta con los datos institucionales principales: identificación, contacto de dirección y contrapartes SLEP. No copia todos los campos de la ficha.">📋 Copiar datos base</button>
@@ -1405,6 +1455,7 @@ function openFicha(rbd){
     $('#ficha').querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
     t.classList.add('on'); $('#p-'+t.dataset.p).classList.add('on');
   });
+  fillNiveles(e.rbd);
   $('#ficha').querySelectorAll('.copy').forEach(b=>b.onclick=ev=>{ev.stopPropagation();navigator.clipboard&&navigator.clipboard.writeText(b.dataset.copy);b.textContent='✓';setTimeout(()=>b.textContent='copiar',1200);});
   $('#copyresumen').onclick=()=>{
     const mv = has(e.mat_jun26)? `${e.mat_jun26} (neta jun-2026)` : (e.mat_2026||'—');
