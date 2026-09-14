@@ -285,6 +285,12 @@
   .cart-rm{border:1px solid var(--line);background:var(--surface);color:var(--ink-faint);border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:15px;line-height:1;padding:0}
   .cart-rm:hover{border-color:var(--crit);color:var(--crit)}
   .subhead{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin:0 0 11px}
+  .mixgrid{display:flex;flex-direction:column;gap:9px;margin-bottom:4px}
+  .mixrow{display:flex;align-items:center;gap:10px}
+  .mixrow label{flex:1;font-size:13.5px;color:var(--ink-soft);font-weight:600}
+  .mixrow input{width:78px;flex:none;font-family:"IBM Plex Mono",monospace;font-size:14px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:7px 9px;text-align:right;font-variant-numeric:tabular-nums}
+  .mixrow .mixpct{color:var(--ink-faint);font-size:13px;width:12px}
+  .mixrow .mixval{color:var(--ink-faint);font-size:12px;min-width:64px;text-align:right;font-variant-numeric:tabular-nums}
   .dir-actions{display:flex;gap:8px;margin:12px 0 0}
   .dir-actions .mini-btn{flex:1;text-align:center}
 
@@ -358,7 +364,8 @@
           <div class="field">
             <label>Fuente del valor
               <span class="seg" role="group" aria-label="Fuente del valor hora">
-                <button type="button" id="modeRef" aria-pressed="true">Tabla de referencia</button>
+                <button type="button" id="modeRef" aria-pressed="true">Referencia</button>
+                <button type="button" id="modeMix" aria-pressed="false">Mezcla</button>
                 <button type="button" id="modeCustom" aria-pressed="false">Personalizado</button>
               </span>
             </label>
@@ -385,14 +392,35 @@
             <p class="ref-note">El tramo más alto (31–44 h) tiene el valor hora más bajo: financia más horas con el mismo monto.</p>
           </div>
 
+          <div id="mezclaBox" hidden>
+            <p class="ref-note" style="margin-top:0">Combina categorías cuando un taller no lo cubre una sola persona. Elige un perfil de partida o ajusta los % a mano; se calcula el valor hora promedio ponderado.</p>
+            <div class="field">
+              <label for="mixPreset">Perfil de mezcla</label>
+              <div class="inrow"><select id="mixPreset" aria-label="Perfil de mezcla"></select></div>
+            </div>
+            <div class="inrow" style="gap:10px;margin-bottom:14px">
+              <select id="mixTramo" aria-label="Tramo de horas de la mezcla">
+                <option value="0">Tramo 1 a 15 h</option>
+                <option value="1">Tramo 16 a 30 h</option>
+                <option value="2" selected>Tramo 31 a 44 h</option>
+              </select>
+            </div>
+            <div class="mixgrid">
+              <div class="mixrow"><label for="mixP">Profesional</label><input type="number" id="mixP" min="0" max="100" step="5" value="50"><span class="mixpct">%</span><span class="mixval mono" id="mixvalP"></span></div>
+              <div class="mixrow"><label for="mixT">Técnico</label><input type="number" id="mixT" min="0" max="100" step="5" value="30"><span class="mixpct">%</span><span class="mixval mono" id="mixvalT"></span></div>
+              <div class="mixrow"><label for="mixO">Oficio</label><input type="number" id="mixO" min="0" max="100" step="5" value="20"><span class="mixpct">%</span><span class="mixval mono" id="mixvalO"></span></div>
+            </div>
+            <p class="ref-note" id="mixNote"></p>
+          </div>
+
           <div id="customBox" hidden>
             <div class="field">
-              <label for="customVal">Valor hora a usar <span class="hint">p. ej. mezcla de categorías</span></label>
+              <label for="customVal">Valor hora a usar <span class="hint">valor fijo que tú defines</span></label>
               <div class="inrow">
                 <span class="pesos"><span class="sign">$</span><input type="number" id="customVal" class="wide" value="6000" min="1" step="100"></span>
               </div>
             </div>
-            <p class="ref-note">Útil para simular un promedio ponderado entre profesionales, técnicos y monitores.</p>
+            <p class="ref-note">Para un valor único que ya tengas definido, sin desglose por categoría.</p>
           </div>
 
           <div class="divider"></div>
@@ -610,6 +638,7 @@
     ee:14, semanas:10,
     categoria:'prof', tramo:2,
     custom:6000,
+    mix:{p:50,t:30,o:20}, mixTramo:2,
     talleres:5, horas:6,
     grupos: defaultGrupos(),
     criterio:'mat',
@@ -625,6 +654,17 @@
     cur:{min:0.5, max:6, step:0.5, label:'Horas semanales por curso'},
     par:{min:1, max:30, step:1,   label:'Horas semanales por establecimiento'}
   };
+
+  // Perfiles de mezcla de categorías [%prof, %téc, %ofi]
+  var MIXPROFILES = [
+    {id:'todo_prof',  label:'Solo profesional',        p:100, t:0,  o:0},
+    {id:'may_prof',   label:'Mayoría profesional',     p:60,  t:30, o:10},
+    {id:'equilibrado',label:'Equilibrado (⅓ / ⅓ / ⅓)', p:34,  t:33, o:33},
+    {id:'may_tec',    label:'Mayoría técnico',          p:20,  t:60, o:20},
+    {id:'may_monit',  label:'Mayoría monitores/oficio', p:20,  t:30, o:50},
+    {id:'tec_ofi',    label:'Técnico + oficio',         p:0,   t:40, o:60},
+    {id:'custom',     label:'Personalizado',            p:null,t:null,o:null}
+  ];
 
   // build reference table
   (function(){
@@ -654,17 +694,62 @@
     render();
   }
 
+  function mixBlend(){
+    var t=state.mixTramo;
+    var p=state.mix.p||0, tt=state.mix.t||0, o=state.mix.o||0, sum=p+tt+o;
+    if(sum<=0) return REF.prof.v[t];
+    return Math.round((p*REF.prof.v[t] + tt*REF.tec.v[t] + o*REF.ofi.v[t])/sum);
+  }
+
   function valorHora(){
     if(state.mode==='custom') return Math.max(1, state.custom||0);
+    if(state.mode==='mezcla') return mixBlend();
     return REF[state.categoria].v[state.tramo];
   }
 
   function setMode(m){
     state.mode=m;
     $('modeRef').setAttribute('aria-pressed', m==='ref');
+    $('modeMix').setAttribute('aria-pressed', m==='mezcla');
     $('modeCustom').setAttribute('aria-pressed', m==='custom');
     $('refBox').hidden = (m!=='ref');
+    $('mezclaBox').hidden = (m!=='mezcla');
     $('customBox').hidden = (m!=='custom');
+  }
+
+  function populateMixProfiles(){
+    var sel=$('mixPreset');
+    MIXPROFILES.forEach(function(m){
+      var o=document.createElement('option'); o.value=m.id; o.textContent=m.label; sel.appendChild(o);
+    });
+  }
+
+  function matchMixProfile(){
+    for(var i=0;i<MIXPROFILES.length;i++){
+      var m=MIXPROFILES[i];
+      if(m.p===null) continue;
+      if(m.p===state.mix.p && m.t===state.mix.t && m.o===state.mix.o) return m.id;
+    }
+    return 'custom';
+  }
+
+  function updateMixNote(){
+    var t=state.mixTramo;
+    $('mixvalP').textContent='$'+CLP.format(REF.prof.v[t]);
+    $('mixvalT').textContent='$'+CLP.format(REF.tec.v[t]);
+    $('mixvalO').textContent='$'+CLP.format(REF.ofi.v[t]);
+    $('mixPreset').value=matchMixProfile();
+    var sum=(state.mix.p||0)+(state.mix.t||0)+(state.mix.o||0);
+    var note = sum===100
+      ? 'Mezcla: '+(state.mix.p||0)+'% profesional · '+(state.mix.t||0)+'% técnico · '+(state.mix.o||0)+'% oficio'
+      : 'Suma '+sum+'% — se pondera automáticamente';
+    $('mixNote').textContent = note + ' → valor hora ' + peso(mixBlend());
+  }
+
+  function syncMixUI(){
+    $('mixP').value=state.mix.p; $('mixT').value=state.mix.t; $('mixO').value=state.mix.o;
+    $('mixTramo').value=String(state.mixTramo);
+    updateMixNote();
   }
 
   function setRangeFill(el){
@@ -936,7 +1021,8 @@
     var jc = jornadaProm/44;
 
     // valor aplicado
-    $('valorAplicado').textContent = state.dmode==='grupos' ? ('Mixto · '+peso(vh)) : peso(vh);
+    $('valorAplicado').textContent = state.dmode==='grupos' ? ('Mixto · '+peso(vh))
+      : (state.mode==='mezcla' ? (peso(vh)+' · mezcla') : peso(vh));
 
     // headline
     $('costoBig').textContent = peso(costo);
@@ -1007,7 +1093,21 @@
   bindRange('horasRange','horas');
 
   $('modeRef').addEventListener('click', function(){ setMode('ref'); render(); });
+  $('modeMix').addEventListener('click', function(){ setMode('mezcla'); syncMixUI(); render(); });
   $('modeCustom').addEventListener('click', function(){ setMode('custom'); render(); });
+
+  $('mixPreset').addEventListener('change', function(){
+    var m=null; for(var i=0;i<MIXPROFILES.length;i++){ if(MIXPROFILES[i].id===this.value){ m=MIXPROFILES[i]; break; } }
+    if(m && m.p!==null){ state.mix={p:m.p,t:m.t,o:m.o}; syncMixUI(); render(); }
+  });
+  function bindMix(id, key){
+    $(id).addEventListener('input', function(){
+      var v=parseInt(this.value,10); if(isNaN(v)||v<0) v=0; if(v>100) v=100;
+      state.mix[key]=v; updateMixNote(); render();
+    });
+  }
+  bindMix('mixP','p'); bindMix('mixT','t'); bindMix('mixO','o');
+  $('mixTramo').addEventListener('change', function(){ state.mixTramo=+this.value; updateMixNote(); render(); });
 
   $('dmodeParejo').addEventListener('click', function(){ setDmode('parejo'); render(); });
   $('dmodeGrupos').addEventListener('click', function(){ setDmode('grupos'); render(); });
@@ -1098,6 +1198,8 @@
   })();
 
   populateComunas();
+  populateMixProfiles();
+  syncMixUI();
   syncCriterioUI();
   EST.forEach(function(e){ state.horasEE[e.rbd]=ruleHoras(e); }); // carrito prellenado por matrícula
   setDmode('parejo');
