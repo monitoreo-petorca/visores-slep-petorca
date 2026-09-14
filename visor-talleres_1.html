@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador de Talleres Extraescolares</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F4F3EF;
+    --surface:#FFFFFF;
+    --surface-2:#FBFAF7;
+    --ink:#1A2A2C;
+    --ink-soft:#4A5B5D;
+    --ink-faint:#78888A;
+    --line:#DED9CF;
+    --line-strong:#C7C0B2;
+    --accent:#0E6B66;
+    --accent-soft:#E2EFED;
+    --accent-ink:#0A4F4B;
+    --good:#2C7A57;
+    --good-soft:#E1F0E7;
+    --warn:#9C6A15;
+    --warn-soft:#F5EBD6;
+    --crit:#B23A2E;
+    --crit-soft:#F5E1DD;
+    --shadow:0 1px 2px rgba(26,42,44,.05), 0 8px 24px -12px rgba(26,42,44,.18);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#111819;
+      --surface:#18211F;
+      --surface-2:#1E2826;
+      --ink:#E7ECEA;
+      --ink-soft:#A7B4B2;
+      --ink-faint:#7B8A88;
+      --line:#2C3937;
+      --line-strong:#3A4744;
+      --accent:#4FBDB2;
+      --accent-soft:#173330;
+      --accent-ink:#8FD9D0;
+      --good:#5FC38E;
+      --good-soft:#173026;
+      --warn:#D9A441;
+      --warn-soft:#332812;
+      --crit:#E27266;
+      --crit-soft:#331C19;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#111819;
+    --surface:#18211F;
+    --surface-2:#1E2826;
+    --ink:#E7ECEA;
+    --ink-soft:#A7B4B2;
+    --ink-faint:#7B8A88;
+    --line:#2C3937;
+    --line-strong:#3A4744;
+    --accent:#4FBDB2;
+    --accent-soft:#173330;
+    --accent-ink:#8FD9D0;
+    --good:#5FC38E;
+    --good-soft:#173026;
+    --warn:#D9A441;
+    --warn-soft:#332812;
+    --crit:#E27266;
+    --crit-soft:#331C19;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Public Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1140px;margin:0 auto;padding-inline:20px;padding-block:32px 56px}
+  .tnum{font-variant-numeric:tabular-nums}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* header */
+  header.masthead{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:20px;
+    border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px;
+  }
+  .eyebrow{
+    font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;margin:0 0 8px;
+  }
+  h1{
+    font-family:"Spectral",Georgia,serif;font-weight:600;
+    font-size:clamp(26px,4.4vw,40px);line-height:1.08;margin:0;
+    letter-spacing:-.01em;text-wrap:balance;max-width:16ch;
+  }
+  .sub{color:var(--ink-soft);margin:12px 0 0;max-width:60ch;font-size:15px}
+  .theme-btn{
+    flex:none;border:1px solid var(--line-strong);background:var(--surface);
+    color:var(--ink-soft);border-radius:999px;padding:7px 14px;cursor:pointer;
+    font-family:inherit;font-size:12.5px;display:inline-flex;gap:7px;align-items:center;
+  }
+  .theme-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:24px;align-items:start}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
+
+  .panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;
+  }
+  .panel + .panel{margin-top:22px}
+  .panel-hd{
+    padding:16px 20px 14px;border-bottom:1px solid var(--line);
+    display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    background:var(--surface-2);
+  }
+  .panel-hd h2{
+    font-family:"Spectral",Georgia,serif;font-weight:600;font-size:17px;margin:0;letter-spacing:-.005em;
+  }
+  .panel-hd .idx{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+  .panel-bd{padding:18px 20px 20px}
+
+  /* results column sticky on desktop */
+  @media (min-width:861px){ .results-col{position:sticky;top:20px} }
+
+  /* field rows */
+  .field{margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+  .field > label{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:7px;
+  }
+  .field .hint{font-weight:400;color:var(--ink-faint);font-size:11.5px}
+  .inrow{display:flex;align-items:center;gap:10px}
+  input[type="number"]{
+    width:100%;font-family:"IBM Plex Mono",monospace;font-size:15px;
+    background:var(--surface-2);color:var(--ink);border:1px solid var(--line-strong);
+    border-radius:9px;padding:9px 11px;font-variant-numeric:tabular-nums;
+  }
+  input[type="number"].wide{flex:1}
+  input:focus-visible, select:focus-visible, button:focus-visible{
+    outline:2px solid var(--accent);outline-offset:1px;
+  }
+  .pesos{position:relative;flex:1}
+  .pesos .sign{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-family:"IBM Plex Mono",monospace;font-size:14px;pointer-events:none}
+  .pesos input{padding-left:26px}
+
+  input[type="range"]{
+    -webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:999px;
+    background:linear-gradient(to right,var(--accent) var(--fill,50%),var(--line) var(--fill,50%));
+    outline-offset:6px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:19px;height:19px;border-radius:50%;
+    background:var(--surface);border:2px solid var(--accent);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25);
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:19px;height:19px;border-radius:50%;background:var(--surface);
+    border:2px solid var(--accent);cursor:pointer;
+  }
+  .slider-val{min-width:44px;text-align:right;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+
+  select{
+    font-family:inherit;font-size:14px;background:var(--surface-2);color:var(--ink);
+    border:1px solid var(--line-strong);border-radius:9px;padding:9px 11px;flex:1;cursor:pointer;
+  }
+
+  /* segmented toggle */
+  .seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:9px;padding:3px;gap:3px}
+  .seg button{
+    border:0;background:transparent;color:var(--ink-soft);font-family:inherit;font-size:12.5px;font-weight:600;
+    padding:6px 12px;border-radius:6px;cursor:pointer;
+  }
+  .seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+
+  .divider{height:1px;background:var(--line);margin:18px 0}
+
+  /* reference table */
+  table.ref{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.ref caption{text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:8px}
+  table.ref th, table.ref td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line)}
+  table.ref th:first-child, table.ref td:first-child{text-align:left}
+  table.ref thead th{color:var(--ink-faint);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  table.ref td.val{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;cursor:pointer;border-radius:4px}
+  table.ref td.val:hover{background:var(--accent-soft);color:var(--accent-ink)}
+  table.ref td.val.on{background:var(--accent);color:#fff}
+  .ref-note{font-size:11.5px;color:var(--ink-faint);margin:10px 0 0}
+
+  /* KPI hero */
+  .headline{padding:22px 20px 20px;border-bottom:1px solid var(--line)}
+  .headline .cost-label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin:0 0 4px}
+  .cost-big{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:clamp(30px,6vw,46px);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .cost-of{color:var(--ink-faint);font-size:14px;margin-top:6px;font-family:"IBM Plex Mono",monospace}
+
+  .bar-track{height:12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);margin-top:16px;overflow:hidden;position:relative}
+  .bar-fill{height:100%;border-radius:999px;transition:width .35s cubic-bezier(.4,0,.2,1),background .3s;width:0%}
+  .bar-100{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink-faint);opacity:.5}
+  .bar-legend{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-faint);margin-top:7px;font-family:"IBM Plex Mono",monospace}
+
+  .status{
+    display:inline-flex;align-items:center;gap:8px;margin-top:16px;
+    padding:9px 14px;border-radius:10px;font-size:13.5px;font-weight:600;
+  }
+  .status .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .status.ok{background:var(--good-soft);color:var(--good)} .status.ok .dot{background:var(--good)}
+  .status.warn{background:var(--warn-soft);color:var(--warn)} .status.warn .dot{background:var(--warn)}
+  .status.crit{background:var(--crit-soft);color:var(--crit)} .status.crit .dot{background:var(--crit)}
+  .status .amt{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+
+  /* metric grid */
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+  .metric{background:var(--surface);padding:15px 18px}
+  .metric .k{font-size:11.5px;color:var(--ink-faint);font-weight:600;letter-spacing:.02em;margin:0 0 5px;display:flex;align-items:center;gap:6px}
+  .metric .v{font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+  .metric .u{font-size:12px;color:var(--ink-faint);font-weight:400;margin-left:3px;font-family:"Public Sans",sans-serif}
+  .metric .note{font-size:11px;color:var(--ink-faint);margin-top:5px}
+
+  /* per-EE strip */
+  .perEE{padding:16px 20px;border-top:1px solid var(--line);background:var(--surface-2)}
+  .perEE h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin:0 0 12px}
+  .perEE .line{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;font-size:13.5px;border-bottom:1px dotted var(--line)}
+  .perEE .line:last-child{border-bottom:0}
+  .perEE .line .lbl{color:var(--ink-soft)}
+  .perEE .line .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-weight:500}
+
+  /* presets */
+  .presets{display:flex;flex-wrap:wrap;gap:8px}
+  .preset{
+    border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);
+    border-radius:10px;padding:9px 13px;cursor:pointer;font-family:inherit;text-align:left;flex:1;min-width:150px;
+  }
+  .preset:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .preset .pt{font-weight:600;font-size:13px;display:block}
+  .preset .pd{font-size:11.5px;color:var(--ink-faint);margin-top:2px}
+
+  /* group cards (differentiated allocation) */
+  .gcard{border:1px solid var(--line);border-radius:11px;padding:12px 13px;margin-bottom:10px;background:var(--surface-2)}
+  .gcard .ghd{display:flex;gap:8px;align-items:center;margin-bottom:11px}
+  .gcard .ghd .gname{flex:1;font-family:inherit;font-size:13.5px;font-weight:600;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:6px 9px}
+  .gcard .gdel{flex:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-faint);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;line-height:1;padding:0}
+  .gcard .gdel:hover{border-color:var(--crit);color:var(--crit)}
+  .gcard .gdel:disabled{opacity:.35;cursor:not-allowed}
+  .ggrid{display:grid;grid-template-columns:1fr 1fr;gap:9px 10px}
+  .ggrid .gf label{display:block;font-size:10.5px;color:var(--ink-faint);font-weight:600;margin-bottom:3px;letter-spacing:.01em}
+  .ggrid .gf input{width:100%;font-family:"IBM Plex Mono",monospace;font-size:13.5px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);border-radius:7px;padding:6px 8px;font-variant-numeric:tabular-nums}
+  .gcalc{display:flex;justify-content:space-between;gap:10px;margin-top:11px;padding-top:9px;border-top:1px dotted var(--line);font-size:12px;color:var(--ink-soft)}
+  .gcalc span.n{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--ink)}
+  .btn-add{width:100%;margin-top:2px;border:1px dashed var(--line-strong);background:transparent;color:var(--accent);border-radius:10px;padding:10px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600}
+  .btn-add:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .warn-inline{color:var(--warn);font-weight:600}
+
+  /* directorio: EE selection list */
+  .eefilter{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .eefilter select{flex:1;min-width:130px}
+  .mini-btn{flex:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:12px;cursor:pointer;font-weight:600}
+  .mini-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .eelist{max-height:290px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+  .eerow{display:flex;align-items:center;gap:10px;padding:7px 11px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .eerow:last-child{border-bottom:0}
+  .eerow input{width:16px;height:16px;accent-color:var(--accent);flex:none;cursor:pointer}
+  .eerow label{flex:1;min-width:0;display:flex;align-items:center;gap:9px;cursor:pointer}
+  .eerow .en{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .eerow .ec{font-size:10px;color:var(--ink-faint);flex:none;text-transform:uppercase;letter-spacing:.03em}
+  .eerow .em{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;flex:none;color:var(--ink-soft);min-width:44px;text-align:right}
+  .eecount{font-size:11.5px;color:var(--ink-faint);margin:10px 0 0;text-align:right}
+
+  /* directorio: reparto table */
+  .rep-wrap{max-height:460px;overflow:auto}
+  table.rep{width:100%;border-collapse:collapse;font-size:12px}
+  table.rep th,table.rep td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  table.rep th{position:sticky;top:0;background:var(--surface-2);z-index:1;color:var(--ink-faint);font-size:10px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  table.rep td:first-child,table.rep th:first-child{text-align:left;white-space:normal;min-width:150px}
+  table.rep td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+  table.rep td .rc{font-size:10px;color:var(--ink-faint);display:block}
+  table.rep tbody tr:hover td{background:var(--accent-soft)}
+  table.rep tfoot td{position:sticky;bottom:0;background:var(--surface-2);font-weight:700;border-top:2px solid var(--line-strong)}
+  .hinput{width:62px;font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);border-radius:6px;padding:4px 6px;text-align:right;font-variant-numeric:tabular-nums}
+  .hinput:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .cart-rm{border:1px solid var(--line);background:var(--surface);color:var(--ink-faint);border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:15px;line-height:1;padding:0}
+  .cart-rm:hover{border-color:var(--crit);color:var(--crit)}
+  .subhead{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin:0 0 11px}
+  .mixgrid{display:flex;flex-direction:column;gap:9px;margin-bottom:4px}
+  .mixrow{display:flex;align-items:center;gap:10px}
+  .mixrow label{flex:1;font-size:13.5px;color:var(--ink-soft);font-weight:600}
+  .mixrow input{width:78px;flex:none;font-family:"IBM Plex Mono",monospace;font-size:14px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:7px 9px;text-align:right;font-variant-numeric:tabular-nums}
+  .mixrow .mixpct{color:var(--ink-faint);font-size:13px;width:12px}
+  .mixrow .mixval{color:var(--ink-faint);font-size:12px;min-width:64px;text-align:right;font-variant-numeric:tabular-nums}
+  .dir-actions{display:flex;gap:8px;margin:12px 0 0}
+  .dir-actions .mini-btn{flex:1;text-align:center}
+
+  footer.foot{margin-top:30px;padding-top:20px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:12px;max-width:75ch}
+  footer.foot strong{color:var(--ink-soft)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px 16px;margin:0 0 14px;padding:0;list-style:none;font-size:12.5px;color:var(--ink-soft)}
+  .chips li{display:flex;align-items:center;gap:6px}
+  .chips b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-weight:500}
+</style>
+
+<style>
+  html,body{margin:0}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+  .hub-back{display:block;background:#0b3d6b;color:#fff;text-decoration:none;font:600 13px/1.3 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:8px 20px;letter-spacing:.2px}
+  .hub-back:hover{background:#0a3155}
+</style>
+</head>
+<body>
+<a class="hub-back" href="index.html">← Volver a los visores</a>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">SLEP Petorca · Estudios y Monitoreo</p>
+      <h1>Simulador de talleres extraescolares</h1>
+      <p class="sub">Ajusta el fondo, el valor hora y el diseño del programa para ver, en vivo, cuánto cuesta la propuesta, cuánto presupuesto queda y qué cobertura alcanza en la red de establecimientos.</p>
+    </div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Cambiar tema">
+      <span id="themeIcon">◑</span><span id="themeTxt">Tema</span>
+    </button>
+  </header>
+
+  <ul class="chips">
+    <li>Destino exclusivo: <b>remuneración de talleristas</b></li>
+    <li>No incluye materiales ni transporte</li>
+    <li>Ejecución: <b>oct — 15 dic</b></li>
+  </ul>
+
+  <div class="grid">
+    <!-- ============ CONTROLES ============ -->
+    <div class="controls-col">
+      <section class="panel">
+        <div class="panel-hd"><h2>Parámetros del fondo</h2><span class="idx">Base</span></div>
+        <div class="panel-bd">
+          <div class="field">
+            <label for="presupuesto">Presupuesto disponible</label>
+            <div class="inrow">
+              <span class="pesos"><span class="sign">$</span><input type="number" id="presupuesto" class="wide" value="41000000" min="0" step="100000"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="ee">Establecimientos a cubrir <span class="hint" id="eeHint">14 por defecto · tope 55</span></label>
+            <div class="inrow">
+              <input type="range" id="eeRange" min="1" max="55" value="14">
+              <span class="slider-val tnum" id="eeVal">14</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="semanas">Semanas de ejecución <span class="hint">duración referencial: 10</span></label>
+            <div class="inrow">
+              <input type="range" id="semRange" min="1" max="16" value="10">
+              <span class="slider-val tnum" id="semVal">10</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-hd"><h2>Valor hora</h2><span class="idx">Tarifa</span></div>
+        <div class="panel-bd">
+          <div class="field">
+            <label>Fuente del valor
+              <span class="seg" role="group" aria-label="Fuente del valor hora">
+                <button type="button" id="modeRef" aria-pressed="true">Referencia</button>
+                <button type="button" id="modeMix" aria-pressed="false">Mezcla</button>
+                <button type="button" id="modeCustom" aria-pressed="false">Personalizado</button>
+              </span>
+            </label>
+          </div>
+
+          <div id="refBox">
+            <div class="inrow" style="gap:10px;margin-bottom:14px">
+              <select id="categoria" aria-label="Categoría">
+                <option value="prof">Profesional</option>
+                <option value="tec">Técnico</option>
+                <option value="ofi">Oficio</option>
+              </select>
+              <select id="tramo" aria-label="Tramo de horas">
+                <option value="0">1 a 15 horas</option>
+                <option value="1">16 a 30 horas</option>
+                <option value="2" selected>31 a 44 horas</option>
+              </select>
+            </div>
+            <table class="ref" id="refTable">
+              <caption>Valor hora de referencia (haz clic para usar)</caption>
+              <thead><tr><th>Categoría</th><th>1–15 h</th><th>16–30 h</th><th>31–44 h</th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <p class="ref-note">El tramo más alto (31–44 h) tiene el valor hora más bajo: financia más horas con el mismo monto.</p>
+          </div>
+
+          <div id="mezclaBox" hidden>
+            <p class="ref-note" style="margin-top:0">Combina categorías cuando un taller no lo cubre una sola persona. Elige un perfil de partida o ajusta los % a mano; se calcula el valor hora promedio ponderado.</p>
+            <div class="field">
+              <label for="mixPreset">Perfil de mezcla</label>
+              <div class="inrow"><select id="mixPreset" aria-label="Perfil de mezcla"></select></div>
+            </div>
+            <div class="inrow" style="gap:10px;margin-bottom:14px">
+              <select id="mixTramo" aria-label="Tramo de horas de la mezcla">
+                <option value="0">Tramo 1 a 15 h</option>
+                <option value="1">Tramo 16 a 30 h</option>
+                <option value="2" selected>Tramo 31 a 44 h</option>
+              </select>
+            </div>
+            <div class="mixgrid">
+              <div class="mixrow"><label for="mixP">Profesional</label><input type="number" id="mixP" min="0" max="100" step="5" value="50"><span class="mixpct">%</span><span class="mixval mono" id="mixvalP"></span></div>
+              <div class="mixrow"><label for="mixT">Técnico</label><input type="number" id="mixT" min="0" max="100" step="5" value="30"><span class="mixpct">%</span><span class="mixval mono" id="mixvalT"></span></div>
+              <div class="mixrow"><label for="mixO">Oficio</label><input type="number" id="mixO" min="0" max="100" step="5" value="20"><span class="mixpct">%</span><span class="mixval mono" id="mixvalO"></span></div>
+            </div>
+            <p class="ref-note" id="mixNote"></p>
+          </div>
+
+          <div id="customBox" hidden>
+            <div class="field">
+              <label for="customVal">Valor hora a usar <span class="hint">valor fijo que tú defines</span></label>
+              <div class="inrow">
+                <span class="pesos"><span class="sign">$</span><input type="number" id="customVal" class="wide" value="6000" min="1" step="100"></span>
+              </div>
+            </div>
+            <p class="ref-note">Para un valor único que ya tengas definido, sin desglose por categoría.</p>
+          </div>
+
+          <div class="divider"></div>
+          <div class="field" style="margin-bottom:0">
+            <label style="margin-bottom:2px">Valor hora aplicado</label>
+            <div class="mono tnum" id="valorAplicado" style="font-size:20px;font-weight:600;color:var(--accent)">$8.295</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-hd" style="align-items:center;flex-wrap:wrap">
+          <h2>Diseño del programa</h2>
+          <span class="seg" role="group" aria-label="Modo de asignación">
+            <button type="button" id="dmodeParejo" aria-pressed="true">Parejo</button>
+            <button type="button" id="dmodeGrupos" aria-pressed="false">Grupos</button>
+            <button type="button" id="dmodeDir" aria-pressed="false">Directorio</button>
+          </span>
+        </div>
+        <div class="panel-bd">
+          <div id="parejoBox">
+            <div class="field">
+              <label for="tallRange">Talleres por establecimiento <span class="slider-val tnum" id="tallVal" style="min-width:0">5</span></label>
+              <input type="range" id="tallRange" min="1" max="12" value="5">
+            </div>
+            <div class="field">
+              <label for="horasRange">Horas semanales por taller <span class="slider-val tnum" id="horasVal" style="min-width:0">6</span></label>
+              <input type="range" id="horasRange" min="1" max="12" value="6">
+            </div>
+            <div class="perEE" style="border-radius:10px;border:1px solid var(--line);margin-top:4px">
+              <h3>Carga por establecimiento</h3>
+              <div class="line"><span class="lbl">Horas semanales por establecimiento</span><span class="num" id="dHsemEE">30</span></div>
+              <div class="line"><span class="lbl">Horas totales por establecimiento</span><span class="num" id="dHtotEE">300</span></div>
+            </div>
+          </div>
+
+          <div id="gruposBox" hidden>
+            <p class="ref-note" style="margin-top:0">Agrupa los establecimientos por tamaño, ruralidad o prioridad. Cada grupo lleva su propia carga y valor hora. En este modo, la cobertura la definen los grupos.</p>
+            <div id="gruposList"></div>
+            <button type="button" id="addGrupo" class="btn-add">+ Agregar grupo</button>
+            <div class="perEE" style="border-radius:10px;border:1px solid var(--line);margin-top:14px">
+              <h3>Totales de la asignación</h3>
+              <div class="line"><span class="lbl">Establecimientos cubiertos</span><span class="num" id="gTotEE">14</span></div>
+              <div class="line"><span class="lbl">Horas totales del programa</span><span class="num" id="gTotH">3.420 h</span></div>
+              <div class="line"><span class="lbl">Valor hora promedio ponderado</span><span class="num" id="gAvgVal">$7.973</span></div>
+            </div>
+          </div>
+
+          <div id="directorioBox" hidden>
+            <p class="ref-note" style="margin-top:0">Arma un carrito con la matrícula real de cada establecimiento (SIGE, niveles y cursos, ago 2026): 55 EE, 8.081 alumnos. Marca los que entran e imputa las horas semanales a mano en la tabla de la derecha; el monto por hora es el mismo sea urbano o rural.</p>
+            <p class="subhead">1 · Establecimientos en el carrito</p>
+            <div class="eefilter">
+              <select id="comunaFilter" aria-label="Filtrar por comuna"><option value="">Todas las comunas</option></select>
+              <select id="areaFilter" aria-label="Filtrar por área"><option value="">Urbano y rural</option><option value="Urbano">Urbano</option><option value="Rural">Rural</option></select>
+              <select id="tipoFilter" aria-label="Filtrar por tipo"><option value="">Todos los tipos</option></select>
+            </div>
+            <div class="eefilter" style="margin-top:-2px">
+              <button type="button" class="mini-btn" id="selAll" style="flex:1">Marcar filtrados</button>
+              <button type="button" class="mini-btn" id="selNone" style="flex:1">Desmarcar filtrados</button>
+            </div>
+            <div class="eelist" id="eelist"></div>
+            <p class="eecount" id="eecount"></p>
+
+            <div class="divider"></div>
+            <p class="subhead">2 · Prellenar horas (opcional)</p>
+            <div class="field">
+              <label>Criterio de sugerencia
+                <span class="seg" role="group" aria-label="Criterio de sugerencia">
+                  <button type="button" id="critMat" aria-pressed="true">Matrícula</button>
+                  <button type="button" id="critCur" aria-pressed="false">Cursos</button>
+                  <button type="button" id="critPar" aria-pressed="false">Parejo</button>
+                </span>
+              </label>
+            </div>
+            <div class="field">
+              <label for="intRange"><span id="intLabel">Horas semanales por cada 100 alumnos</span> <span class="slider-val tnum" id="intVal" style="min-width:0">5</span></label>
+              <input type="range" id="intRange" min="1" max="20" step="1" value="5">
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label for="pisoRange">Piso mínimo de horas semanales por EE <span class="slider-val tnum" id="pisoVal" style="min-width:0">2</span></label>
+              <input type="range" id="pisoRange" min="0" max="12" step="1" value="2">
+            </div>
+            <div class="dir-actions">
+              <button type="button" class="mini-btn" id="applyRule">↧ Volcar al carrito</button>
+              <button type="button" class="mini-btn" id="clearRule">Vaciar horas</button>
+            </div>
+            <p class="ref-note">«Volcar» rellena las horas de los establecimientos marcados con la sugerencia; luego puedes editar cada uno a mano.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ RESULTADOS ============ -->
+    <div class="results-col">
+      <section class="panel">
+        <div class="headline">
+          <p class="cost-label">Costo total del diseño</p>
+          <div class="cost-big" id="costoBig">$34.839.000</div>
+          <div class="cost-of">de <span id="presRef">$41.000.000</span> disponibles · <span id="pctExec">85%</span> del fondo</div>
+          <div class="bar-track"><div class="bar-fill" id="barFill"></div><div class="bar-100" id="bar100"></div></div>
+          <div class="bar-legend"><span>0</span><span id="barMid">presupuesto</span></div>
+          <div class="status ok" id="statusPill">
+            <span class="dot"></span><span id="statusTxt">Saldo disponible</span>&nbsp;<span class="amt" id="statusAmt">$6.161.000</span>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <p class="k">Horas totales del programa</p>
+            <div class="v tnum"><span id="mHtot">4.200</span><span class="u">h</span></div>
+            <p class="note" id="mHtotNote">14 EE × 300 h</p>
+          </div>
+          <div class="metric">
+            <p class="k">Horas financiables (máx.)</p>
+            <div class="v tnum"><span id="mHmax">4.943</span><span class="u">h</span></div>
+            <p class="note">con el fondo y este valor hora</p>
+          </div>
+          <div class="metric">
+            <p class="k">Costo por establecimiento</p>
+            <div class="v tnum" id="mCostoEE">$2.488.500</div>
+            <p class="note">promedio, si es parejo</p>
+          </div>
+          <div class="metric">
+            <p class="k">Costo por semana</p>
+            <div class="v tnum" id="mCostoSem">$3.483.900</div>
+            <p class="note" id="mCostoSemNote">a lo largo de 10 semanas</p>
+          </div>
+        </div>
+
+        <div class="perEE">
+          <h3>Lectura rápida</h3>
+          <div class="line"><span class="lbl" id="rTalleresLbl">Talleres en toda la red</span><span class="num" id="rTalleres">70</span></div>
+          <div class="line"><span class="lbl">Jornada semanal por establecimiento</span><span class="num" id="rJornada">30 h</span></div>
+          <div class="line"><span class="lbl">Equivale a jornadas completas (44 h)</span><span class="num" id="rJC">9,5</span></div>
+        </div>
+      </section>
+
+      <section class="panel" id="repartoPanel" hidden>
+        <div class="panel-hd" style="align-items:center"><h2>Carrito de horas por establecimiento</h2><span class="idx" id="repCount">55 EE</span></div>
+        <div class="rep-wrap">
+          <table class="rep">
+            <thead><tr><th>Establecimiento</th><th>Mat.</th><th>h/sem</th><th>h total</th><th>Costo</th><th aria-label="Quitar"></th></tr></thead>
+            <tbody id="repBody"></tbody>
+            <tfoot><tr><td>Total</td><td class="n" id="repFmat">0</td><td class="n" id="repFsem">0</td><td class="n" id="repFtot">0</td><td class="n" id="repFcosto">$0</td><td></td></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" id="resumenPanel" hidden>
+        <div class="panel-hd" style="align-items:center;flex-wrap:wrap">
+          <h2>Resumen del reparto</h2>
+          <span class="seg" role="group" aria-label="Agrupar resumen">
+            <button type="button" id="grpComuna" aria-pressed="true">Comuna</button>
+            <button type="button" id="grpArea" aria-pressed="false">Área</button>
+            <button type="button" id="grpTipo" aria-pressed="false">Tipo</button>
+          </span>
+        </div>
+        <div class="rep-wrap">
+          <table class="rep">
+            <thead><tr><th id="grpColHd">Comuna</th><th>EE</th><th>h total</th><th>Costo</th><th>% costo</th></tr></thead>
+            <tbody id="resBody"></tbody>
+            <tfoot><tr><td>Total</td><td class="n" id="resFee">0</td><td class="n" id="resFh">0</td><td class="n" id="resFc">$0</td><td class="n">100%</td></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-hd"><h2>Escenarios de partida</h2><span class="idx">Presets</span></div>
+        <div class="panel-bd">
+          <div class="presets" id="presets"></div>
+          <p class="ref-note">Cargan una configuración base que luego puedes ajustar con los controles.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <p style="margin:0 0 8px"><strong>Cómo se calcula.</strong> Costo total = horas totales × valor hora, donde las horas totales = talleres por establecimiento × horas semanales × semanas × N° de establecimientos. Las horas financiables máximas = presupuesto ÷ valor hora.</p>
+    <p style="margin:0 0 8px"><strong>Modo Directorio (carrito).</strong> Marca los establecimientos e imputa a mano las horas semanales de cada uno; el carrito suma las horas, el costo (mismo valor hora sea urbano o rural) y el saldo contra el presupuesto. El botón «Volcar al carrito» prellena las horas con una sugerencia por matrícula, cursos o parejo, con piso mínimo, que luego puedes editar colegio a colegio. Datos: matrícula real SIGE «Niveles y cursos», ago 2026; 55 EE, 8.081 alumnos. Fuente: <a href="https://monitoreo-petorca.github.io/visores-slep-petorca/" style="color:var(--accent)">hub de visores SLEP Petorca</a>.</p>
+    <p style="margin:0"><strong>Referencia mensual (44 h):</strong> Profesional $1.459.980 · Técnico $677.000 · Oficio $372.502. Valores hora y montos según el análisis preliminar de financiamiento; simulador para dimensionar, no para comprometer gasto.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var CLP = new Intl.NumberFormat('es-CL',{maximumFractionDigits:0});
+  var CLP1 = new Intl.NumberFormat('es-CL',{maximumFractionDigits:1});
+  var peso = function(n){ return '$' + CLP.format(Math.round(n)); };
+  var $ = function(id){ return document.getElementById(id); };
+
+  // reference hourly values [1-15, 16-30, 31-44]
+  var REF = {
+    prof:{ label:'Profesional', v:[15554,10369,8295] },
+    tec: { label:'Técnico',     v:[7212,4808,3847] },
+    ofi: { label:'Oficio',      v:[6099,4066,3253] }
+  };
+
+  // Directorio real SLEP Petorca — matrícula y cursos SIGE (niveles y cursos), ago 2026. 55 EE.
+  var EST = [{"rbd":"1167","nombre":"Liceo y Escuela Municipal","comuna":"Cabildo","area":"Urbano","tipo":"Liceo","mat":550,"cursos":21},{"rbd":"12336","nombre":"Liceo Bicentenario T-P de Minería","comuna":"Cabildo","area":"Urbano","tipo":"Liceo","mat":468,"cursos":14},{"rbd":"14479","nombre":"Escuela Básica Municipal Araucaria","comuna":"Cabildo","area":"Urbano","tipo":"Escuela","mat":341,"cursos":18},{"rbd":"1168","nombre":"Escuela Hans Wenke Mengers","comuna":"Cabildo","area":"Urbano","tipo":"Escuela","mat":320,"cursos":17},{"rbd":"1180","nombre":"Escuela Básica G-45","comuna":"Cabildo","area":"Rural","tipo":"Escuela","mat":233,"cursos":10},{"rbd":"40242","nombre":"Colegio Bicentenario","comuna":"Cabildo","area":"Urbano","tipo":"Escuela","mat":225,"cursos":8},{"rbd":"1178","nombre":"Escuela Básica La Viña","comuna":"Cabildo","area":"Rural","tipo":"Escuela","mat":164,"cursos":10},{"rbd":"1170","nombre":"Escuela Básica Valle de Artificio","comuna":"Cabildo","area":"Urbano","tipo":"Escuela","mat":131,"cursos":10},{"rbd":"1173","nombre":"Escuela Ester Silva Somarriva Bartolillo","comuna":"Cabildo","area":"Rural","tipo":"Escuela","mat":112,"cursos":10},{"rbd":"1174","nombre":"Escuela Básica San Lorenzo","comuna":"Cabildo","area":"Rural","tipo":"Escuela","mat":94,"cursos":10},{"rbd":"11196","nombre":"CRAD Paul Percy Harris","comuna":"Cabildo","area":"Urbano","tipo":"Escuela Especial","mat":50,"cursos":13},{"rbd":"1176","nombre":"Escuela Pablo Neruda","comuna":"Cabildo","area":"Rural","tipo":"Escuela","mat":36,"cursos":7},{"rbd":"1171","nombre":"Escuela Básica La Frontera de Alicahue","comuna":"Cabildo","area":"Rural","tipo":"Escuela","mat":13,"cursos":6},{"rbd":"1182","nombre":"Escuela Básica G-47","comuna":"Cabildo","area":"Rural","tipo":"Escuela","mat":8,"cursos":3},{"rbd":"11206","nombre":"Escuela Municipal Las Puertas","comuna":"Cabildo","area":"Rural","tipo":"Escuela","mat":8,"cursos":4},{"rbd":"1181","nombre":"Escuela Básica Los Ángeles","comuna":"Cabildo","area":"Rural","tipo":"Escuela","mat":6,"cursos":4},{"rbd":"1123","nombre":"Escuela Gabriela Mistral","comuna":"La Ligua","area":"Urbano","tipo":"Colegio","mat":742,"cursos":23},{"rbd":"11199","nombre":"Colegio Luis Cruz Martínez","comuna":"La Ligua","area":"Urbano","tipo":"Colegio","mat":638,"cursos":21},{"rbd":"1121","nombre":"Liceo Pulmahue de La Ligua","comuna":"La Ligua","area":"Urbano","tipo":"Liceo","mat":553,"cursos":22},{"rbd":"1122","nombre":"Escuela República de Venezuela","comuna":"La Ligua","area":"Urbano","tipo":"Escuela","mat":315,"cursos":10},{"rbd":"1128","nombre":"Escuela Comunidades de Valle Hermoso","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":280,"cursos":10},{"rbd":"1132","nombre":"Escuela Básica Poza Verde","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":166,"cursos":8},{"rbd":"1125","nombre":"Escuela Diego Portales","comuna":"La Ligua","area":"Urbano","tipo":"Escuela","mat":135,"cursos":10},{"rbd":"1133","nombre":"Esc. Básica Las Casas de Huaquén","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":72,"cursos":6},{"rbd":"1120","nombre":"Centro de Educación de Adultos La Ligua","comuna":"La Ligua","area":"Urbano","tipo":"Liceo","mat":66,"cursos":2},{"rbd":"1136","nombre":"Escuela Básica Puyancón","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":63,"cursos":8},{"rbd":"1140","nombre":"Escuela Básica Carlos Ariztía Ruiz","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":60,"cursos":6},{"rbd":"1135","nombre":"Escuela Básica Los Molles","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":55,"cursos":6},{"rbd":"1145","nombre":"Escuela Enrique Doll Rojas","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":51,"cursos":8},{"rbd":"1142","nombre":"Escuela La Canela","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":45,"cursos":8},{"rbd":"1139","nombre":"Escuela Ministro Gómez Millas","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":38,"cursos":8},{"rbd":"1144","nombre":"Escuela Básica Pichicuy","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":37,"cursos":6},{"rbd":"1126","nombre":"Escuela Especial Sol Naciente","comuna":"La Ligua","area":"Urbano","tipo":"Escuela Especial","mat":34,"cursos":3},{"rbd":"1130","nombre":"Esc. Básica Los Hornos de Huaquén","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":34,"cursos":6},{"rbd":"1143","nombre":"Escuela Básica Quebradilla","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":32,"cursos":6},{"rbd":"1131","nombre":"Esc. Básica Casas Viejas de Longotoma","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":30,"cursos":6},{"rbd":"1137","nombre":"Escuela Básica Hortencia Powell S.","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":23,"cursos":6},{"rbd":"1134","nombre":"Carmen Sánchez Araya","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":16,"cursos":6},{"rbd":"1129","nombre":"Escuela Ángel Menay","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":11,"cursos":5},{"rbd":"12299","nombre":"Escuela Básica Anexo Pichilemu","comuna":"La Ligua","area":"Rural","tipo":"Escuela","mat":7,"cursos":4},{"rbd":"1191","nombre":"Escuela Papudo","comuna":"Papudo","area":"Urbano","tipo":"Escuela","mat":300,"cursos":10},{"rbd":"1192","nombre":"Escuela Rural Pullally","comuna":"Papudo","area":"Rural","tipo":"Escuela","mat":300,"cursos":10},{"rbd":"40099","nombre":"Liceo Técnico Profesional Papudo","comuna":"Papudo","area":"Urbano","tipo":"Liceo","mat":194,"cursos":8},{"rbd":"1148","nombre":"Liceo José Manuel Borgoño Núñez","comuna":"Petorca","area":"Urbano","tipo":"Colegio","mat":421,"cursos":30},{"rbd":"1161","nombre":"Escuela Básica Pedegua","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":170,"cursos":10},{"rbd":"1149","nombre":"Liceo Cordillera","comuna":"Petorca","area":"Rural","tipo":"Colegio","mat":155,"cursos":15},{"rbd":"1147","nombre":"Escuela Fernando García Oldini","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":103,"cursos":10},{"rbd":"1152","nombre":"Escuela Eduardo Frei Montalva","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":68,"cursos":8},{"rbd":"1156","nombre":"Escuela Básica G-24","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":42,"cursos":8},{"rbd":"1157","nombre":"Escuela Básica Los Álamos El Sobrante","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":34,"cursos":8},{"rbd":"1160","nombre":"Escuela Hogar Fronteriza de Chalaco","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":9,"cursos":5},{"rbd":"1150","nombre":"Escuela Básica Neftalí Reyes B.","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":7,"cursos":4},{"rbd":"1158","nombre":"Escuela Básica Benancio Pérez","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":7,"cursos":4},{"rbd":"1151","nombre":"Escuela Básica Villa Santa Ana","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":6,"cursos":4},{"rbd":"1153","nombre":"Escuela Básica El Crucero","comuna":"Petorca","area":"Rural","tipo":"Escuela","mat":3,"cursos":3}];
+
+  var guid = 0;
+  function defaultGrupos(){
+    return [
+      {id:++guid, nombre:'Grandes / urbanas',   count:4, talleres:6, horas:6, valor:8295},
+      {id:++guid, nombre:'Medianas',            count:6, talleres:5, horas:5, valor:8295},
+      {id:++guid, nombre:'Pequeñas / rurales',  count:4, talleres:3, horas:4, valor:6000}
+    ];
+  }
+
+  var state = {
+    mode:'ref',
+    dmode:'parejo',
+    presupuesto:41000000,
+    ee:14, semanas:10,
+    categoria:'prof', tramo:2,
+    custom:6000,
+    mix:{p:50,t:30,o:20}, mixTramo:2,
+    talleres:5, horas:6,
+    grupos: defaultGrupos(),
+    criterio:'mat',
+    intens:{mat:5, cur:1.5, par:8},
+    piso:2,
+    selEE: new Set(EST.map(function(e){ return e.rbd; })),
+    horasEE: {},
+    grp:'comuna'
+  };
+
+  var INTCFG = {
+    mat:{min:1, max:20, step:1,   label:'Horas semanales por cada 100 alumnos'},
+    cur:{min:0.5, max:6, step:0.5, label:'Horas semanales por curso'},
+    par:{min:1, max:30, step:1,   label:'Horas semanales por establecimiento'}
+  };
+
+  // Perfiles de mezcla de categorías [%prof, %téc, %ofi]
+  var MIXPROFILES = [
+    {id:'todo_prof',  label:'Solo profesional',        p:100, t:0,  o:0},
+    {id:'may_prof',   label:'Mayoría profesional',     p:60,  t:30, o:10},
+    {id:'equilibrado',label:'Equilibrado (⅓ / ⅓ / ⅓)', p:34,  t:33, o:33},
+    {id:'may_tec',    label:'Mayoría técnico',          p:20,  t:60, o:20},
+    {id:'may_monit',  label:'Mayoría monitores/oficio', p:20,  t:30, o:50},
+    {id:'tec_ofi',    label:'Técnico + oficio',         p:0,   t:40, o:60},
+    {id:'custom',     label:'Personalizado',            p:null,t:null,o:null}
+  ];
+
+  // build reference table
+  (function(){
+    var tb = $('refTable').querySelector('tbody');
+    var order = ['prof','tec','ofi'];
+    order.forEach(function(key){
+      var tr = document.createElement('tr');
+      var th = document.createElement('td'); th.textContent = REF[key].label; tr.appendChild(th);
+      REF[key].v.forEach(function(val,i){
+        var td = document.createElement('td');
+        td.className = 'val tnum'; td.textContent = CLP.format(val);
+        td.dataset.cat = key; td.dataset.tramo = i;
+        td.setAttribute('role','button'); td.tabIndex = 0;
+        td.addEventListener('click', function(){ pickRef(key,i); });
+        td.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();pickRef(key,i);} });
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  })();
+
+  function pickRef(cat,tramo){
+    state.mode='ref';
+    state.categoria=cat; state.tramo=tramo;
+    setMode('ref');
+    $('categoria').value=cat; $('tramo').value=String(tramo);
+    render();
+  }
+
+  function mixBlend(){
+    var t=state.mixTramo;
+    var p=state.mix.p||0, tt=state.mix.t||0, o=state.mix.o||0, sum=p+tt+o;
+    if(sum<=0) return REF.prof.v[t];
+    return Math.round((p*REF.prof.v[t] + tt*REF.tec.v[t] + o*REF.ofi.v[t])/sum);
+  }
+
+  function valorHora(){
+    if(state.mode==='custom') return Math.max(1, state.custom||0);
+    if(state.mode==='mezcla') return mixBlend();
+    return REF[state.categoria].v[state.tramo];
+  }
+
+  function setMode(m){
+    state.mode=m;
+    $('modeRef').setAttribute('aria-pressed', m==='ref');
+    $('modeMix').setAttribute('aria-pressed', m==='mezcla');
+    $('modeCustom').setAttribute('aria-pressed', m==='custom');
+    $('refBox').hidden = (m!=='ref');
+    $('mezclaBox').hidden = (m!=='mezcla');
+    $('customBox').hidden = (m!=='custom');
+  }
+
+  function populateMixProfiles(){
+    var sel=$('mixPreset');
+    MIXPROFILES.forEach(function(m){
+      var o=document.createElement('option'); o.value=m.id; o.textContent=m.label; sel.appendChild(o);
+    });
+  }
+
+  function matchMixProfile(){
+    for(var i=0;i<MIXPROFILES.length;i++){
+      var m=MIXPROFILES[i];
+      if(m.p===null) continue;
+      if(m.p===state.mix.p && m.t===state.mix.t && m.o===state.mix.o) return m.id;
+    }
+    return 'custom';
+  }
+
+  function updateMixNote(){
+    var t=state.mixTramo;
+    $('mixvalP').textContent='$'+CLP.format(REF.prof.v[t]);
+    $('mixvalT').textContent='$'+CLP.format(REF.tec.v[t]);
+    $('mixvalO').textContent='$'+CLP.format(REF.ofi.v[t]);
+    $('mixPreset').value=matchMixProfile();
+    var sum=(state.mix.p||0)+(state.mix.t||0)+(state.mix.o||0);
+    var note = sum===100
+      ? 'Mezcla: '+(state.mix.p||0)+'% profesional · '+(state.mix.t||0)+'% técnico · '+(state.mix.o||0)+'% oficio'
+      : 'Suma '+sum+'% — se pondera automáticamente';
+    $('mixNote').textContent = note + ' → valor hora ' + peso(mixBlend());
+  }
+
+  function syncMixUI(){
+    $('mixP').value=state.mix.p; $('mixT').value=state.mix.t; $('mixO').value=state.mix.o;
+    $('mixTramo').value=String(state.mixTramo);
+    updateMixNote();
+  }
+
+  function setRangeFill(el){
+    var min=+el.min, max=+el.max, val=+el.value;
+    var pct = max>min ? ((val-min)/(max-min))*100 : 0;
+    el.style.setProperty('--fill', pct+'%');
+  }
+
+  function setDmode(m){
+    state.dmode=m;
+    $('dmodeParejo').setAttribute('aria-pressed', m==='parejo');
+    $('dmodeGrupos').setAttribute('aria-pressed', m==='grupos');
+    $('dmodeDir').setAttribute('aria-pressed', m==='directorio');
+    $('parejoBox').hidden = (m!=='parejo');
+    $('gruposBox').hidden = (m!=='grupos');
+    $('directorioBox').hidden = (m!=='directorio');
+    $('repartoPanel').hidden = (m!=='directorio');
+    $('resumenPanel').hidden = (m!=='directorio');
+    // in group / directorio mode the EE slider is driven by the groups or selection
+    var slaved = (m==='grupos'||m==='directorio');
+    $('eeRange').disabled = slaved;
+    $('eeRange').style.opacity = slaved ? .4 : 1;
+  }
+
+  function populateComunas(){
+    var sel=$('comunaFilter'), seen=[];
+    EST.forEach(function(e){ if(seen.indexOf(e.comuna)<0) seen.push(e.comuna); });
+    seen.sort().forEach(function(c){
+      var o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o);
+    });
+    var st=$('tipoFilter'), seent=[];
+    EST.forEach(function(e){ if(seent.indexOf(e.tipo)<0) seent.push(e.tipo); });
+    seent.sort().forEach(function(t){
+      var o=document.createElement('option'); o.value=t; o.textContent=t; st.appendChild(o);
+    });
+  }
+
+  function syncCriterioUI(){
+    [['Mat','mat'],['Cur','cur'],['Par','par']].forEach(function(p){
+      $('crit'+p[0]).setAttribute('aria-pressed', state.criterio===p[1]);
+    });
+    var cfg=INTCFG[state.criterio], r=$('intRange');
+    r.min=cfg.min; r.max=cfg.max; r.step=cfg.step; r.value=state.intens[state.criterio];
+    $('intLabel').textContent=cfg.label;
+    $('intVal').textContent=state.intens[state.criterio];
+    setRangeFill(r);
+  }
+
+  function syncGrpUI(){
+    $('grpComuna').setAttribute('aria-pressed', state.grp==='comuna');
+    $('grpArea').setAttribute('aria-pressed', state.grp==='area');
+    $('grpTipo').setAttribute('aria-pressed', state.grp==='tipo');
+  }
+
+  function eePassesFilter(e){
+    var f=$('comunaFilter').value, fa=$('areaFilter').value, ft=$('tipoFilter').value;
+    if(f && e.comuna!==f) return false;
+    if(fa && e.area!==fa) return false;
+    if(ft && e.tipo!==ft) return false;
+    return true;
+  }
+
+  function buildEEList(){
+    var list=$('eelist'); list.innerHTML='';
+    EST.forEach(function(e){
+      if(!eePassesFilter(e)) return;
+      var row=document.createElement('div'); row.className='eerow';
+      var cb=document.createElement('input'); cb.type='checkbox'; cb.id='ee_'+e.rbd; cb.checked=state.selEE.has(e.rbd);
+      cb.addEventListener('change', function(){ if(this.checked) state.selEE.add(e.rbd); else state.selEE.delete(e.rbd); buildCart(); });
+      var lab=document.createElement('label'); lab.htmlFor='ee_'+e.rbd;
+      lab.innerHTML='<span class="en">'+esc(e.nombre)+'</span><span class="ec">'+esc(e.comuna)+'</span>';
+      var mat=document.createElement('span'); mat.className='em'; mat.textContent=CLP.format(e.mat);
+      row.appendChild(cb); row.appendChild(lab); row.appendChild(mat);
+      list.appendChild(row);
+    });
+    var nsel=0, msel=0;
+    EST.forEach(function(e){ if(state.selEE.has(e.rbd)){ nsel++; msel+=e.mat; } });
+    $('eecount').textContent = nsel+' de 55 seleccionados · '+CLP.format(msel)+' alumnos';
+    render();
+  }
+
+  function selFiltered(on){
+    EST.forEach(function(e){ if(!eePassesFilter(e)) return; if(on) state.selEE.add(e.rbd); else state.selEE.delete(e.rbd); });
+    buildEEList(); buildCart();
+  }
+
+  function renderResumen(){
+    var vh=valorHora(), key=state.grp, groups={}, order=[];
+    EST.forEach(function(e){
+      if(!state.selEE.has(e.rbd)) return;
+      var g = key==='comuna' ? e.comuna : (key==='area' ? e.area : e.tipo);
+      if(!groups[g]){ groups[g]={ee:0,h:0,c:0}; order.push(g); }
+      var ht=(state.horasEE[e.rbd]||0)*state.semanas;
+      groups[g].ee++; groups[g].h+=ht; groups[g].c+=ht*vh;
+    });
+    var totC=0,totH=0,totEE=0;
+    order.forEach(function(g){ totC+=groups[g].c; totH+=groups[g].h; totEE+=groups[g].ee; });
+    order.sort(function(a,b){ return groups[b].c-groups[a].c; });
+    var tb=$('resBody'); tb.innerHTML='';
+    if(order.length===0){ tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--ink-faint);padding:16px">Sin establecimientos en el carrito</td></tr>'; }
+    order.forEach(function(g){
+      var gr=groups[g], pct = totC>0 ? gr.c/totC*100 : 0;
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+esc(g)+'</td><td class="n">'+gr.ee+'</td><td class="n">'+CLP.format(gr.h)+'</td><td class="n">'+peso(gr.c)+'</td><td class="n">'+CLP.format(pct)+'%</td>';
+      tb.appendChild(tr);
+    });
+    $('resFee').textContent=CLP.format(totEE);
+    $('resFh').textContent=CLP.format(totH);
+    $('resFc').textContent=peso(totC);
+    $('grpColHd').textContent = key==='comuna' ? 'Comuna' : (key==='area' ? 'Área' : 'Tipo');
+  }
+
+  function ruleHoras(e){
+    var intens=state.intens[state.criterio];
+    var w = state.criterio==='mat' ? e.mat/100 : (state.criterio==='cur' ? e.cursos : 1);
+    var raw = state.criterio==='par' ? intens : intens*w;
+    return Math.max(state.piso, Math.round(raw));
+  }
+
+  function suggestHoras(){
+    EST.forEach(function(e){ if(state.selEE.has(e.rbd)) state.horasEE[e.rbd]=ruleHoras(e); });
+    buildCart();
+  }
+  function clearHoras(){
+    EST.forEach(function(e){ if(state.selEE.has(e.rbd)) state.horasEE[e.rbd]=0; });
+    buildCart();
+  }
+
+  // build the cart rows (structure). Called when the SET of selected EE changes.
+  function buildCart(){
+    var tb=$('repBody'); tb.innerHTML='';
+    var sel=EST.filter(function(e){ return state.selEE.has(e.rbd); }).sort(function(a,b){ return b.mat-a.mat; });
+    if(sel.length===0){
+      tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--ink-faint);padding:20px">Marca establecimientos en la lista para agregarlos al carrito</td></tr>';
+    }
+    sel.forEach(function(e){
+      var tr=document.createElement('tr'); tr.dataset.id=e.rbd;
+      var td1=document.createElement('td');
+      td1.innerHTML='<span>'+esc(e.nombre)+'</span><span class="rc">'+esc(e.comuna)+' · '+esc(e.area)+'</span>';
+      var td2=document.createElement('td'); td2.className='n'; td2.textContent=CLP.format(e.mat);
+      var td3=document.createElement('td');
+      var inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.step='1'; inp.className='hinput';
+      inp.value=state.horasEE[e.rbd]||0; inp.setAttribute('aria-label','Horas semanales '+e.nombre);
+      inp.addEventListener('input', function(){ var v=+this.value; if(isNaN(v)||v<0) v=0; state.horasEE[e.rbd]=v; render(); });
+      td3.appendChild(inp);
+      var td4=document.createElement('td'); td4.className='n'; td4.setAttribute('data-ht','');
+      var td5=document.createElement('td'); td5.className='n'; td5.setAttribute('data-c','');
+      var td6=document.createElement('td');
+      var rm=document.createElement('button'); rm.type='button'; rm.className='cart-rm'; rm.textContent='×'; rm.title='Quitar del carrito';
+      rm.addEventListener('click', function(){ state.selEE.delete(e.rbd); buildEEList(); buildCart(); });
+      td6.appendChild(rm);
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tr.appendChild(td5); tr.appendChild(td6);
+      tb.appendChild(tr);
+    });
+    render();
+  }
+
+  function buildGrupos(){
+    var list=$('gruposList');
+    list.innerHTML='';
+    state.grupos.forEach(function(g){
+      var card=document.createElement('div');
+      card.className='gcard'; card.dataset.id=g.id;
+      var fields=[
+        ['count','N° establecimientos'],
+        ['talleres','Talleres por EE'],
+        ['horas','Horas semanales/taller'],
+        ['valor','Valor hora ($)']
+      ];
+      var html='<div class="ghd">'
+        +'<input class="gname" type="text" aria-label="Nombre del grupo" value="'+esc(g.nombre)+'">'
+        +'<button class="gdel" type="button" aria-label="Eliminar grupo" title="Eliminar grupo">×</button>'
+        +'</div><div class="ggrid">';
+      fields.forEach(function(f){
+        var step = f[0]==='valor' ? '100' : '1';
+        html+='<div class="gf"><label>'+f[1]+'</label>'
+          +'<input type="number" min="0" step="'+step+'" data-k="'+f[0]+'" value="'+g[f[0]]+'"></div>';
+      });
+      html+='</div><div class="gcalc"><span>Horas del grupo: <span class="n" data-h>0</span></span>'
+        +'<span>Costo: <span class="n" data-c>$0</span></span></div>';
+      card.innerHTML=html;
+
+      card.querySelector('.gname').addEventListener('input', function(){ g.nombre=this.value; });
+      card.querySelectorAll('input[data-k]').forEach(function(inp){
+        inp.addEventListener('input', function(){
+          var v=+this.value; if(isNaN(v)||v<0) v=0;
+          g[this.dataset.k]=v; render();
+        });
+      });
+      card.querySelector('.gdel').addEventListener('click', function(){
+        if(state.grupos.length<=1) return;
+        state.grupos=state.grupos.filter(function(x){ return x.id!==g.id; });
+        buildGrupos();
+      });
+      list.appendChild(card);
+    });
+    // disable delete when only one group
+    var only = state.grupos.length<=1;
+    list.querySelectorAll('.gdel').forEach(function(b){ b.disabled=only; });
+    render();
+  }
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function render(){
+    var vh, ee, horasTot, costo, talleresRed, horasSemTotal;
+
+    if(state.dmode==='grupos'){
+      var tH=0, tC=0, tEE=0, tTall=0, tHsem=0;
+      state.grupos.forEach(function(g){
+        var gh = g.count*g.talleres*g.horas*state.semanas;
+        var gc = gh*g.valor;
+        tH+=gh; tC+=gc; tEE+=g.count; tTall+=g.count*g.talleres; tHsem+=g.count*g.talleres*g.horas;
+        var card=$('gruposList').querySelector('.gcard[data-id="'+g.id+'"]');
+        if(card){
+          card.querySelector('[data-h]').textContent=CLP.format(gh)+' h';
+          card.querySelector('[data-c]').textContent=peso(gc);
+        }
+      });
+      horasTot=tH; costo=tC; ee=tEE; talleresRed=tTall; horasSemTotal=tHsem;
+      vh = tH>0 ? tC/tH : 0;
+      // group totals block
+      $('gTotEE').innerHTML = CLP.format(tEE) + (tEE>55 ? ' <span class="warn-inline">(sobre el tope de 55)</span>' : '');
+      $('gTotH').textContent = CLP.format(tH)+' h';
+      $('gAvgVal').textContent = peso(vh);
+    } else if(state.dmode==='directorio'){
+      var vhd=valorHora();
+      var dH=0, dC=0, dHsem=0, dMat=0, n=0;
+      var body=$('repBody');
+      EST.forEach(function(e){
+        if(!state.selEE.has(e.rbd)) return;
+        var hs = state.horasEE[e.rbd]||0;
+        var ht = hs*state.semanas;
+        var c = ht*vhd;
+        dH+=ht; dC+=c; dHsem+=hs; dMat+=e.mat; n++;
+        var row=body.querySelector('tr[data-id="'+e.rbd+'"]');
+        if(row){
+          var htc=row.querySelector('[data-ht]'), cc=row.querySelector('[data-c]');
+          if(htc) htc.textContent=CLP.format(ht);
+          if(cc) cc.textContent=peso(c);
+        }
+      });
+      horasTot=dH; costo=dC; ee=n; horasSemTotal=dHsem; talleresRed=n; vh=vhd;
+      $('repFmat').textContent=CLP.format(dMat);
+      $('repFsem').textContent=CLP.format(dHsem);
+      $('repFtot').textContent=CLP.format(dH);
+      $('repFcosto').textContent=peso(dC);
+      $('repCount').textContent=n+' EE';
+      renderResumen();
+    } else {
+      vh = valorHora();
+      ee = state.ee;
+      var horasTotEE = state.talleres*state.horas*state.semanas;
+      var horasSemEE = state.talleres*state.horas;
+      horasTot = horasTotEE*ee;
+      costo = horasTot*vh;
+      talleresRed = state.talleres*ee;
+      horasSemTotal = horasSemEE*ee;
+      $('dHsemEE').textContent = CLP.format(horasSemEE)+' h';
+      $('dHtotEE').textContent = CLP.format(horasTotEE)+' h';
+    }
+
+    var saldo = state.presupuesto - costo;
+    var pct = state.presupuesto>0 ? costo/state.presupuesto : 0;
+    var horasMax = vh>0 ? state.presupuesto/vh : 0;
+    var costoEE = ee>0 ? costo/ee : 0;
+    var costoSem = state.semanas>0 ? costo/state.semanas : 0;
+    var jornadaProm = ee>0 ? horasSemTotal/ee : 0;
+    var jc = jornadaProm/44;
+
+    // valor aplicado
+    $('valorAplicado').textContent = state.dmode==='grupos' ? ('Mixto · '+peso(vh))
+      : (state.mode==='mezcla' ? (peso(vh)+' · mezcla') : peso(vh));
+
+    // headline
+    $('costoBig').textContent = peso(costo);
+    $('presRef').textContent = peso(state.presupuesto);
+    $('pctExec').textContent = CLP.format(pct*100)+'%';
+
+    // bar
+    var fillEl = $('barFill');
+    var shown = Math.min(pct,1)*100;
+    fillEl.style.width = shown.toFixed(1)+'%';
+    // over-budget: fill red across full; else color by proximity
+    var col, statCls, statTxt, statAmt;
+    if(saldo < 0){
+      col='var(--crit)'; statCls='crit'; statTxt='Sobre el presupuesto por'; statAmt=peso(-saldo);
+      fillEl.style.width='100%';
+    } else if(pct >= 0.97){
+      col='var(--warn)'; statCls='warn'; statTxt='Al límite — saldo'; statAmt=peso(saldo);
+    } else {
+      col='var(--good)'; statCls='good'; statTxt='Saldo disponible'; statAmt=peso(saldo);
+    }
+    // status pill uses ok/warn/crit classes
+    fillEl.style.background = col;
+    var pill=$('statusPill');
+    pill.className='status '+(statCls==='good'?'ok':statCls);
+    $('statusTxt').textContent = statTxt;
+    $('statusAmt').textContent = statAmt;
+    $('bar100').style.left='100%';
+
+    // metrics
+    $('mHtot').textContent = CLP.format(horasTot);
+    $('mHtotNote').textContent =
+      state.dmode==='grupos' ? (CLP.format(ee)+' EE en '+state.grupos.length+' grupo'+(state.grupos.length===1?'':'s'))
+      : state.dmode==='directorio' ? (CLP.format(ee)+' EE · horas imputadas en el carrito')
+      : (ee+' EE × '+CLP.format(state.talleres*state.horas*state.semanas)+' h');
+    $('mHmax').textContent = CLP.format(Math.round(horasMax));
+    $('mCostoEE').textContent = peso(costoEE);
+    $('mCostoSem').textContent = peso(costoSem);
+    $('mCostoSemNote').textContent = 'a lo largo de '+state.semanas+' semana'+(state.semanas===1?'':'s');
+
+    // lectura rápida
+    var noParejo = state.dmode!=='parejo';
+    $('rTalleresLbl').textContent = state.dmode==='directorio' ? 'Establecimientos con oferta' : 'Talleres en toda la red';
+    $('rTalleres').textContent = CLP.format(talleresRed);
+    $('rJornada').textContent = CLP1.format(jornadaProm)+' h'+(noParejo?' (prom.)':'');
+    $('rJC').textContent = CLP1.format(jc)+(noParejo?' (prom.)':'');
+
+    // sync labels
+    $('eeVal').textContent = CLP.format(ee);
+    $('semVal').textContent = state.semanas;
+    $('tallVal').textContent = state.talleres;
+    $('horasVal').textContent = state.horas;
+  }
+
+  // ---- wire inputs ----
+  $('presupuesto').addEventListener('input', function(){ state.presupuesto = +this.value||0; render(); });
+  $('customVal').addEventListener('input', function(){ state.custom = +this.value||0; render(); });
+  $('categoria').addEventListener('change', function(){ state.categoria=this.value; render(); });
+  $('tramo').addEventListener('change', function(){ state.tramo=+this.value; render(); });
+
+  function bindRange(id, key){
+    var el=$(id);
+    el.addEventListener('input', function(){ state[key]=+this.value; setRangeFill(el); render(); });
+    setRangeFill(el);
+  }
+  bindRange('eeRange','ee');
+  bindRange('semRange','semanas');
+  bindRange('tallRange','talleres');
+  bindRange('horasRange','horas');
+
+  $('modeRef').addEventListener('click', function(){ setMode('ref'); render(); });
+  $('modeMix').addEventListener('click', function(){ setMode('mezcla'); syncMixUI(); render(); });
+  $('modeCustom').addEventListener('click', function(){ setMode('custom'); render(); });
+
+  $('mixPreset').addEventListener('change', function(){
+    var m=null; for(var i=0;i<MIXPROFILES.length;i++){ if(MIXPROFILES[i].id===this.value){ m=MIXPROFILES[i]; break; } }
+    if(m && m.p!==null){ state.mix={p:m.p,t:m.t,o:m.o}; syncMixUI(); render(); }
+  });
+  function bindMix(id, key){
+    $(id).addEventListener('input', function(){
+      var v=parseInt(this.value,10); if(isNaN(v)||v<0) v=0; if(v>100) v=100;
+      state.mix[key]=v; updateMixNote(); render();
+    });
+  }
+  bindMix('mixP','p'); bindMix('mixT','t'); bindMix('mixO','o');
+  $('mixTramo').addEventListener('change', function(){ state.mixTramo=+this.value; updateMixNote(); render(); });
+
+  $('dmodeParejo').addEventListener('click', function(){ setDmode('parejo'); render(); });
+  $('dmodeGrupos').addEventListener('click', function(){ setDmode('grupos'); render(); });
+  $('dmodeDir').addEventListener('click', function(){ setDmode('directorio'); render(); });
+  $('addGrupo').addEventListener('click', function(){
+    state.grupos.push({id:++guid, nombre:'Nuevo grupo', count:1, talleres:4, horas:4, valor:valorHora()});
+    buildGrupos();
+  });
+
+  $('critMat').addEventListener('click', function(){ state.criterio='mat'; syncCriterioUI(); render(); });
+  $('critCur').addEventListener('click', function(){ state.criterio='cur'; syncCriterioUI(); render(); });
+  $('critPar').addEventListener('click', function(){ state.criterio='par'; syncCriterioUI(); render(); });
+  $('intRange').addEventListener('input', function(){ state.intens[state.criterio]=+this.value; $('intVal').textContent=this.value; setRangeFill(this); render(); });
+  $('pisoRange').addEventListener('input', function(){ state.piso=+this.value; $('pisoVal').textContent=this.value; setRangeFill(this); render(); });
+  $('comunaFilter').addEventListener('change', buildEEList);
+  $('areaFilter').addEventListener('change', buildEEList);
+  $('tipoFilter').addEventListener('change', buildEEList);
+  $('selAll').addEventListener('click', function(){ selFiltered(true); });
+  $('selNone').addEventListener('click', function(){ selFiltered(false); });
+  $('applyRule').addEventListener('click', suggestHoras);
+  $('clearRule').addEventListener('click', clearHoras);
+  $('grpComuna').addEventListener('click', function(){ state.grp='comuna'; syncGrpUI(); render(); });
+  $('grpArea').addEventListener('click', function(){ state.grp='area'; syncGrpUI(); render(); });
+  $('grpTipo').addEventListener('click', function(){ state.grp='tipo'; syncGrpUI(); render(); });
+
+  // ---- presets ----
+  var PRESETS = [
+    { t:'1 · Todo profesional', d:'Valor eficiente · 7 tall. × 5 h', s:{dmode:'parejo',mode:'ref',categoria:'prof',tramo:2,talleres:7,horas:5,semanas:10,ee:14} },
+    { t:'2 · Mezcla con monitores', d:'Valor promedio $6.000 · 8 tall. × 6 h', s:{dmode:'parejo',mode:'custom',custom:6000,talleres:8,horas:6,semanas:10,ee:14} },
+    { t:'3 · Propuesta equilibrada', d:'5 tall. × 6 h en 14 EE', s:{dmode:'parejo',mode:'ref',categoria:'prof',tramo:2,talleres:5,horas:6,semanas:10,ee:14} },
+    { t:'4 · Cobertura amplia', d:'Profesional · 7 tall. × 5 h', s:{dmode:'parejo',mode:'ref',categoria:'prof',tramo:2,talleres:7,horas:5,semanas:10,ee:14} },
+    { t:'5 · Diferenciado por tamaño', d:'Grupos: grandes / medianas / rurales', s:{dmode:'grupos',semanas:10,resetGrupos:true} },
+    { t:'6 · Carrito por matrícula', d:'55 EE reales, prellenados por matrícula', s:{dmode:'directorio',mode:'ref',categoria:'prof',tramo:2,criterio:'mat',semanas:10,selAllReset:true,seedHoras:true} }
+  ];
+  (function(){
+    var box=$('presets');
+    PRESETS.forEach(function(p){
+      var b=document.createElement('button');
+      b.type='button'; b.className='preset';
+      b.innerHTML='<span class="pt"></span><span class="pd"></span>';
+      b.querySelector('.pt').textContent=p.t;
+      b.querySelector('.pd').textContent=p.d;
+      b.addEventListener('click', function(){ applyPreset(p.s); });
+      box.appendChild(b);
+    });
+  })();
+
+  function applyPreset(s){
+    var reset = !!s.resetGrupos, selReset = !!s.selAllReset, seed = !!s.seedHoras;
+    Object.keys(s).forEach(function(k){ if(k!=='resetGrupos'&&k!=='selAllReset'&&k!=='seedHoras') state[k]=s[k]; });
+    if(reset){ state.grupos=defaultGrupos(); }
+    if(selReset){ state.selEE=new Set(EST.map(function(e){ return e.rbd; })); }
+    if(seed){ EST.forEach(function(e){ if(state.selEE.has(e.rbd)) state.horasEE[e.rbd]=ruleHoras(e); }); }
+    // reflect into controls
+    setMode(state.mode);
+    setDmode(state.dmode||'parejo');
+    $('categoria').value=state.categoria;
+    $('tramo').value=String(state.tramo);
+    $('customVal').value=state.custom;
+    $('eeRange').value=state.ee; setRangeFill($('eeRange'));
+    $('semRange').value=state.semanas; setRangeFill($('semRange'));
+    $('tallRange').value=state.talleres; setRangeFill($('tallRange'));
+    $('horasRange').value=state.horas; setRangeFill($('horasRange'));
+    $('pisoRange').value=state.piso; setRangeFill($('pisoRange')); $('pisoVal').textContent=state.piso;
+    syncCriterioUI();
+    buildGrupos();
+    buildEEList();
+    buildCart();
+  }
+
+  // ---- theme toggle ----
+  (function(){
+    var btn=$('themeBtn');
+    function apply(t){
+      if(t==='system'){ document.documentElement.removeAttribute('data-theme'); }
+      else{ document.documentElement.setAttribute('data-theme', t); }
+      $('themeIcon').textContent = t==='dark'?'●':(t==='light'?'○':'◑');
+      $('themeTxt').textContent = t==='dark'?'Oscuro':(t==='light'?'Claro':'Auto');
+    }
+    var cur='system';
+    try{ cur = localStorage.getItem('sim-theme')||'system'; }catch(e){}
+    apply(cur);
+    btn.addEventListener('click', function(){
+      cur = cur==='system' ? 'light' : (cur==='light'?'dark':'system');
+      apply(cur);
+      try{ localStorage.setItem('sim-theme',cur); }catch(e){}
+    });
+  })();
+
+  populateComunas();
+  populateMixProfiles();
+  syncMixUI();
+  syncCriterioUI();
+  EST.forEach(function(e){ state.horasEE[e.rbd]=ruleHoras(e); }); // carrito prellenado por matrícula
+  setDmode('parejo');
+  buildGrupos();
+  buildEEList();
+  buildCart();
+})();
+</script>
+
+</body>
+</html>
