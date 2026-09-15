@@ -70,10 +70,26 @@ td.lvl,th.lvl{text-align:left;font-weight:700;white-space:normal;min-width:150px
 .cminp{display:flex;gap:8px;flex-wrap:wrap;margin-top:5px}
 .cminp label{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:4px}
 .cminp input{width:52px;padding:4px 6px;text-align:center;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px}
+.cminp .capfix{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;display:inline-flex;align-items:center;gap:3px}
+.cminp .capfix b{font-size:13px;color:var(--ink)}
+#concl{margin:14px 0 4px;display:flex;flex-direction:column;gap:8px}
+.concl-box{border-radius:10px;padding:10px 13px;font-size:13.5px;line-height:1.5;border:1px solid var(--line)}
+.concl-box.ok{background:var(--ok-bg);border-color:#bfe6cd;color:#0f5c34}
+.concl-box.warn{background:var(--warn-bg);border-color:#f4dca6;color:#7a5510}
+.concl-box.bad{background:var(--bad-bg);border-color:#f2c3ba;color:#8f2c1e}
+.concl-box.pend{background:#f1f3f6;color:#5b6775}
+.concl-foot{font-size:11.5px;color:var(--muted);padding:2px 2px 0}
 td.rol{text-align:left;font-weight:600;color:var(--muted)}
 tbody tr:hover{background:#f7fafd}
 .grp-edu{background:#f3f8fc}
 .numin{width:56px;padding:5px 6px;text-align:center;border:1px solid var(--line);border-radius:7px;font:inherit}
+.numin::-webkit-outer-spin-button,.numin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.numin{-moz-appearance:textfield;appearance:textfield}
+.licstep{display:inline-flex;align-items:center;gap:3px}
+.licstep .numin{width:40px}
+.licbtn{width:23px;height:28px;border:1px solid var(--line);background:#fff;border-radius:6px;font-weight:800;color:var(--brand);cursor:pointer;line-height:1;padding:0}
+.licbtn:hover:not(:disabled){border-color:var(--brand2)}
+.licbtn:disabled{color:#cbd3dc;cursor:not-allowed;background:#f5f7f9}
 .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700}
 .pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
 .sub{color:var(--muted);font-size:12px}
@@ -148,7 +164,8 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:26px}
         <li><b>Elige el jardín</b> en el selector (agrupados por comuna).</li>
         <li>Revisa la tabla <b>Dotación de aula por nivel</b>: para cada nivel ves las <b>educadoras</b> y <b>técnicas</b> que tiene, cuántas requiere el coeficiente, el <b>excedente</b> y la <b>cobertura</b>. La cuadratura viene por <b>matrícula</b>; con el toggle <b>Cuadratura según</b> pasas a verla por <b>capacidad</b>.</li>
         <li><b>Imputa licencias</b>: en la columna <b>Con licencia</b> escribe cuántas personas del nivel están con licencia. La dotación efectiva y el semáforo se recalculan al instante. Vienen pre-cargadas las licencias detectadas en las observaciones del archivo.</li>
-        <li><b>Actualiza matrícula o capacidad</b>: los campos <b>Cap.</b> y <b>Mat.</b> bajo cada nivel son editables — ingresa la última matrícula disponible.</li>
+        <li><b>Actualiza la matrícula</b>: el campo <b>Mat.</b> bajo cada nivel es editable — ingresa la última matrícula disponible. La <b>capacidad</b> (Cap.) es fija: son los cupos autorizados, que cambian año a año.</li>
+        <li><b>Lee la conclusión</b> bajo la tabla: te dice, por estamento, si un déficit en un nivel podría cubrirse reubicando el excedente de otro nivel del mismo jardín, o si faltan personas.</li>
         <li>Si un jardín tiene personas <b>por asignar</b> (llegaron sin nivel en la fuente), distribúyelas con los botones + / − para que entren al cálculo.</li>
         <li>Ajusta los <b>coeficientes</b> en su panel desplegable si tu experta en normativa usa otros valores. Revisa el <b>resumen territorial</b> de los 13 jardines y usa <b>Exportar CSV</b> para llevarte todo el detalle.</li>
       </ol>
@@ -189,8 +206,9 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:26px}
   <div class="card">
     <h2>Dotación de aula por nivel <span class="hint">planta = dotación oficial · efectiva = planta − licencias imputadas</span></h2>
     <div class="body">
-      <div class="secbar">Editables: <b>Cap.</b> (capacidad) y <b>Mat.</b> (matrícula) por nivel — actualízalas con la última matrícula disponible — y <b>Con licencia</b>, cuántas educadoras / técnicas del nivel están con licencia. El semáforo compara la dotación <b>efectiva</b> con la <b>requerida</b> por el coeficiente (base <b id="baseLbl">capacidad</b>). La matrícula viene del corte <b>GESPARVU agosto 2026</b> (matrícula activa); edítala si cambia.</div>
+      <div class="secbar">La <b>capacidad</b> es un valor fijo (cupos autorizados, cambian año a año). Editables: <b>Mat.</b> (matrícula, corte <b>GESPARVU agosto 2026</b>) y <b>Con licencia</b> (cuántas educadoras / técnicas del nivel están con licencia). El semáforo compara la dotación <b>efectiva</b> con la <b>requerida</b> por el coeficiente (base <b id="baseLbl">capacidad</b>). Debajo de la tabla, la <b>conclusión</b> indica si un déficit en un nivel podría cubrirse con el excedente de otro nivel del mismo estamento.</div>
       <div class="tablewrap"><table id="tblNiveles"></table></div>
+      <div id="concl"></div>
       <div id="asignaWrap"></div>
     </div>
   </div>
@@ -363,7 +381,7 @@ function render(){
   $('#baseLbl').textContent = BASE==='cap'?'capacidad':'matrícula';
   document.querySelectorAll('#segBase button').forEach(b=>b.classList.toggle('on', b.dataset.base===BASE));
   const j = curJardin();
-  renderKpis(j); renderNiveles(j); renderAsigna(j); renderApoyo(j); renderTerr(); renderHeat();
+  renderKpis(j); renderNiveles(j); renderConcl(j); renderAsigna(j); renderApoyo(j); renderTerr(); renderHeat();
   $('#tab-ficha').hidden = TAB!=='ficha';
   $('#tab-mapa').hidden = TAB!=='mapa';
   $('#fldJardin').style.display = TAB==='ficha' ? '' : 'none';
@@ -462,14 +480,18 @@ function renderNiveles(j){
       if(idx===0){
         body+='<td class="lvl" rowspan="2">'+l.name
           +'<div class="cminp">'
-          +'<label>Cap. <input type="number" min="0" step="1" value="'+capOf(j,l)+'" data-cm="cap" data-cod="'+j.cod+'" data-lk="'+l.key+'"></label>'
+          +'<span class="capfix">Cap. <b>'+capOf(j,l)+'</b></span>'
           +'<label>Mat. <input type="number" min="0" step="1" value="'+matOf(j,l)+'" data-cm="mat" data-cod="'+j.cod+'" data-lk="'+l.key+'"></label>'
           +'</div></td>';
       }
       body+='<td class="rol">'+lbl+'</td>'
         +'<td>1:'+r.c+'</td>'
         +'<td>'+r.planta+'</td>'
-        +'<td><input class="numin" type="number" min="0" step="1" value="'+r.lic+'" data-cod="'+j.cod+'" data-lk="'+l.key+'" data-rol="'+rol+'"></td>'
+        +'<td><div class="licstep">'
+          +'<button class="licbtn" data-licd="-1" data-cod="'+j.cod+'" data-lk="'+l.key+'" data-rol="'+rol+'"'+(r.lic<=0?' disabled':'')+'>−</button>'
+          +'<input class="numin" type="number" min="0" step="1" value="'+r.lic+'" data-cod="'+j.cod+'" data-lk="'+l.key+'" data-rol="'+rol+'">'
+          +'<button class="licbtn" data-licd="1" data-cod="'+j.cod+'" data-lk="'+l.key+'" data-rol="'+rol+'">+</button>'
+          +'</div></td>'
         +'<td><b>'+r.efec+'</b></td>'
         +'<td>'+req+'</td><td>'+excS+'</td><td>'+cob(cobv)+'</td>'
         +'<td><span class="pill '+st.cls+'">'+st.txt+'</span></td>';
@@ -485,6 +507,13 @@ function renderNiveles(j){
       save('jcoef_lic',LIC); render();
     });
   });
+  $('#tblNiveles').querySelectorAll('button.licbtn').forEach(b=>b.addEventListener('click',e=>{
+    const t=e.currentTarget; const {cod,lk,rol,licd}=t.dataset; const d=parseInt(licd);
+    const cur=getLic(cod,lk)[rol]||0; const nv=Math.max(0,cur+d);
+    if(nv===cur) return;
+    LIC[cod]=LIC[cod]||{}; LIC[cod][lk]=LIC[cod][lk]||{edu:0,tec:0}; LIC[cod][lk][rol]=nv;
+    save('jcoef_lic',LIC); render();
+  }));
   $('#tblNiveles').querySelectorAll('input[data-cm]').forEach(inp=>{
     inp.addEventListener('change',e=>{
       const {cod,lk,cm}=e.target.dataset; const val=Math.max(0,parseInt(e.target.value)||0);
@@ -492,6 +521,47 @@ function renderNiveles(j){
       save('jcoef_capmat',CM); render();
     });
   });
+}
+
+function renderConcl(j){
+  const box=$('#concl');
+  const bn = BASE==='cap'?'capacidad':'matrícula';
+  if(porImputar(j)){
+    box.innerHTML='<div class="concl-box pend">⏳ <b>Sin conclusión:</b> este jardín aún no tiene el detalle de niveles por funcionaria (pendiente de reunión de imputación). Distribuye las personas por nivel o quítale la marca «por imputar» para calcularla.</div>';
+    return;
+  }
+  let html='';
+  [['tec','Técnicas'],['edu','Educadoras']].forEach(([rol,lbl])=>{
+    const rows=j.levels.map(l=>{
+      const r=calcCell(j,l,rol);
+      return {name:l.name, exc: BASE==='cap'?r.excCap:r.excMat};
+    });
+    const defs=rows.filter(r=>r.exc<0);
+    const surs=rows.filter(r=>r.exc>0);
+    const totDef=defs.reduce((a,r)=>a-r.exc,0);   // positivo
+    const totSur=surs.reduce((a,r)=>a+r.exc,0);
+    let cls, msg;
+    if(defs.length===0){
+      cls='ok';
+      msg='<b>'+lbl+':</b> todos los niveles cumplen el coeficiente'+(totSur>0?' (excedente total +'+totSur+')':'')+'.';
+    } else {
+      const defTxt=defs.map(d=>d.name+' ('+d.exc+')').join(', ');
+      const surTxt=surs.map(s=>s.name+' (+'+s.exc+')').join(', ');
+      if(totSur>=totDef){
+        cls='warn';
+        msg='<b>'+lbl+':</b> falta '+totDef+' en '+defTxt+'. Se podría cubrir reubicando el excedente de '+surTxt+' dentro del jardín (excedente disponible +'+totSur+' ≥ déficit '+totDef+').';
+      } else if(totSur>0){
+        cls='bad';
+        msg='<b>'+lbl+':</b> falta '+totDef+' en '+defTxt+'. El excedente interno ('+surTxt+') no alcanza: se requieren '+(totDef-totSur)+' persona(s) adicional(es).';
+      } else {
+        cls='bad';
+        msg='<b>'+lbl+':</b> falta '+totDef+' en '+defTxt+' y no hay excedente en otros niveles: se requieren '+totDef+' persona(s) adicional(es).';
+      }
+    }
+    html+='<div class="concl-box '+cls+'">'+msg+'</div>';
+  });
+  html+='<div class="concl-foot">Conclusión según <b>'+bn+'</b> y las licencias imputadas. La reubicación entre niveles es referencial y queda sujeta al criterio técnico: no toda educadora o técnica puede trasladarse de nivel.</div>';
+  box.innerHTML=html;
 }
 
 function renderAsigna(j){
