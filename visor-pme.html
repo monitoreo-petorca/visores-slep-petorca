@@ -84,7 +84,7 @@
   .cb .track i.a2 span,.cb .track i.ax span{color:#1b2733}
   .a4{background:#1e4e8c}.a3{background:#3aa0d1}.a2{background:#7bb8dd}.ax{background:#c2d3e5}
   /* controls + table */
-  .controls{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:6px 0 12px}
+  .controls{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:6px 0 12px}
   .controls label{font-size:12px;color:var(--gris);display:flex;flex-direction:column;gap:4px}
   select,input[type=search]{font-size:13px;padding:7px 9px;border-radius:8px;border:1px solid #cdd8e6;background:#fff}
   .btn{font-size:12.5px;padding:8px 12px;border-radius:8px;border:1px solid #cdd8e6;background:#fff;color:var(--azul);cursor:pointer}
@@ -96,9 +96,13 @@
   table.ee td.name{font-weight:600}
   .pill{display:inline-block;min-width:64px;padding:3px 6px;border-radius:20px;font-size:10.5px;font-weight:700;color:#fff}
   .idxcell{font-weight:800}
+  .idxcell .i100{display:block;font-size:10.5px;font-weight:600;color:var(--gris)}
+  .mx td .sub100{font-size:10px;color:var(--gris);margin-top:3px}
   .tablewrap{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
   .foot{margin-top:30px;font-size:12px;color:var(--gris);border-top:1px solid var(--line);padding-top:14px}
-  .count{font-size:12px;color:var(--gris);margin-left:6px}
+  .count{display:inline-flex;align-items:center;gap:6px;background:#eaf1fa;border:1px solid #cfe0f2;
+         color:var(--azul);font-weight:700;font-size:12.5px;padding:8px 13px;border-radius:9px;white-space:nowrap}
+  .count .lbl{font-weight:600;color:#3f5a78}
 </style>
 </head>
 <body>
@@ -128,15 +132,15 @@
   <div class="kpis" id="kpis"></div>
 
   <h2>Panorama por comuna</h2>
-  <p class="sub">Índice de avance (promedio de las bandas de ejecución) por dimensión y comuna. Verde = más avanzado.</p>
+  <p class="sub">Nivel de avance (escalera 1–4, promedio de las bandas) por dimensión y comuna; abajo de cada celda, su equivalente 0–100. Verde = escalón más alto.</p>
   <div class="panel">
     <table class="mx" id="matrix"></table>
     <div class="legend">
-      <span><i class="dot" style="background:var(--i90)"></i>90-100</span>
-      <span><i class="dot" style="background:var(--i75)"></i>75-89</span>
-      <span><i class="dot" style="background:var(--i60)"></i>60-74</span>
-      <span><i class="dot" style="background:var(--ilo)"></i>&lt;60</span>
-      <span style="margin-left:auto">Índice = promedio ponderado por punto medio de banda (100/88/62/38).</span>
+      <span><i class="dot" style="background:var(--i90)"></i>Escalón 4 · Implementado</span>
+      <span><i class="dot" style="background:var(--i75)"></i>Escalón 3 · Avanzada</span>
+      <span><i class="dot" style="background:var(--i60)"></i>Escalón 2 · Adecuada</span>
+      <span><i class="dot" style="background:var(--ilo)"></i>Escalón 1 · Parcial</span>
+      <span style="margin-left:auto">Cada celda: <b>nivel 1–4</b> (escalera) y, abajo, su equivalente <b>0–100</b>. Referencia comparativa, no % oficial. Ver <b>❓ Cómo funciona</b>.</span>
     </div>
   </div>
 
@@ -185,7 +189,7 @@
         <th data-s="li">Liderazgo</th>
         <th data-s="ce">Convivencia</th>
         <th data-s="gr">G. Recursos</th>
-        <th data-s="idx">Índice</th>
+        <th data-s="niv">Nivel · 0-100</th>
       </tr></thead>
       <tbody id="tb"></tbody>
     </table>
@@ -194,7 +198,7 @@
   <div class="foot">
     Fuente: consolidado SLEP <b>«Datos PME 2025-2026»</b> · Bandas de ejecución tal cual el archivo original.
     Los jardines VTF (13 EE del directorio) no cuentan con PME y no aparecen aquí.
-    El índice es una referencia comparativa construida con el punto medio de cada banda; no es un porcentaje oficial.
+    El nivel 1–4 (escalera) y el índice 0–100 (punto medio de banda) son referencias comparativas para ordenar; no son porcentajes oficiales del PME.
   </div>
 </div>
 
@@ -215,16 +219,23 @@
     <div class="keyrow"><span class="sw" style="background:#d9683a"></span>Implementado parcialmente (25% a 49%)</div>
     <div class="keyrow"><span class="sw" style="background:#9aa7b4"></span>N/A — sin dato</div>
 
-    <h3>Índice de avance</h3>
-    <p>Para poder <b>comparar y ordenar</b>, cada banda recibe un puntaje por su punto medio (100 · 88 · 62 · 38) y el índice es el promedio. Va de 0 a 100 y sube mientras más avanzadas están las acciones.</p>
-    <div class="tip">⚠️ Es una referencia comparativa que construimos aquí para leer la tabla de un vistazo — <b>no es un porcentaje oficial del PME</b>.</div>
+    <h3>Nivel de avance — cómo se calcula</h3>
+    <p>Las bandas son <b>escalones</b> de una escalera: sabemos que una está sobre otra, pero no cuánto exactamente. Por eso el indicador principal es el <b>nivel 1–4</b>, dando a cada banda un escalón:</p>
+    <div class="keyrow"><span class="sw" style="background:#0f9d7a"></span>Implementado (100%) → escalón <b>4</b></div>
+    <div class="keyrow"><span class="sw" style="background:#3aa0d1"></span>Avanzada (75–99%) → escalón <b>3</b></div>
+    <div class="keyrow"><span class="sw" style="background:#e0a52e"></span>Adecuada (50–74%) → escalón <b>2</b></div>
+    <div class="keyrow"><span class="sw" style="background:#d9683a"></span>Parcial (25–49%) → escalón <b>1</b></div>
+    <div class="keyrow"><span class="sw" style="background:#9aa7b4"></span>N/A → no se cuenta</div>
+    <p style="margin-top:10px">El <b>nivel de un establecimiento</b> es el promedio simple de sus 4 dimensiones (ej. 3,2 = está, en promedio, sobre el escalón 3); el de una comuna o de la red es el promedio de sus establecimientos. Es un <b>promedio simple</b>: todas las dimensiones y todos los EE pesan igual (no se pondera por matrícula ni por número de acciones).</p>
+    <p>Junto al nivel mostramos también un <b>índice 0–100</b> como referencia familiar, hecho con el <b>punto medio</b> de cada banda (100 · 88 · 62 · 38) en vez del escalón. Miden lo mismo, pero con distinta "regla": la escalera tiene saltos iguales y el 0–100 saltos desiguales, así que a veces ordenan levemente distinto.</p>
+    <div class="tip">⚠️ Ambos son referencias para comparar y ordenar, <b>no un porcentaje oficial del PME</b>. Dos EE en la misma banda reciben el mismo valor aunque uno esté al 76% y otro al 99%; por eso las diferencias pequeñas no son significativas — conviene leer los <b>escalones de color</b>, no los decimales.</div>
 
     <h3>Panorama por comuna (los colores)</h3>
-    <p>Cada celda muestra el índice de una dimensión en una comuna, coloreado por tramo:</p>
-    <div class="keyrow"><span class="sw" style="background:#0f9d7a"></span>90-100 · muy avanzado</div>
-    <div class="keyrow"><span class="sw" style="background:#3aa0d1"></span>75-89 · avanzado</div>
-    <div class="keyrow"><span class="sw" style="background:#e0a52e"></span>60-74 · en desarrollo</div>
-    <div class="keyrow"><span class="sw" style="background:#d9683a"></span>menos de 60 · a reforzar</div>
+    <p>Cada celda muestra el <b>nivel 1–4</b> de una dimensión en una comuna (y abajo su 0–100), coloreado por el escalón más cercano:</p>
+    <div class="keyrow"><span class="sw" style="background:#0f9d7a"></span>≈ escalón 4 (3,5–4,0) · muy avanzado</div>
+    <div class="keyrow"><span class="sw" style="background:#3aa0d1"></span>≈ escalón 3 (2,5–3,4) · avanzado</div>
+    <div class="keyrow"><span class="sw" style="background:#e0a52e"></span>≈ escalón 2 (1,5–2,4) · en desarrollo</div>
+    <div class="keyrow"><span class="sw" style="background:#d9683a"></span>≈ escalón 1 (1,0–1,4) · a reforzar</div>
     <p>La última fila, <b>Red SLEP</b>, resume las cuatro comunas juntas.</p>
 
     <h3>Año del ciclo</h3>
@@ -255,29 +266,38 @@ const DIMS=[['gp','Gestión Pedagógica'],['li','Liderazgo'],['ce','Convivencia 
 const BAND={4:{t:'Implementado 100%',c:'#0f9d7a'},3:{t:'Avanzada 75-99%',c:'#3aa0d1'},2:{t:'Adecuada 50-74%',c:'#e0a52e'},1:{t:'Parcial 25-49%',c:'#d9683a'},0:{t:'N/A',c:'#9aa7b4'}};
 const CO=['La Ligua','Petorca','Cabildo','Papudo'];
 function idxColor(v){ if(v==null) return '#9aa7b4'; if(v>=90)return '#0f9d7a'; if(v>=75)return '#3aa0d1'; if(v>=60)return '#e0a52e'; return '#d9683a'; }
+const MID={4:100,3:88,2:62,1:38};
+// color por escalón del nivel 1–4 (cada tramo ≈ un escalón)
+function stepColor(v){ if(v==null) return '#9aa7b4'; if(v>=3.5)return '#0f9d7a'; if(v>=2.5)return '#3aa0d1'; if(v>=1.5)return '#e0a52e'; return '#d9683a'; }
+function nf(v){ return v==null?'—':(Math.round(v*10)/10).toFixed(1).replace('.',','); }
+// nivel 1–4 por EE = promedio simple de los códigos de banda (4..1) con dato
+ROWS.forEach(r=>{const cs=DIMS.map(([k])=>r.d[k].c).filter(c=>c>0); r.niv=cs.length?cs.reduce((a,b)=>a+b,0)/cs.length:null;});
+// agregados: por dimensión y global, para un set de EE (nivel 1–4 + índice 0–100)
+function dimAgg(rows,k){const cs=rows.map(r=>r.d[k].c).filter(c=>c>0); if(!cs.length)return{niv:null,idx:null}; return {niv:cs.reduce((a,b)=>a+b,0)/cs.length, idx:Math.round(cs.map(c=>MID[c]).reduce((a,b)=>a+b,0)/cs.length)};}
+function ovAgg(rows){const rr=rows.filter(r=>r.niv!=null); if(!rr.length)return{niv:null,idx:null}; return {niv:rr.reduce((a,r)=>a+r.niv,0)/rr.length, idx:Math.round(rr.reduce((a,r)=>a+r.idx,0)/rr.length)};}
 
 // KPIs
-const withIdx=ROWS.filter(r=>r.idx!=null);
-const red=Math.round(withIdx.reduce((a,r)=>a+r.idx,0)/withIdx.length);
+const redAgg=ovAgg(ROWS);
+const red=redAgg.idx;
 const totAcc=ROWS.reduce((a,r)=>a+DIMS.reduce((s,[k])=>s+((r.d[k].n)||0),0),0);
 const c4=ROWS.filter(r=>r.a==='4').length;
 document.getElementById('kpis').innerHTML=[
  ['55','Establecimientos con PME'],[totAcc,'Acciones comprometidas'],
- [red,'Índice de avance de red'],[c4,'EE cierran ciclo en 2026 (año 4)']
+ [nf(redAgg.niv)+'<span style="font-size:15px;font-weight:600;color:#5b6b7a"> /4</span>','Nivel de avance de red · ≈'+redAgg.idx+'/100'],
+ [c4,'EE cierran ciclo en 2026 (año 4)']
 ].map(k=>`<div class="kpi"><div class="n">${k[0]}</div><div class="l">${k[1]}</div></div>`).join('');
 
 // matrix
-let mh='<thead><tr><th class="name">Comuna</th>'+DIMS.map(d=>`<th>${d[1]}</th>`).join('')+'<th>Índice global</th><th>EE</th></tr></thead><tbody>';
+function mxCell(a){return `<td><span class="cell" style="background:${stepColor(a.niv)}">${nf(a.niv)}</span><div class="sub100">${a.idx==null?'—':a.idx+'/100'}</div></td>`;}
+let mh='<thead><tr><th class="name">Comuna</th>'+DIMS.map(d=>`<th>${d[1]}</th>`).join('')+'<th>Nivel global</th><th>EE</th></tr></thead><tbody>';
 CO.forEach(com=>{
-  const c=COM[com];
+  const rws=ROWS.filter(r=>r.comuna===com);
   mh+='<tr class="red"><td class="name">'+com+'</td>'+
-    DIMS.map(([k])=>{const v=c.dim[k];return `<td><span class="cell" style="background:${idxColor(v)}">${v??'—'}</span></td>`;}).join('')+
-    `<td><span class="cell" style="background:${idxColor(c.idx)}">${c.idx??'—'}</span></td><td class="mini">${c.n}</td></tr>`;
+    DIMS.map(([k])=>mxCell(dimAgg(rws,k))).join('')+
+    mxCell(ovAgg(rws))+`<td class="mini">${rws.length}</td></tr>`;
 });
-// total row
-const dimTot={};DIMS.forEach(([k])=>{const s=ROWS.map(r=>({4:100,3:88,2:62,1:38})[r.d[k].c]).filter(x=>x!=null);dimTot[k]=Math.round(s.reduce((a,b)=>a+b,0)/s.length);});
-mh+='<tr class="red tot"><td class="name">Red SLEP</td>'+DIMS.map(([k])=>`<td><span class="cell" style="background:${idxColor(dimTot[k])}">${dimTot[k]}</span></td>`).join('')+
-  `<td><span class="cell" style="background:${idxColor(red)}">${red}</span></td><td class="mini">55</td></tr></tbody>`;
+mh+='<tr class="red tot"><td class="name">Red SLEP</td>'+DIMS.map(([k])=>mxCell(dimAgg(ROWS,k))).join('')+
+  mxCell(redAgg)+`<td class="mini">55</td></tr></tbody>`;
 document.getElementById('matrix').innerHTML=mh;
 
 // dim distribution bars
@@ -296,25 +316,27 @@ document.getElementById('ciclobars').innerHTML=CO.map(com=>{
 
 // ---- table ----
 const fcom=document.getElementById('fcom');CO.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;fcom.appendChild(o);});
-let sortKey='idx', sortDir=-1;
+let sortKey='niv', sortDir=-1;
 function pill(code){const b=BAND[code];return `<span class="pill" style="background:${b.c}">${b.t.replace('Implementado ','').replace('Avanzada ','Avanz. ').replace('Adecuada ','Adec. ').replace('Parcial ','Parc. ')}</span>`;}
 function render(){
   const com=fcom.value, an=document.getElementById('fanio').value, q=document.getElementById('fq').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  let list=ROWS.filter(r=>(!com||r.comuna===com)&&(!an||r.a===an)&&(!q||r.nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes(q)));
+  let list=ROWS.filter(r=>(!com||r.comuna===com)&&(!an||r.a===an)&&(!q||(r.nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes(q)||String(r.rbd).includes(q))));
   list.sort((a,b)=>{let x,y;if(['gp','li','ce','gr'].includes(sortKey)){x=a.d[sortKey].c;y=b.d[sortKey].c;}else{x=a[sortKey];y=b[sortKey];}
     if(x==null)x=-1;if(y==null)y=-1;if(typeof x==='string')return sortDir*x.localeCompare(y,'es');return sortDir*(x-y);});
   document.getElementById('tb').innerHTML=list.map(r=>`<tr>
-    <td class="name">${r.nombre}</td><td>${r.comuna}</td><td>${r.a==='*'?'—':r.a}</td>
+    <td class="name">${r.rbd} - ${r.nombre}</td><td>${r.comuna}</td><td>${r.a==='*'?'—':r.a}</td>
     ${DIMS.map(([k])=>`<td>${pill(r.d[k].c)}</td>`).join('')}
-    <td class="idxcell" style="color:${idxColor(r.idx)}">${r.idx??'—'}</td></tr>`).join('');
-  document.getElementById('cnt').textContent=list.length+' EE';
+    <td class="idxcell" style="color:${stepColor(r.niv)}">${nf(r.niv)}<span class="i100">${r.idx==null?'—':r.idx+'/100'}</span></td></tr>`).join('');
+  document.getElementById('cnt').innerHTML= (list.length===ROWS.length)
+    ? '🏫 <b>'+list.length+'</b> <span class="lbl">establecimientos</span>'
+    : '🏫 <b>'+list.length+'</b> <span class="lbl">de '+ROWS.length+' EE</span>';
   window._list=list;
 }
 document.querySelectorAll('#tbl th').forEach(th=>th.onclick=()=>{const k=th.dataset.s;if(k===sortKey)sortDir*=-1;else{sortKey=k;sortDir=(k==='nombre'||k==='comuna')?1:-1;}render();});
 [fcom,document.getElementById('fanio'),document.getElementById('fq')].forEach(el=>el.addEventListener('input',render));
 document.getElementById('csv').onclick=()=>{
-  const h=['RBD','Establecimiento','Comuna','Año ciclo','G.Pedagogica','Liderazgo','Convivencia','G.Recursos','Indice'];
-  const lines=[h.join(';')].concat((window._list||ROWS).map(r=>[r.rbd,'"'+r.nombre+'"',r.comuna,r.a,BAND[r.d.gp.c].t,BAND[r.d.li.c].t,BAND[r.d.ce.c].t,BAND[r.d.gr.c].t,r.idx??''].join(';')));
+  const h=['RBD','Establecimiento','Comuna','Año ciclo','G.Pedagogica','Liderazgo','Convivencia','G.Recursos','Nivel(1-4)','Indice(0-100)'];
+  const lines=[h.join(';')].concat((window._list||ROWS).map(r=>[r.rbd,'"'+r.nombre+'"',r.comuna,r.a,BAND[r.d.gp.c].t,BAND[r.d.li.c].t,BAND[r.d.ce.c].t,BAND[r.d.gr.c].t,nf(r.niv),r.idx??''].join(';')));
   const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='PME_territorial_SLEP_Petorca.csv';a.click();
 };
