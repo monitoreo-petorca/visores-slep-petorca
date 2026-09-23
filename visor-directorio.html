@@ -884,6 +884,19 @@ header.top .priv{margin-top:8px;font-size:12px;background:rgba(255,255,255,.14);
 .tile .tv small{font-size:13px}
 .badges .b{font-size:11.5px}
 </style>
+<style id="pme-css">
+.pme-ciclo{display:inline-flex;align-items:center;gap:9px;background:#eaf1fa;border:1px solid #cfe0f2;border-radius:12px;padding:9px 14px;margin:6px 0 14px}
+.pme-cnum{font-size:22px;font-weight:800;color:#1e4e8c;line-height:1}
+.pme-ctxt{font-size:12.5px;color:#5b6b7a}
+.pme-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pme-card{border:1px solid #e2e8f0;border-radius:11px;padding:13px 14px}
+.pme-dt{font-size:13px;font-weight:700;margin-bottom:2px}
+.pme-acc{font-size:12px;color:#5b6b7a;margin-bottom:9px}
+.pme-meter{height:9px;border-radius:6px;background:#eef2f7;overflow:hidden;margin-bottom:8px}
+.pme-meter i{display:block;height:100%}
+.pme-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;color:#fff}
+@media(max-width:640px){.pme-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <a class="hub-back" href="index.html">← Volver a los visores</a>
@@ -1327,6 +1340,32 @@ function fillNiveles(rbd){
   });
 }
 
+/* ===== PME-INTEGRACION v1 (Datos PME 2025-2026 SLEP Petorca) ===== */
+const PME_DATA = {"1120":{"a":"2","d":[[2,3],[2,1],[2,3],[2,3]]},"1121":{"a":"4","d":[[3,2],[2,2],[3,3],[2,3]]},"1122":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1123":{"a":"4","d":[[3,4],[2,3],[2,3],[2,3]]},"1125":{"a":"4","d":[[2,4],[2,2],[2,2],[2,4]]},"1126":{"a":"2","d":[[2,4],[2,4],[2,4],[2,4]]},"1128":{"a":"3","d":[[2,3],[2,3],[2,3],[2,4]]},"1129":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1130":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1131":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1132":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1133":{"a":"4","d":[[2,2],[2,1],[2,2],[2,1]]},"1134":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1135":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1136":{"a":"4","d":[[2,3],[2,3],[2,4],[2,3]]},"1137":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1139":{"a":"4","d":[[2,3],[2,3],[2,4],[2,4]]},"1140":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1142":{"a":"4","d":[[2,3],[2,3],[2,3],[2,2]]},"1143":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"1144":{"a":"4","d":[[2,3],[2,2],[2,3],[2,3]]},"1145":{"a":"4","d":[[3,3],[2,3],[2,3],[2,3]]},"1147":{"a":"4","d":[[3,4],[2,4],[2,4],[3,4]]},"1148":{"a":"4","d":[[2,4],[2,4],[2,4],[2,3]]},"1149":{"a":"4","d":[[4,1],[2,2],[2,3],[2,2]]},"1150":{"a":"4","d":[[2,3],[2,3],[2,3],[2,4]]},"1151":{"a":"4","d":[[2,4],[2,4],[2,4],[2,3]]},"1152":{"a":"4","d":[[2,4],[2,4],[2,4],[2,2]]},"1153":{"a":"4","d":[[2,3],[2,3],[2,2],[3,2]]},"1156":{"a":"4","d":[[2,4],[2,4],[2,4],[2,4]]},"1157":{"a":"3","d":[[2,4],[2,3],[2,4],[2,3]]},"1158":{"a":"4","d":[[2,4],[2,4],[3,4],[2,4]]},"1160":{"a":"4","d":[[2,4],[2,4],[2,4],[2,3]]},"1161":{"a":"4","d":[[4,2],[2,2],[3,2],[2,2]]},"1167":{"a":"3","d":[[2,3],[2,3],[2,3],[2,3]]},"1168":{"a":"3","d":[[3,3],[2,3],[2,4],[2,3]]},"1170":{"a":"3","d":[[2,3],[2,3],[4,3],[2,3]]},"1171":{"a":"3","d":[[2,3],[2,3],[4,4],[2,3]]},"1173":{"a":"4","d":[[2,3],[2,3],[2,3],[2,4]]},"1174":{"a":"3","d":[[4,3],[2,3],[3,4],[4,2]]},"1176":{"a":"4","d":[[2,1],[2,1],[2,2],[2,3]]},"1178":{"a":"3","d":[[3,3],[2,4],[2,3],[2,3]]},"1180":{"a":"4","d":[[5,3],[3,3],[3,3],[3,3]]},"1181":{"a":"4","d":[[2,3],[2,3],[2,2],[2,1]]},"1182":{"a":"4","d":[[2,4],[2,2],[2,4],[2,4]]},"1191":{"a":"4","d":[[12,4],[6,3],[5,3],[8,3]]},"1192":{"a":"4","d":[[13,2],[5,3],[6,2],[7,2]]},"11196":{"a":"*","d":[[null,0],[null,0],[null,0],[null,0]]},"11199":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"11206":{"a":"2","d":[[2,3],[2,3],[2,3],[2,3]]},"12299":{"a":"4","d":[[2,3],[2,3],[2,3],[2,3]]},"12336":{"a":"3","d":[[4,4],[2,4],[2,4],[2,1]]},"14479":{"a":"4","d":[[3,3],[2,2],[3,3],[2,3]]},"40099":{"a":"4","d":[[14,1],[7,2],[6,1],[5,2]]},"40242":{"a":"3","d":[[2,3],[2,4],[2,3],[2,4]]}};
+const PME_BANDS={4:{t:'Implementado 100%',c:'#0f9d7a',w:100},3:{t:'Avanzada 75-99%',c:'#3aa0d1',w:88},2:{t:'Adecuada 50-74%',c:'#e0a52e',w:62},1:{t:'Parcial 25-49%',c:'#d9683a',w:38},0:{t:'N/A',c:'#9aa7b4',w:6}};
+const PME_DIMS=[['gp','Gesti\u00f3n Pedag\u00f3gica'],['li','Liderazgo'],['ce','Convivencia Escolar'],['gr','Gesti\u00f3n de Recursos']];
+function fillPme(rbd){
+  var box=document.getElementById('p-pme'); if(!box) return;
+  var e=PME_DATA[rbd]||PME_DATA[String(rbd)];
+  if(!e){ box.innerHTML='<div class="sect"><h3>\ud83d\udcc8 Plan de Mejoramiento Educativo</h3><p class="empty">Este establecimiento no cuenta con PME en el consolidado 2025-2026 (por ejemplo, jardines VTF o modalidades sin PME).</p></div>'; return; }
+  var anio=e.a;
+  var badge=(anio==='*'||anio==null)
+    ? '<div class="pme-ciclo"><span class="pme-ctxt">Sin a\u00f1o de ciclo est\u00e1ndar</span></div>'
+    : '<div class="pme-ciclo"><span class="pme-cnum">'+anio+'</span><span class="pme-ctxt">A\u00f1o '+anio+' de 4 del ciclo PME (al 2026)</span></div>';
+  var cards=PME_DIMS.map(function(dd,i){
+    var val=e.d[i], nacc=val[0], b=PME_BANDS[val[1]];
+    return '<div class="pme-card"><div class="pme-dt">'+dd[1]+'</div>'
+      +'<div class="pme-acc">'+(nacc!=null?nacc:'\u2014')+(nacc===1?' acci\u00f3n comprometida':' acciones comprometidas')+'</div>'
+      +'<div class="pme-meter"><i style="width:'+b.w+'%;background:'+b.c+'"></i></div>'
+      +'<span class="pme-pill" style="background:'+b.c+'">'+b.t+'</span></div>';
+  }).join('');
+  box.innerHTML='<div class="sect"><h3>\ud83d\udcc8 Plan de Mejoramiento Educativo <span class="nivmes">Ejecuci\u00f3n 2025</span></h3>'
+    +badge+'<div class="pme-grid">'+cards+'</div>'
+    +'<p class="nivsrc">Fuente: consolidado SLEP \u00abDatos PME 2025-2026\u00bb \u00b7 bandas de ejecuci\u00f3n de acciones por dimensi\u00f3n (2025) y a\u00f1o del ciclo PME (2026).</p>'
+    +'</div>';
+}
+/* ===== fin PME-INTEGRACION v1 ===== */
+
 function openFicha(rbd){
   const e = EE.find(x=>x.rbd===rbd); if(!e)return;
   state.sel=rbd; render();
@@ -1441,11 +1480,13 @@ function openFicha(rbd){
       <div class="tab" data-p="contrapartes">Contrapartes</div>
       <div class="tab" data-p="equipo">Equipo directivo</div>
       <div class="tab" data-p="niveles">Niveles y cursos</div>
+      <div class="tab" data-p="pme">📈 PME</div>
     </div>
     <div class="panel on" id="p-general">${general}</div>
     <div class="panel" id="p-contrapartes">${contrapartes}</div>
     <div class="panel" id="p-equipo">${equipo}</div>
     <div class="panel" id="p-niveles"><div class="sect"><h3>🎓 Niveles y cursos</h3><p class="empty">Cargando…</p></div></div>
+    <div class="panel" id="p-pme"><div class="sect"><h3>📈 Plan de Mejoramiento Educativo</h3><p class="empty">Cargando…</p></div></div>
     <div class="faccion">
       <button class="btn pri" data-tip="Abre el diálogo de impresión para guardar la ficha como PDF o imprimirla en una hoja." onclick="window.print()">🖨 Imprimir ficha (one-pager)</button>
       <button class="btn" id="copyresumen" data-tip="Copia una ficha corta con los datos institucionales principales: identificación, contacto de dirección y contrapartes SLEP. No copia todos los campos de la ficha.">📋 Copiar datos base</button>
@@ -1456,6 +1497,7 @@ function openFicha(rbd){
     t.classList.add('on'); $('#p-'+t.dataset.p).classList.add('on');
   });
   fillNiveles(e.rbd);
+  fillPme(e.rbd);
   $('#ficha').querySelectorAll('.copy').forEach(b=>b.onclick=ev=>{ev.stopPropagation();navigator.clipboard&&navigator.clipboard.writeText(b.dataset.copy);b.textContent='✓';setTimeout(()=>b.textContent='copiar',1200);});
   $('#copyresumen').onclick=()=>{
     const mv = has(e.mat_jun26)? `${e.mat_jun26} (neta jun-2026)` : (e.mat_2026||'—');
