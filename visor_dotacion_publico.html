@@ -93,6 +93,14 @@
   .svtbl tr:hover td{background:var(--chip)}
   .svbar{display:flex;height:26px;border-radius:7px;overflow:hidden;border:1px solid var(--bd)}
   .svbar>div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+  .gen-tiles{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .gen-tiles .kpi{border-left:4px solid var(--vc,var(--blue))}
+  .genrow{display:grid;grid-template-columns:minmax(160px,240px) 1fr;gap:10px;align-items:center;font-size:13px;margin:0 0 6px}
+  .genlab{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .genn{color:var(--muted);font-size:11.5px}
+  .genbar{position:relative;height:20px;border-radius:6px;background:var(--chip)}
+  .genbar .genf{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;color:#fff;font-size:11px;font-weight:700;white-space:nowrap;min-width:2px}
+  .genbar .ref{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.5}
   .vtf-tiles .kpi{border-left:4px solid var(--vc,var(--blue))}
   #vtfJardin{overflow:auto}
   #vtfJardin table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;min-width:520px}
@@ -199,6 +207,7 @@
   <button class="vtab on" data-view="resumen">📊 Resumen</button>
   <button class="vtab" data-view="tabla">▤ Constructor de tablas</button>
   <button class="vtab" data-view="subv">💰 Subvención</button>
+  <button class="vtab" data-view="genero">👥 Género</button>
 </div></div>
 
 <div class="wrap" id="view-resumen">
@@ -482,6 +491,42 @@
     </div>
   </div>
 </div>
+<div class="wrap" id="view-genero" hidden>
+  <div class="card full" id="genFilterCard">
+    <div class="cardhead"><div><h3>Filtros</h3><p class="cs">Acotan toda la pestaña de género. Se comparten con el Resumen.</p></div>
+      <div class="toolbar"><button class="btn" id="genFiltHide">▲ Ocultar filtros</button></div></div>
+    <div class="filters" id="genFilters">
+      <div class="fg"><label>Reemplazos</label><div class="seg" id="segGenRem"><button data-v="con" class="on">Con reemplazos</button><button data-v="sin">Sin reemplazos</button></div></div>
+      <div class="fg"><label>Mes (foto)</label><select id="fgenMes"></select></div>
+      <div class="fg"><label>Comuna</label><div class="combo"><input id="fgenComuna" class="combo-in" type="text" autocomplete="off" spellcheck="false"><div class="combo-pop"></div></div></div>
+      <div class="fg"><label>Área</label><div class="combo"><input id="fgenArea" class="combo-in" type="text" autocomplete="off" spellcheck="false"><div class="combo-pop"></div></div></div>
+      <div class="fg"><label>Tipo de EE</label><div class="combo"><input id="fgenTipo" class="combo-in" type="text" autocomplete="off" spellcheck="false"><div class="combo-pop"></div></div></div>
+      <div class="fg"><label>Categoría de enseñanza</label><div class="combo"><input id="fgenCat" class="combo-in" type="text" autocomplete="off" spellcheck="false"><div class="combo-pop"></div></div></div>
+      <div class="fg"><label>Microcentro</label><div class="combo"><input id="fgenMicro" class="combo-in" type="text" autocomplete="off" spellcheck="false"><div class="combo-pop"></div></div></div>
+      <div class="fg" style="flex:1;min-width:220px"><label>Establecimiento (RBD · Nombre)</label><div class="combo wide"><input id="fgenRbd" class="combo-in" type="text" autocomplete="off" spellcheck="false"><div class="combo-pop"></div></div></div>
+      <button class="btn" id="genClear">Limpiar</button>
+    </div>
+  </div>
+  <div class="card full">
+    <div class="cardhead"><div>
+      <h3>Perspectiva de género <span class="info" data-def="generotab">ⓘ</span></h3>
+      <p class="cs">Distribución por sexo de la dotación — mes foto (<span id="genMes"></span>). Responde a los filtros. <span style="color:var(--muted)">Sexo registrado en el maestro (binario F/M); cifras agregadas, sin datos individuales.</span></p>
+    </div></div>
+    <div class="kpis gen-tiles" id="genTiles"></div>
+    <div id="genBar" style="margin-top:12px"></div>
+  </div>
+  <div class="grid">
+    <div class="card full"><h3>% de mujeres por tipo de función · SIGE</h3><p class="cs">Feminización de cada función respecto del promedio del Servicio. La línea marca el promedio.</p><div id="genFunc"></div></div>
+    <div class="card"><h3>Foco: cargos directivos</h3><p class="cs">% de mujeres en cargos de dirección y jefatura (segregación vertical).</p><div id="genLead" style="overflow:auto"></div></div>
+    <div class="card"><h3>Docentes por tramo — % mujeres</h3><p class="cs">¿Avanzan parejo en la Carrera Docente? % de mujeres en cada tramo.</p><div class="legend" data-legend="gentramo"></div><div class="chart" data-chart="gen_tramo"></div></div>
+    <div class="card full"><h3>Evolución mensual por sexo</h3><p class="cs">Personas por sexo, mes a mes.</p><div class="legend" data-legend="genevol"></div><div class="chart" data-chart="gen_evol"></div></div>
+    <div class="card full">
+      <div class="cardhead"><div><h3>Por establecimiento</h3><p class="cs">Mujeres, hombres y % de mujeres en cada establecimiento.</p></div>
+        <div class="toolbar"><button class="btn" id="genEstToggle">▼ Mostrar</button></div></div>
+      <div id="genEstTbl" style="overflow:auto"></div>
+    </div>
+  </div>
+</div>
 <div class="wrap" id="view-tabla" hidden>
   <div class="card full">
     <h3>Constructor de tablas <span class="info" data-def="constructor">ⓘ</span></h3>
@@ -735,6 +780,15 @@ makeCombo('fComuna',comunas,'Todas','comuna'); makeCombo('fArea',areas,'Todas','
 makeCombo('fCat',cats,'Todas','cat'); makeCombo('fMicro',micros,'Todos','micro'); makeCombo('fRbd',rbds,'Todos','rbd');
 makeCombo('fsvComuna',comunas,'Todas','comuna'); makeCombo('fsvArea',areas,'Todas','area'); makeCombo('fsvTipo',tipos,'Todos','tipo');
 makeCombo('fsvCat',cats,'Todas','cat'); makeCombo('fsvMicro',micros,'Todos','micro'); makeCombo('fsvRbd',rbds,'Todos','rbd');
+makeCombo('fgenComuna',comunas,'Todas','comuna'); makeCombo('fgenArea',areas,'Todas','area'); makeCombo('fgenTipo',tipos,'Todos','tipo');
+makeCombo('fgenCat',cats,'Todas','cat'); makeCombo('fgenMicro',micros,'Todos','micro'); makeCombo('fgenRbd',rbds,'Todos','rbd');
+function genRefreshAll(){ for(const id in COMBOS) COMBOS[id].redraw(); render(); }
+['fgenComuna','fgenArea','fgenTipo','fgenCat','fgenMicro','fgenRbd'].forEach(id=>document.getElementById(id).addEventListener('change',genRefreshAll));
+document.getElementById('segGenRem').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return; [...e.currentTarget.children].forEach(b=>b.classList.remove('on')); e.target.classList.add('on'); F.rem=e.target.dataset.v; [...document.getElementById('segRem').children].forEach(b=>b.classList.toggle('on',b.dataset.v===F.rem)); genRefreshAll();});
+document.getElementById('fgenMes').addEventListener('change',function(){ document.getElementById('fMes').value=this.value; genRefreshAll();});
+document.getElementById('genClear').addEventListener('click',()=>{ for(const k in F) if(k!=='rem') F[k].length=0; ['fgenComuna','fgenArea','fgenTipo','fgenCat','fgenMicro','fgenRbd','fComuna','fArea','fTipo','fCat','fMicro','fRbd','fFgrp','fFunc'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';}); if(typeof syncFuncOpts==='function') syncFuncOpts(); genRefreshAll();});
+document.getElementById('genEstToggle').addEventListener('click',()=>{ genEstOpen=!genEstOpen; renderGenero();});
+document.getElementById('genFiltHide').addEventListener('click',function(){ const f=document.getElementById('genFilters'); f.hidden=!f.hidden; this.textContent=f.hidden?'▼ Mostrar filtros':'▲ Ocultar filtros';});
 function svRefreshAll(){ for(const id in COMBOS) COMBOS[id].redraw(); render(); }
 ['fsvComuna','fsvArea','fsvTipo','fsvCat','fsvMicro','fsvRbd'].forEach(id=>document.getElementById(id).addEventListener('change',svRefreshAll));
 document.getElementById('segSvRem').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return; [...e.currentTarget.children].forEach(b=>b.classList.remove('on')); e.target.classList.add('on'); F.rem=e.target.dataset.v; [...document.getElementById('segRem').children].forEach(b=>b.classList.toggle('on',b.dataset.v===F.rem)); svRefreshAll();});
@@ -758,6 +812,7 @@ makeCombo('fFgrp',fgrps,'Todas','fgrp'); makeCombo('fFunc',funcOpts,'Todas','fun
 document.getElementById('fMes').innerHTML = M.meses.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
 document.getElementById('fMes').value = M.meses.length-1;
 document.getElementById('fsvMes').innerHTML = document.getElementById('fMes').innerHTML; document.getElementById('fsvMes').value = document.getElementById('fMes').value;
+document.getElementById('fgenMes').innerHTML = document.getElementById('fMes').innerHTML; document.getElementById('fgenMes').value = document.getElementById('fMes').value;
 const DIMS = [['esc','Estamento'],['fgrp','Tipo de función (SIGE)'],['func','Función específica (SIGE)'],['comuna','Comuna'],['area','Área'],['tipo','Tipo de EE']];
 document.getElementById('fDim').innerHTML = DIMS.map(d=>`<option value="${d[0]}">${d[1]}</option>`).join('');
 document.getElementById('tagAct').textContent = 'Actualizado ' + M.actualizado;
@@ -1199,6 +1254,7 @@ function render(){
   renderSubv();
   renderVtf(+document.getElementById('fMes').value, mesLbl);
   if(!document.getElementById('view-subv').hidden) renderSubvTab();
+  if(!document.getElementById('view-genero').hidden) renderGenero();
   buildTables(rowsAll,rowsMes,mesLbl);
 }
 function buildTables(rowsAll,rowsMes,mesLbl){
@@ -1260,6 +1316,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')tut.classList.add('h
 
 /* --- tooltips de definición (hover sobre ⓘ) --- */
 const DEFS={
+  generotab:{t:'Perspectiva de género',d:'Distribución por sexo de la dotación (sexo registrado en el maestro, binario Femenino/Masculino). Muestra el % de mujeres global y por estamento, la feminización de cada función frente al promedio, la representación femenina en cargos directivos, el % de mujeres por tramo de la Carrera Docente y la evolución mes a mes. Cifras agregadas, sin nombres ni RUT.'},
   subvtab:{t:'Mirada por subvención',d:'Reparte la dotación según la fuente de financiamiento de cada nombramiento (variable «proyecto» del maestro): Subvención General (base), SEP, PIE, JUNJI (VTF) y Pro-Retención. La tabla por establecimiento usa nombramientos y en modo % reparte el 100% de cada EE. Personas por subvención es aproximada en la vista previa.'},
   vtf:{t:'Personal VTF de jardines',d:'Personal de los jardines infantiles VTF, contratado bajo el Código del Trabajo con financiamiento JUNJI. Como estos jardines no reportan función en SIGE, la categoría se toma del cargo del maestro de remuneraciones, agrupado en tres categorías consistentes con la glosa de dotación: Educadoras de Párvulos (incluye a las directoras de jardín), Técnicos VTF (técnicas/os en párvulos) y Otros asistentes VTF (auxiliares y profesionales de jardín).'},
   constructor:{t:'Constructor de tablas',d:'Arma la tabla que necesites y descárgala en Excel o CSV. Eliges cómo agrupar las filas (por establecimiento, comuna, función, estamento, mes…), qué cifras incluir y qué establecimientos considerar. El Excel trae una hoja «Ficha técnica» con el mes, la selección y las fuentes. Son cifras agregadas: no hay nombres ni RUT.'},
@@ -1782,12 +1839,75 @@ function renderSubvTab(){
   document.getElementById('svNote').hidden=!svEstOpen;
   document.getElementById('svEstToggle').innerHTML=(svEstOpen?'▲ Ocultar tabla':'▼ Mostrar tabla')+' ('+list.length+')';
 }
+let genEstOpen=false;
+function genRows(mes){
+  const okEst=EST.map(estabOK); const out=[];
+  for(const r of ROWS){ if(!okEst[r[C.EST]]) continue; if(F.rem==='sin'&&r[C.REM]===1) continue; if(r[C.MES]!==mes) continue; out.push(r);}
+  return out;
+}
+function pctFem(subset){ const fem=new Set(),tot=new Set();
+  subset.forEach(r=>{tot.add(r[C.RUT]); if(r[C.SEXO]===0) fem.add(r[C.RUT]);});
+  return {f:fem.size,t:tot.size,p:tot.size?fem.size/tot.size*100:0}; }
+function renderGenero(){
+  const mes=+document.getElementById('fMes').value, mesLbl=M.meses[mes];
+  document.getElementById('genMes').textContent=mesLbl;
+  document.getElementById('fgenMes').value=mes;
+  [...document.getElementById('segGenRem').children].forEach(b=>b.classList.toggle('on',b.dataset.v===F.rem));
+  ['fgenComuna','fgenArea','fgenTipo','fgenCat','fgenMicro','fgenRbd'].forEach(id=>COMBOS[id]&&COMBOS[id].redraw());
+  const FCOL=css('--s2'), MCOL=css('--s1');
+  const rows=genRows(mes);
+  const all=pctFem(rows);
+  // KPIs
+  const tiles=[['Total dotación',all],['Docentes',pctFem(rows.filter(r=>r[C.ESC]===0))],['Asistentes de la educación',pctFem(rows.filter(r=>r[C.ESC]===1))],['Jardines (Cód. del Trabajo)',pctFem(rows.filter(r=>r[C.ESC]===2))]];
+  document.getElementById('genTiles').innerHTML=tiles.map(([lab,o])=>
+    `<div class="kpi" style="--vc:${FCOL}"><div class="lab">${lab}</div>`+
+    `<div class="val">${Math.round(o.p)}% <span style="font-size:14px;color:var(--muted);font-weight:600">mujeres</span></div>`+
+    `<div class="sub">${nf.format(o.f)} de ${nf.format(o.t)} personas</div></div>`).join('');
+  // barra composición
+  const femN=all.f, homN=all.t-all.f, tot=all.t||1;
+  document.getElementById('genBar').innerHTML=
+    '<div style="font-size:12px;color:var(--muted);margin:0 0 5px">Composición por sexo · mes '+mesLbl+'</div>'+
+    '<div class="svbar">'+
+    `<div title="Mujeres: ${Math.round(femN/tot*100)}%" style="width:${femN/tot*100}%;background:${FCOL}">${Math.round(femN/tot*100)}% mujeres</div>`+
+    `<div title="Hombres: ${Math.round(homN/tot*100)}%" style="width:${homN/tot*100}%;background:${MCOL}">${Math.round(homN/tot*100)}% hombres</div></div>`;
+  // × función (fgrp), ordenado por %F asc
+  const fgData=M.fgrp.map((fg,i)=>({fg,o:pctFem(rows.filter(r=>r[C.FGRP]===i))})).filter(x=>x.o.t>0).sort((a,b)=>a.o.p-b.o.p);
+  document.getElementById('genFunc').innerHTML=fgData.map(x=>
+    `<div class="genrow"><div class="genlab">${x.fg} <span class="genn">${nf.format(x.o.f)}/${nf.format(x.o.t)}</span></div>`+
+    `<div class="genbar"><div class="genf" style="width:${x.o.p}%;background:${FCOL}">${Math.round(x.o.p)}%</div><div class="ref" style="left:${all.p}%" title="Promedio ${Math.round(all.p)}%"></div></div></div>`).join('')+
+    `<div class="cs" style="margin-top:8px">Línea = promedio del Servicio (<b>${Math.round(all.p)}%</b> mujeres). Barras más cortas que la línea = funciones menos feminizadas.</div>`;
+  // foco liderazgo
+  const lead=['Director/a','Jefe/a de UTP','Inspector/a general','Otro cargo directivo','Profesor/a encargado/a','Directora de jardín (VTF)'];
+  const leadRows=lead.map(fn=>{const fi=M.func.indexOf(fn); if(fi<0)return null; const o=pctFem(rows.filter(r=>r[C.FUNC]===fi)); return o.t?`<tr><td>${fn}</td><td>${Math.round(o.p)}%</td><td>${nf.format(o.f)}</td><td>${nf.format(o.t)}</td></tr>`:null;}).filter(Boolean).join('');
+  document.getElementById('genLead').innerHTML=`<table class="svtbl"><thead><tr><th>Cargo directivo</th><th>% mujeres</th><th>Mujeres</th><th>Total</th></tr></thead><tbody>${leadRows}</tbody></table>`;
+  // tramos docentes % (100% apilado)
+  const doc=rows.filter(r=>r[C.ESC]===0), TO=PUB.tramo_order;
+  const tr=TO.map((t,ti)=>pctFem(doc.filter(r=>r[C.TRAMO]===ti)));
+  const trSer=[{name:'Mujeres',color:'--s2',data:tr.map(o=>o.t?+o.p.toFixed(1):0)},{name:'Hombres',color:'--s1',data:tr.map(o=>o.t?+(100-o.p).toFixed(1):0)}];
+  legend('gentramo',trSer);
+  barChart(q('gen_tramo'),TO.map(t=>PUB.tramo_label[t]||t),trSer,{stacked:true,ymax:100,slabel:true,dfmt:v=>Math.round(v)+'%'});
+  // evolución (personas por sexo, todos los meses, respeta filtros EE)
+  const okEstAll=EST.map(estabOK);
+  const femMes=M.meses.map(()=>new Set()), homMes=M.meses.map(()=>new Set());
+  for(const r of ROWS){ if(!okEstAll[r[C.EST]]) continue; if(F.rem==='sin'&&r[C.REM]===1) continue; (r[C.SEXO]===0?femMes:homMes)[r[C.MES]].add(r[C.RUT]); }
+  const evSer=[{name:'Mujeres',color:'--s2',data:femMes.map(s=>s.size)},{name:'Hombres',color:'--s1',data:homMes.map(s=>s.size)}];
+  legend('genevol',evSer); barChart(q('gen_evol'),M.meses,evSer,{stacked:true});
+  // por establecimiento
+  const byE={}; rows.forEach(r=>{const rb=EST[r[C.EST]].rbd; (byE[rb]=byE[rb]||{f:new Set(),t:new Set()}); byE[rb].t.add(r[C.RUT]); if(r[C.SEXO]===0) byE[rb].f.add(r[C.RUT]);});
+  const el=Object.keys(byE).sort((a,b)=>byE[b].t.size-byE[a].t.size||a.localeCompare(b,'es'));
+  const eRows=el.map(e=>{const f=byE[e].f.size,t=byE[e].t.size; return `<tr><td>${e}</td><td>${nf.format(f)}</td><td>${nf.format(t-f)}</td><td>${Math.round(f/t*100)}%</td><td>${nf.format(t)}</td></tr>`;}).join('');
+  document.getElementById('genEstTbl').innerHTML=`<table class="svtbl"><thead><tr><th>Establecimiento (RBD · Nombre)</th><th>Mujeres</th><th>Hombres</th><th>% mujeres</th><th>Total</th></tr></thead><tbody>${eRows}</tbody></table>`;
+  document.getElementById('genEstTbl').hidden=!genEstOpen;
+  document.getElementById('genEstToggle').innerHTML=(genEstOpen?'▲ Ocultar tabla':'▼ Mostrar tabla')+' ('+el.length+')';
+}
 function setView(v){
   document.querySelectorAll('.vtab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
   document.getElementById('view-resumen').hidden = v!=='resumen';
   document.getElementById('view-tabla').hidden  = v!=='tabla';
   document.getElementById('view-subv').hidden   = v!=='subv';
+  document.getElementById('view-genero').hidden = v!=='genero';
   if(v==='subv') renderSubvTab();
+  if(v==='genero') renderGenero();
   if(v==='tabla') buildTabla();
   window.scrollTo({top:0,behavior:'auto'});
 }
