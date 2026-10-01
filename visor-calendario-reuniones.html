@@ -14,6 +14,19 @@
   header.top p{margin:0;font-size:.86rem;opacity:.92}
   .note{max-width:1180px;margin:12px auto 0;padding:0 20px}
   .note .box{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:9px 13px;font-size:.82rem}
+  .kpi-wrap{max-width:1180px;margin:14px auto 0;padding:0 20px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px 20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+  .gauge{flex:0 0 auto;width:190px;position:relative}
+  .gauge svg{display:block;width:100%;height:auto}
+  .gauge .pct{font-size:2.1rem;font-weight:800;fill:var(--brand);}
+  .gauge .plabel{font-size:.72rem;font-weight:600;fill:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .kpi-text{flex:1 1 220px;min-width:200px}
+  .kpi-text .big{font-size:1.15rem;font-weight:700;color:var(--ink)}
+  .kpi-text .big b{color:var(--brand2)}
+  .kpi-text .sub{font-size:.9rem;color:var(--muted);margin-top:2px}
+  .kpi-text .sub .pend{color:#1d4ed8;font-weight:600}
+  .kpi-text .foot{font-size:.76rem;color:var(--muted);margin-top:8px;font-style:italic}
+  @media(max-width:520px){.kpi{gap:12px;justify-content:center}.gauge{width:160px}}
   .controls{max-width:1180px;margin:16px auto 0;padding:0 20px}
   .grid-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
   .field label{display:block;font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:0 0 4px}
@@ -91,6 +104,8 @@
 <div class="note"><div class="box">
   Las <b>fechas y horarios</b> corresponden a la programación vigente (pueden ajustarse). Las reuniones ya realizadas aparecen marcadas con <b>✓ Realizada</b>; usa el filtro <i>Estado</i> para ver solo las pendientes.
 </div></div>
+
+<div class="kpi-wrap"><div class="kpi" id="kpi"></div></div>
 
 <div class="controls">
   <div class="grid-f">
@@ -230,10 +245,36 @@ function renderCal(rows){
   out+=`<div class="cal-legend">${Object.keys(COMUNA_COLOR).map(c=>`<span><span class="dot" style="background:${COMUNA_COLOR[c]}"></span>${c}</span>`).join('')}<span>· ✓ = realizada (atenuada)</span><span>· Clic en una reunión pendiente para agregarla a Outlook</span></div>`;
   el.innerHTML=out;
 }
+function uniqueStats(rows){
+  // Agrupa por establecimiento (código): un EE con varias sesiones cuenta como 1.
+  const by={};rows.forEach(e=>{(by[e.code]=by[e.code]||[]).push(e);});
+  const codes=Object.keys(by);const total=codes.length;
+  const done=codes.filter(c=>by[c].every(r=>r.ejecutada)).length;
+  return {total,done,pend:total-done,pct:total?Math.round(done/total*100):0};
+}
+function renderGauge(){
+  const s=uniqueStats(EVENTOS); // global: denominador = total de establecimientos
+  const r=84,cx=100,cy=100,L=Math.PI*r;
+  const off=L*(1-s.pct/100);
+  const multi=EVENTOS.length-s.total; // sesiones extra (EE con >1 sesión)
+  $('#kpi').innerHTML=`
+    <div class="gauge"><svg viewBox="0 0 200 120" role="img" aria-label="Ejecución ${s.pct}%">
+      <path d="M16,100 A84,84 0 0 1 184,100" fill="none" stroke="var(--line)" stroke-width="16" stroke-linecap="round"/>
+      <path d="M16,100 A84,84 0 0 1 184,100" fill="none" stroke="var(--brand2)" stroke-width="16" stroke-linecap="round"
+            stroke-dasharray="${L.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
+      <text class="pct" x="100" y="94" text-anchor="middle">${s.pct}%</text>
+      <text class="plabel" x="100" y="114" text-anchor="middle">ejecutado</text>
+    </svg></div>
+    <div class="kpi-text">
+      <div class="big"><b>${s.done}</b> de <b>${s.total}</b> establecimientos con revisión de dotación realizada</div>
+      <div class="sub"><span class="pend">${s.pend} pendientes</span> · ${EVENTOS.length} sesiones en total</div>
+      ${multi>0?`<div class="foot">Liceo Cordillera se realizó en 2 sesiones y se cuenta como 1 establecimiento (denominador: ${s.total}).</div>`:''}
+    </div>`;
+}
 function render(){
   const rows=currentRows();
-  const done=rows.filter(r=>r.ejecutada).length,pend=rows.length-done;
-  $('#count').innerHTML=`<b>${rows.length}</b> reunion${rows.length===1?'':'es'} <span class="p">· ${done} realizadas · ${pend} pendientes</span>`;
+  const s=uniqueStats(rows);
+  $('#count').innerHTML=`<b>${s.total}</b> establecimiento${s.total===1?'':'s'} <span class="p">· ${s.done} realizados · ${s.pend} pendientes</span>`;
   if(VIEW==='list')renderList(rows);else renderCal(rows);
 }
 function setView(v){VIEW=v;
@@ -243,7 +284,7 @@ function setView(v){VIEW=v;
 $('#vList').addEventListener('click',()=>setView('list'));
 $('#vCal').addEventListener('click',()=>setView('cal'));
 $('#clear').addEventListener('click',()=>{['#fEstado','#fComuna','#fMes','#fLugar'].forEach(s=>$(s).value='');$('#fSearch').value='';COLLAPSED.clear();[7,8,9].forEach(x=>COLLAPSED.add(x));render();});
-initFilters();render();
+initFilters();renderGauge();render();
 </script>
 </body>
 </html>
