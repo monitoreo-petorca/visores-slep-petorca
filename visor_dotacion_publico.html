@@ -215,6 +215,7 @@
   <button class="vtab" data-view="subv">💰 Subvención</button>
   <button class="vtab" data-view="genero">👥 Género</button>
   <button class="vtab" data-view="gasto">💵 Gasto</button>
+  <div class="shotwrap gotowrap"><button class="gotobtn" id="btnGoto">↑↓ Ir a…</button><div class="shotmenu" id="gotoMenu" hidden></div></div>
 </div></div>
 
 <div class="wrap" id="view-resumen">
@@ -2475,6 +2476,37 @@ function renderComuna(){
   segBind('segComRem',b=>CM_R=b.getAttribute('data-cr'));
 })();
 
+
+/* ===== Menu "Ir a..." (salta a secciones de la vista activa) ===== */
+(function(){
+  var btn=document.getElementById('btnGoto'), menu=document.getElementById('gotoMenu');
+  if(!btn||!menu) return;
+  function activeView(){ var b=document.querySelector('.vtab.on'); return b?('view-'+b.dataset.view):'view-resumen'; }
+  function build(){
+    var vid=activeView(), v=document.getElementById(vid), items=[];
+    if(vid==='view-resumen'){ var k=document.getElementById('kpis'); if(k) items.push(['Indicadores (KPIs)','kpis']); }
+    if(v) v.querySelectorAll('.card').forEach(function(card){
+      if(card.parentElement && card.parentElement.closest('.card')) return;
+      var h3=card.querySelector('h3'); if(!h3) return;
+      var tt=h3.textContent.replace(/\s+/g,' ').trim().replace(/ⓘ/g,'').trim();
+      if(/^Filtros/.test(tt)) return;
+      if(!card.id) card.id='sec_'+Math.random().toString(36).slice(2,7);
+      items.push([tt, card.id]);
+    });
+    if(!items.length){ menu.innerHTML='<div class="shotmenu-f">No hay secciones en esta vista.</div>'; return; }
+    menu.innerHTML='<div class="shotmenu-h">Ir a la sección</div>'+items.map(function(it){return '<button type="button" data-goto="'+it[1]+'">'+it[0]+'</button>';}).join('');
+    menu.querySelectorAll('button[data-goto]').forEach(function(b){ b.addEventListener('click',function(ev){ ev.stopPropagation(); menu.hidden=true; gotoSec(b.getAttribute('data-goto')); }); });
+  }
+  function gotoSec(id){ var el=document.getElementById(id); if(!el) return;
+    var vt=document.querySelector('.vtabs'); var off=(vt?vt.offsetHeight:0)+12;
+    var y=el.getBoundingClientRect().top+window.pageYOffset-off;
+    window.scrollTo({top:Math.max(0,y),behavior:'smooth'});
+  }
+  btn.addEventListener('click',function(ev){ ev.stopPropagation(); if(menu.hidden){ build(); menu.hidden=false; } else { menu.hidden=true; } });
+  document.addEventListener('click',function(ev){ if(menu.hidden) return; if(!menu.contains(ev.target)&&ev.target!==btn) menu.hidden=true; });
+  document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') menu.hidden=true; });
+})();
+
 document.querySelectorAll('.vtab').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
 applyTheme();
 </script>
@@ -2510,6 +2542,10 @@ applyTheme();
 .cardshot.inbar{width:30px;height:28px;margin-left:6px;font-size:13px;flex:0 0 auto}
 .cardshot.corner{position:absolute;top:14px;right:14px;width:28px;height:28px;font-size:13px;opacity:.5;z-index:4}
 .card:hover>.cardshot.corner{opacity:1}
+.gotowrap{margin-left:auto}
+.gotobtn{appearance:none;background:var(--chip);border:1px solid var(--bd);color:var(--ink);border-radius:8px;padding:7px 13px;margin:6px 0;font:600 13px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer}
+.gotobtn:hover{border-color:var(--blue);color:var(--blue)}
+#gotoMenu{max-height:72vh;overflow:auto;min-width:264px}
 #remMesChips{align-items:center}
 #remMesChips .rmlbl{font:700 11px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-right:2px}
 #remMesChips .gchip.mo{padding:4px 11px}
