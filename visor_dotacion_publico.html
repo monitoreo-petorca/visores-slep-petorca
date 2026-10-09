@@ -309,11 +309,11 @@
     <div class="cardhead">
       <div>
         <h3>Reemplazos por mes <span class="info" data-def="remmes">ⓘ</span></h3>
-        <p class="cs">Cuántos nombramientos (o personas) son de <b>reemplazo</b> cada mes y qué % representan del total. <span style="color:var(--muted)">Barra clara = total (con su número arriba); roja = reemplazos (número y %). Elige estamento y los meses a mostrar. Responde a los filtros de establecimiento y función.</span></p>
+        <p class="cs">Cuántos nombramientos (o personas) son de <b>reemplazo</b> cada mes y qué % representan del total. <span style="color:var(--muted)">Barra clara = total (con su número arriba); roja = reemplazos (número y %). ⇄ Escuelas compara Docentes vs Asistentes y ⇄ Jardines las 3 categorías VTF, en paralelo. Elige estamento/vista y los meses a mostrar. Responde a los filtros de establecimiento y función.</span></p>
       </div>
       <div class="toolbar">
         <label class="tl">Estamento</label>
-        <div class="seg" id="segRemEsc"><button data-re="all" class="on">Todos</button><button data-re="doc">Docentes</button><button data-re="asis">Asistentes</button><button data-re="cod">Cód. del Trabajo</button></div>
+        <div class="seg" id="segRemEsc"><button data-re="all" class="on">Todos</button><button data-re="doc">Docentes</button><button data-re="asis">Asistentes</button><button data-re="cod">Cód. del Trabajo</button><button data-re="esc">⇄ Escuelas</button><button data-re="jar">⇄ Jardines</button></div>
         <label class="tl">Ver</label>
         <div class="seg" id="segRemMes"><button data-rm="nom" class="on">Nombramientos</button><button data-rm="pers">Personas</button></div>
         <button class="btn" id="btnRemCsv" title="Descarga los datos de reemplazos por mes (total, reemplazos y % en nombramientos y personas) del estamento elegido, en CSV para Excel.">⬇ CSV</button>
@@ -424,9 +424,18 @@
       <div class="chart" data-chart="estamento"></div>
     </div>
 
-    <div class="card">
-      <h3>Personas por comuna</h3>
-      <p class="cs" id="comunaSub"></p>
+    <div class="card" id="comunaCard">
+      <div class="cardhead">
+        <div><h3>Personas por comuna</h3><p class="cs" id="comunaSub"></p></div>
+        <div class="toolbar">
+          <label class="tl">Estamento</label>
+          <div class="seg" id="segComEsc"><button data-ce="all" class="on">Todos</button><button data-ce="doc">Docentes</button><button data-ce="asis">Asistentes</button><button data-ce="cod">Cód. del Trabajo</button></div>
+          <label class="tl">Reempl.</label>
+          <div class="seg" id="segComRem"><button data-cr="con" class="on">Con</button><button data-cr="sin">Sin</button><button data-cr="solo">Solo</button></div>
+        </div>
+      </div>
+      <div class="gchips" id="comMesChips"></div>
+      <div class="legend" data-legend="comuna"></div>
       <div class="chart" data-chart="comuna"></div>
     </div>
 
@@ -1354,10 +1363,8 @@ function render(){
   const estSer=M.esc.map((c,i)=>({name:c,color:PAL[i],data:est[i]}));
   legend('estamento',estSer);barChart(q('estamento'),M.meses,estSer,{stacked:true});
 
-  // Comuna (foto)
-  const comSets={};rowsMes.forEach(r=>{const c=EST[r[C.EST]].comuna;(comSets[c]=comSets[c]||new Set()).add(r[C.RUT]);});
-  const comEnt=Object.entries(comSets).map(([k,s])=>[k,s.size]).sort((a,b)=>b[1]-a[1]);
-  barChart(q('comuna'),comEnt.map(e=>e[0]),[{name:'Personas',color:'--s1',data:comEnt.map(e=>e[1])}],{dlabel:true});
+  // Comuna
+  renderComuna();
 
   // BRP mensual
   const b=brpByMonth(rowsAll);
@@ -2288,14 +2295,29 @@ initGlosaEvol();
 /* ===== Reemplazos por mes ===== */
 let RM_T='nom'; let RM_E='all'; let RM_MES=null;
 const RM_ESC={all:null,doc:0,asis:1,cod:2};
-const RM_ELBL={all:'Todos los estamentos',doc:'Docentes',asis:'Asistentes de la educación',cod:'Código del Trabajo (VTF)'};
+const RM_ELBL={all:'Todos los estamentos',doc:'Docentes',asis:'Asistentes de la educación',cod:'Código del Trabajo (VTF)',esc:'Escuelas: Docentes vs Asistentes',jar:'Jardines VTF: 3 categorías'};
+function remGroupsDef(){
+  if(RM_E==='esc') return [{k:'doc',name:'Docentes',color:'--s1',test:r=>r[C.ESC]===0},
+                           {k:'asis',name:'Asistentes',color:'--s3',test:r=>r[C.ESC]===1}];
+  if(RM_E==='jar') return [{k:'edu',name:'Educadoras de párvulos',color:'--s2',test:r=>r[C.ESC]===2&&(vtfCatOf(r[C.FUNC])||'').indexOf('Educadoras')>-1},
+                           {k:'tec',name:'Técnicos VTF',color:'--s7',test:r=>r[C.ESC]===2&&(vtfCatOf(r[C.FUNC])||'').indexOf('cnicos')>-1},
+                           {k:'otros',name:'Otros asistentes VTF',color:'--s4',test:r=>r[C.ESC]===2&&(vtfCatOf(r[C.FUNC])||'').indexOf('Otros')>-1}];
+  return null;
+}
 function remMesData(){
   const rows=rowsEstAll(), n=M.meses.length, escF=RM_ESC[RM_E];
   const totN=Array(n).fill(0), remN=Array(n).fill(0);
   const totP=Array.from({length:n},()=>new Set()), remP=Array.from({length:n},()=>new Set());
-  rows.forEach(r=>{ if(escF!==null && r[C.ESC]!==escF) return; const m=r[C.MES];
+  rows.forEach(r=>{ if(escF!=null && r[C.ESC]!==escF) return; const m=r[C.MES];
     totN[m]++; totP[m].add(r[C.RUT]); if(r[C.REM]===1){ remN[m]++; remP[m].add(r[C.RUT]); } });
   return {totN,remN,totP:totP.map(s=>s.size),remP:remP.map(s=>s.size)};
+}
+function remGroupData(groups){
+  const rows=rowsEstAll(), n=M.meses.length;
+  const g=groups.map(()=>({totN:Array(n).fill(0),remN:Array(n).fill(0),totP:Array.from({length:n},()=>new Set()),remP:Array.from({length:n},()=>new Set())}));
+  rows.forEach(r=>{ const m=r[C.MES];
+    for(var gi=0;gi<groups.length;gi++){ if(groups[gi].test(r)){ const d=g[gi]; d.totN[m]++; d.totP[m].add(r[C.RUT]); if(r[C.REM]===1){ d.remN[m]++; d.remP[m].add(r[C.RUT]); } break; } } });
+  return g.map(d=>({totN:d.totN,remN:d.remN,totP:d.totP.map(s=>s.size),remP:d.remP.map(s=>s.size)}));
 }
 function buildRemChips(){
   const host=document.getElementById('remMesChips'); if(!host) return;
@@ -2309,39 +2331,75 @@ function buildRemChips(){
   host.querySelectorAll('.gchip.mo').forEach(b=>{ const i=+b.getAttribute('data-mi'); b.classList.toggle('off',!RM_MES.has(i)); });
 }
 function glRemCsv(){
-  var d=remMesData(), labels=M.meses, dec=v=>String(v).replace('.',',');
-  var H=['Mes','Total nombramientos','Reemplazos (nombramientos)','% nombramientos','Total personas','Reemplazos (personas)','% personas'];
-  var lines=[H.join(';')];
-  labels.forEach((m,i)=>{ var tn=d.totN[i],rn=d.remN[i],tp=d.totP[i],rp=d.remP[i];
-    var pn=tn?dec(Math.round(rn/tn*1000)/10):'0', pp=tp?dec(Math.round(rp/tp*1000)/10):'0';
-    lines.push([m,tn,rn,pn,tp,rp,pp].join(';')); });
+  var labels=M.meses, dec=v=>String(v).replace('.',','), pm=RM_T, lines, groups=remGroupsDef();
+  function pct(a,b){ return b?dec(Math.round(a/b*1000)/10):'0'; }
+  if(groups){
+    var gd=remGroupData(groups);
+    var H=['Mes']; groups.forEach(function(g){ H.push(g.name+' total',g.name+' reempl',g.name+' %'); });
+    lines=[H.join(';')];
+    labels.forEach(function(m,i){ var row=[m];
+      groups.forEach(function(g,gi){ var tot=(pm==='pers'?gd[gi].totP:gd[gi].totN)[i], rem=(pm==='pers'?gd[gi].remP:gd[gi].remN)[i]; row.push(tot,rem,pct(rem,tot)); });
+      lines.push(row.join(';')); });
+  } else {
+    var d=remMesData();
+    lines=[['Mes','Total nombramientos','Reemplazos (nombramientos)','% nombramientos','Total personas','Reemplazos (personas)','% personas'].join(';')];
+    labels.forEach(function(m,i){ lines.push([m,d.totN[i],d.remN[i],pct(d.remN[i],d.totN[i]),d.totP[i],d.remP[i],pct(d.remP[i],d.totP[i])].join(';')); });
+  }
   var csv='﻿'+lines.join('\r\n');
   try{var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='reemplazos_por_mes_'+RM_E+'.csv';
+    var a=document.createElement('a');a.href=url;a.download='reemplazos_por_mes_'+RM_E+(groups?('_'+pm):'')+'.csv';
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}catch(e){}
 }
 function renderRemMes(){
   const host=document.getElementById('remMesChart'); if(!host) return;
   buildRemChips();
+  const idxs=M.meses.map((_,i)=>i).filter(i=>RM_MES.has(i));
+  host.innerHTML='';
+  if(!idxs.length){ host.innerHTML='<p class="cs" style="padding:18px 2px;margin:0">Selecciona al menos un mes.</p>'; return; }
+  const groups=remGroupsDef();
+  const svg=svgEl('svg',{viewBox:`0 0 ${W} ${H}`}); host.appendChild(svg); const tip=mkTip(host);
+  const Y=(v,ymax)=>P.t+IH-IH*v/ymax; const labs=idxs.map(i=>M.meses[i]);
+
+  if(groups){
+    const gd=remGroupData(groups);
+    const remOf=gi=>RM_T==='pers'?gd[gi].remP:gd[gi].remN;
+    const totOf=gi=>RM_T==='pers'?gd[gi].totP:gd[gi].totN;
+    let max=0; groups.forEach((g,gi)=>idxs.forEach(i=>{ if(remOf(gi)[i]>max) max=remOf(gi)[i]; }));
+    const ymax=niceMax(max*1.18)||1;
+    legend('remmes', groups.map(g=>({name:g.name,color:g.color})));
+    const {step}=axes(svg,ymax,labs,{}); const X=k=>P.l+step*(k+.5);
+    const gw=Math.min(step*0.8, 42*groups.length), bw=gw/groups.length;
+    idxs.forEach((i,k)=>{ const x0=X(k)-gw/2;
+      groups.forEach((g,gi)=>{ const v=remOf(gi)[i], yy=Y(v,ymax), bx=x0+gi*bw;
+        svg.appendChild(svgEl('rect',{x:bx+1,y:yy,width:Math.max(1,bw-2),height:Math.max(0,P.t+IH-yy),rx:2,fill:css(g.color)}));
+        const tot=totOf(gi)[i], pct=tot?Math.round(v/tot*1000)/10:0;
+        const tx=svgEl('text',{x:bx+bw/2,y:yy-4,'text-anchor':'middle','font-size':9.5,'font-weight':700,fill:css(g.color)});
+        tx.textContent = groups.length<=2 ? (nf.format(v)+'·'+pct+'%') : nf.format(v); svg.appendChild(tx); });
+    });
+    const gl=svgEl('line',{y1:P.t,y2:P.t+IH,stroke:css('--axis'),'stroke-width':1,opacity:0}); svg.appendChild(gl);
+    svg.addEventListener('mousemove',e=>{ const c=svgC(svg,e); let k=Math.max(0,Math.min(idxs.length-1,Math.round((c.x-P.l)/step-.5))); const i=idxs[k], x=X(k);
+      gl.setAttribute('x1',x); gl.setAttribute('x2',x); gl.setAttribute('opacity',1);
+      tip.innerHTML=`<div style="opacity:.8;margin-bottom:2px">${M.meses[i]} · ${RM_ELBL[RM_E]}</div>`+groups.map((g,gi)=>{ const v=remOf(gi)[i],tot=totOf(gi)[i],pct=tot?Math.round(v/tot*1000)/10:0; return `<div><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${css(g.color)};margin-right:5px"></i>${g.name}: <b>${nf.format(v)}</b> de ${nf.format(tot)} (${pct}%)`; }).join('');
+      const r=host.getBoundingClientRect(); tip.style.left=Math.min(r.width-180,Math.max(4,(x/W*r.width)))+'px'; tip.style.top='6px'; tip.style.opacity=1; });
+    svg.addEventListener('mouseleave',()=>{ tip.style.opacity=0; gl.setAttribute('opacity',0); });
+    return;
+  }
+
+  // vista simple (bullet: total claro + reemplazos)
   const d=remMesData();
   const total = RM_T==='pers'? d.totP : d.totN;
   const rem   = RM_T==='pers'? d.remP : d.remN;
   const unit  = RM_T==='pers'?'personas':'nombramientos';
-  const idxs=M.meses.map((_,i)=>i).filter(i=>RM_MES.has(i));
   legend('remmes',[{name:'Total del mes',color:'--chip'},{name:'Reemplazos',color:'--s8'}]);
-  host.innerHTML='';
-  if(!idxs.length){ host.innerHTML='<p class="cs" style="padding:18px 2px;margin:0">Selecciona al menos un mes.</p>'; return; }
-  const svg=svgEl('svg',{viewBox:`0 0 ${W} ${H}`}); host.appendChild(svg); const tip=mkTip(host);
   let max=0; idxs.forEach(i=>{ if(total[i]>max) max=total[i]; }); const ymax=niceMax(max*1.16)||1;
-  const labs=idxs.map(i=>M.meses[i]);
-  const {step}=axes(svg,ymax,labs,{}); const Y=v=>P.t+IH-IH*v/ymax; const X=k=>P.l+step*(k+.5);
+  const {step}=axes(svg,ymax,labs,{}); const X=k=>P.l+step*(k+.5);
   idxs.forEach((i,k)=>{
     const cx=X(k), bw=Math.min(54,step*0.52), rw=bw*0.58;
-    svg.appendChild(svgEl('rect',{x:cx-bw/2,y:Y(total[i]),width:bw,height:Math.max(0,P.t+IH-Y(total[i])),rx:3,fill:css('--chip'),stroke:css('--bd'),'stroke-width':1}));
-    const tt=svgEl('text',{x:cx,y:Y(total[i])-5,'text-anchor':'middle','font-size':10,'font-weight':600,fill:css('--muted')}); tt.textContent=nf.format(total[i]); svg.appendChild(tt);
-    svg.appendChild(svgEl('rect',{x:cx-rw/2,y:Y(rem[i]),width:rw,height:Math.max(0,P.t+IH-Y(rem[i])),rx:2.5,fill:css('--s8')}));
+    svg.appendChild(svgEl('rect',{x:cx-bw/2,y:Y(total[i],ymax),width:bw,height:Math.max(0,P.t+IH-Y(total[i],ymax)),rx:3,fill:css('--chip'),stroke:css('--bd'),'stroke-width':1}));
+    const tt=svgEl('text',{x:cx,y:Y(total[i],ymax)-5,'text-anchor':'middle','font-size':10,'font-weight':600,fill:css('--muted')}); tt.textContent=nf.format(total[i]); svg.appendChild(tt);
+    svg.appendChild(svgEl('rect',{x:cx-rw/2,y:Y(rem[i],ymax),width:rw,height:Math.max(0,P.t+IH-Y(rem[i],ymax)),rx:2.5,fill:css('--s8')}));
     const pct=total[i]?Math.round(rem[i]/total[i]*1000)/10:0;
-    const rt=svgEl('text',{x:cx,y:Y(rem[i])-6,'text-anchor':'middle','font-size':10.5,'font-weight':700,fill:css('--s8')}); rt.textContent=nf.format(rem[i])+' · '+pct+'%'; svg.appendChild(rt);
+    const rt=svgEl('text',{x:cx,y:Y(rem[i],ymax)-6,'text-anchor':'middle','font-size':10.5,'font-weight':700,fill:css('--s8')}); rt.textContent=nf.format(rem[i])+' · '+pct+'%'; svg.appendChild(rt);
   });
   const gl=svgEl('line',{y1:P.t,y2:P.t+IH,stroke:css('--axis'),'stroke-width':1,opacity:0}); svg.appendChild(gl);
   svg.addEventListener('mousemove',e=>{ const c=svgC(svg,e); let k=Math.max(0,Math.min(idxs.length-1,Math.round((c.x-P.l)/step-.5))); const i=idxs[k], x=X(k);
@@ -2360,6 +2418,61 @@ function renderRemMes(){
   segBind('segRemMes',b=>RM_T=b.getAttribute('data-rm'));
   segBind('segRemEsc',b=>RM_E=b.getAttribute('data-re'));
   var cb=document.getElementById('btnRemCsv'); if(cb) cb.addEventListener('click',glRemCsv);
+})();
+
+
+/* ===== Personas por comuna (estamento + reemplazos + meses) ===== */
+let CM_E='all', CM_R='con', CM_MES=null;
+const CM_ESC={all:null,doc:0,asis:1,cod:2};
+const CM_ELBL={all:'todos los estamentos',doc:'docentes',asis:'asistentes',cod:'Código del Trabajo (VTF)'};
+const CM_RLBL={con:'con reemplazos',sin:'sin reemplazos',solo:'solo reemplazos'};
+const CM_PAL=['--s1','--s3','--s4','--s7','--s2','--s5','--s6','--s8','--navy','--blue'];
+function comKeep(r){ const e=CM_ESC[CM_E];
+  if(e!=null && r[C.ESC]!==e) return false;
+  if(CM_R==='sin'&&r[C.REM]===1) return false;
+  if(CM_R==='solo'&&r[C.REM]!==1) return false;
+  return true; }
+function buildComChips(){
+  const host=document.getElementById('comMesChips'); if(!host) return;
+  if(CM_MES===null) CM_MES=new Set([M.meses.length-1]);
+  if(!host._built){
+    host.innerHTML='<span class="rmlbl">Meses</span>'+M.meses.map((m,i)=>`<button type="button" class="gchip mo" data-mi="${i}">${m}</button>`).join('')+'<button type="button" class="rmall" data-rmall="1">Todos</button>';
+    host.querySelectorAll('.gchip.mo').forEach(b=>b.addEventListener('click',()=>{ const i=+b.getAttribute('data-mi'); if(CM_MES.has(i))CM_MES.delete(i); else CM_MES.add(i); if(!CM_MES.size)CM_MES.add(i); renderComuna(); }));
+    host.querySelector('[data-rmall]').addEventListener('click',()=>{ CM_MES=new Set(M.meses.map((_,i)=>i)); renderComuna(); });
+    host._built=true;
+  }
+  host.querySelectorAll('.gchip.mo').forEach(b=>{ const i=+b.getAttribute('data-mi'); b.classList.toggle('off',!CM_MES.has(i)); });
+}
+function renderComuna(){
+  const host=q('comuna'); if(!host) return;
+  if(CM_MES===null) CM_MES=new Set([M.meses.length-1]);
+  buildComChips();
+  const rows=rowsEstAll();
+  const idxs=M.meses.map((_,i)=>i).filter(i=>CM_MES.has(i)).sort((a,b)=>a-b);
+  const sub=document.getElementById('comunaSub');
+  if(!idxs.length){ host.innerHTML=''; if(sub)sub.textContent=''; return; }
+  const perMonth=idxs.map(()=>({}));
+  const pos={}; idxs.forEach((i,k)=>pos[i]=k);
+  rows.forEach(r=>{ if(!comKeep(r)) return; const k=pos[r[C.MES]]; if(k===undefined) return;
+    const c=EST[r[C.EST]].comuna; (perMonth[k][c]=perMonth[k][c]||new Set()).add(r[C.RUT]); });
+  const tot={}; perMonth.forEach(mm=>Object.entries(mm).forEach(([c,s])=>tot[c]=(tot[c]||0)+s.size));
+  const comunas=Object.keys(tot).sort((a,b)=>tot[b]-tot[a]);
+  const single=idxs.length===1;
+  if(single){
+    legend('comuna',[]);
+    barChart(host,comunas,[{name:'Personas',color:'--s1',data:comunas.map(c=>perMonth[0][c]?perMonth[0][c].size:0)}],{dlabel:true});
+  } else {
+    const series=idxs.map((i,k)=>({name:M.meses[i],color:CM_PAL[k%CM_PAL.length],data:comunas.map(c=>perMonth[k][c]?perMonth[k][c].size:0)}));
+    legend('comuna',series.map(s=>({name:s.name,color:s.color})));
+    barChart(host,comunas,series,{});
+  }
+  if(sub) sub.textContent=(single?('Mes '+M.meses[idxs[0]]):(idxs.length+' meses comparados'))+' · '+CM_ELBL[CM_E]+' · '+CM_RLBL[CM_R]+' · personas únicas (RUT)';
+}
+(function(){
+  function segBind(id,set){ var s=document.getElementById(id); if(!s) return;
+    s.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ s.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); set(b); renderComuna(); })); }
+  segBind('segComEsc',b=>CM_E=b.getAttribute('data-ce'));
+  segBind('segComRem',b=>CM_R=b.getAttribute('data-cr'));
 })();
 
 document.querySelectorAll('.vtab').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
@@ -2402,6 +2515,11 @@ applyTheme();
 #remMesChips .gchip.mo{padding:4px 11px}
 #remMesChips .rmall{background:transparent;border:1px solid var(--blue);color:var(--blue);border-radius:999px;padding:4px 12px;font:600 12px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer}
 #remMesChips .rmall:hover{background:var(--blue);color:#fff}
+#comMesChips{align-items:center}
+#comMesChips .rmlbl{font:700 11px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-right:2px}
+#comMesChips .gchip.mo{padding:4px 11px}
+#comMesChips .rmall{background:transparent;border:1px solid var(--blue);color:var(--blue);border-radius:999px;padding:4px 12px;font:600 12px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer}
+#comMesChips .rmall:hover{background:var(--blue);color:#fff}
 </style>
 <script>
 /*!
