@@ -309,14 +309,17 @@
     <div class="cardhead">
       <div>
         <h3>Reemplazos por mes <span class="info" data-def="remmes">ⓘ</span></h3>
-        <p class="cs">Cuántos nombramientos (o personas) son de <b>reemplazo</b> cada mes y qué % representan del total. <span style="color:var(--muted)">La barra clara es el total; la roja, los reemplazos. Responde a los filtros de establecimiento y función.</span></p>
+        <p class="cs">Cuántos nombramientos (o personas) son de <b>reemplazo</b> cada mes y qué % representan del total. <span style="color:var(--muted)">Barra clara = total (con su número arriba); roja = reemplazos (número y %). Elige estamento y los meses a mostrar. Responde a los filtros de establecimiento y función.</span></p>
       </div>
       <div class="toolbar">
+        <label class="tl">Estamento</label>
+        <div class="seg" id="segRemEsc"><button data-re="all" class="on">Todos</button><button data-re="doc">Docentes</button><button data-re="asis">Asistentes</button><button data-re="cod">Cód. del Trabajo</button></div>
         <label class="tl">Ver</label>
         <div class="seg" id="segRemMes"><button data-rm="nom" class="on">Nombramientos</button><button data-rm="pers">Personas</button></div>
-        <button class="btn" id="btnRemCsv" title="Descarga los datos de reemplazos por mes (total, reemplazos y % en nombramientos y personas) en CSV para Excel.">⬇ CSV</button>
+        <button class="btn" id="btnRemCsv" title="Descarga los datos de reemplazos por mes (total, reemplazos y % en nombramientos y personas) del estamento elegido, en CSV para Excel.">⬇ CSV</button>
       </div>
     </div>
+    <div class="gchips" id="remMesChips"></div>
     <div class="legend" data-legend="remmes"></div>
     <div id="remMesChart"></div>
   </div>
@@ -2283,62 +2286,79 @@ initGlosaEvol();
 
 
 /* ===== Reemplazos por mes ===== */
-let RM_T='nom';
+let RM_T='nom'; let RM_E='all'; let RM_MES=null;
+const RM_ESC={all:null,doc:0,asis:1,cod:2};
+const RM_ELBL={all:'Todos los estamentos',doc:'Docentes',asis:'Asistentes de la educación',cod:'Código del Trabajo (VTF)'};
+function remMesData(){
+  const rows=rowsEstAll(), n=M.meses.length, escF=RM_ESC[RM_E];
+  const totN=Array(n).fill(0), remN=Array(n).fill(0);
+  const totP=Array.from({length:n},()=>new Set()), remP=Array.from({length:n},()=>new Set());
+  rows.forEach(r=>{ if(escF!==null && r[C.ESC]!==escF) return; const m=r[C.MES];
+    totN[m]++; totP[m].add(r[C.RUT]); if(r[C.REM]===1){ remN[m]++; remP[m].add(r[C.RUT]); } });
+  return {totN,remN,totP:totP.map(s=>s.size),remP:remP.map(s=>s.size)};
+}
+function buildRemChips(){
+  const host=document.getElementById('remMesChips'); if(!host) return;
+  if(RM_MES===null) RM_MES=new Set(M.meses.map((_,i)=>i));
+  if(!host._built){
+    host.innerHTML='<span class="rmlbl">Meses</span>'+M.meses.map((m,i)=>`<button type="button" class="gchip mo" data-mi="${i}">${m}</button>`).join('')+'<button type="button" class="rmall" data-rmall="1">Todos</button>';
+    host.querySelectorAll('.gchip.mo').forEach(b=>b.addEventListener('click',()=>{ const i=+b.getAttribute('data-mi'); if(RM_MES.has(i))RM_MES.delete(i); else RM_MES.add(i); if(!RM_MES.size)RM_MES.add(i); renderRemMes(); }));
+    host.querySelector('[data-rmall]').addEventListener('click',()=>{ RM_MES=new Set(M.meses.map((_,i)=>i)); renderRemMes(); });
+    host._built=true;
+  }
+  host.querySelectorAll('.gchip.mo').forEach(b=>{ const i=+b.getAttribute('data-mi'); b.classList.toggle('off',!RM_MES.has(i)); });
+}
 function glRemCsv(){
-  var rows=rowsEstAll(), labels=M.meses;
-  var totN=labels.map(()=>0),remN=labels.map(()=>0),totP=labels.map(()=>new Set()),remP=labels.map(()=>new Set());
-  rows.forEach(r=>{var m=r[C.MES];totN[m]++;totP[m].add(r[C.RUT]);if(r[C.REM]===1){remN[m]++;remP[m].add(r[C.RUT]);}});
-  var dec=v=>String(v).replace('.',',');
+  var d=remMesData(), labels=M.meses, dec=v=>String(v).replace('.',',');
   var H=['Mes','Total nombramientos','Reemplazos (nombramientos)','% nombramientos','Total personas','Reemplazos (personas)','% personas'];
   var lines=[H.join(';')];
-  labels.forEach((m,i)=>{
-    var tn=totN[i],rn=remN[i],tp=totP[i].size,rp=remP[i].size;
+  labels.forEach((m,i)=>{ var tn=d.totN[i],rn=d.remN[i],tp=d.totP[i],rp=d.remP[i];
     var pn=tn?dec(Math.round(rn/tn*1000)/10):'0', pp=tp?dec(Math.round(rp/tp*1000)/10):'0';
-    lines.push([m,tn,rn,pn,tp,rp,pp].join(';'));
-  });
+    lines.push([m,tn,rn,pn,tp,rp,pp].join(';')); });
   var csv='﻿'+lines.join('\r\n');
   try{var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='reemplazos_por_mes.csv';
+    var a=document.createElement('a');a.href=url;a.download='reemplazos_por_mes_'+RM_E+'.csv';
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}catch(e){}
 }
 function renderRemMes(){
   const host=document.getElementById('remMesChart'); if(!host) return;
-  const rows=rowsEstAll(), labels=M.meses, n=labels.length;
-  const totN=labels.map(()=>0), remN=labels.map(()=>0);
-  const totP=labels.map(()=>new Set()), remP=labels.map(()=>new Set());
-  rows.forEach(r=>{ const m=r[C.MES]; totN[m]++; totP[m].add(r[C.RUT]); if(r[C.REM]===1){ remN[m]++; remP[m].add(r[C.RUT]); } });
-  const total = RM_T==='pers'? totP.map(s=>s.size): totN;
-  const rem   = RM_T==='pers'? remP.map(s=>s.size): remN;
+  buildRemChips();
+  const d=remMesData();
+  const total = RM_T==='pers'? d.totP : d.totN;
+  const rem   = RM_T==='pers'? d.remP : d.remN;
   const unit  = RM_T==='pers'?'personas':'nombramientos';
+  const idxs=M.meses.map((_,i)=>i).filter(i=>RM_MES.has(i));
   legend('remmes',[{name:'Total del mes',color:'--chip'},{name:'Reemplazos',color:'--s8'}]);
   host.innerHTML='';
+  if(!idxs.length){ host.innerHTML='<p class="cs" style="padding:18px 2px;margin:0">Selecciona al menos un mes.</p>'; return; }
   const svg=svgEl('svg',{viewBox:`0 0 ${W} ${H}`}); host.appendChild(svg); const tip=mkTip(host);
-  let max=0; total.forEach(v=>{ if(v>max) max=v; }); const ymax=niceMax(max*1.14)||1;
-  const {step}=axes(svg,ymax,labels,{}); const Y=v=>P.t+IH-IH*v/ymax; const X=i=>P.l+step*(i+.5);
-  labels.forEach((_,i)=>{
-    const cx=X(i), bw=step*0.52, rw=bw*0.58;
+  let max=0; idxs.forEach(i=>{ if(total[i]>max) max=total[i]; }); const ymax=niceMax(max*1.16)||1;
+  const labs=idxs.map(i=>M.meses[i]);
+  const {step}=axes(svg,ymax,labs,{}); const Y=v=>P.t+IH-IH*v/ymax; const X=k=>P.l+step*(k+.5);
+  idxs.forEach((i,k)=>{
+    const cx=X(k), bw=Math.min(54,step*0.52), rw=bw*0.58;
     svg.appendChild(svgEl('rect',{x:cx-bw/2,y:Y(total[i]),width:bw,height:Math.max(0,P.t+IH-Y(total[i])),rx:3,fill:css('--chip'),stroke:css('--bd'),'stroke-width':1}));
+    const tt=svgEl('text',{x:cx,y:Y(total[i])-5,'text-anchor':'middle','font-size':10,'font-weight':600,fill:css('--muted')}); tt.textContent=nf.format(total[i]); svg.appendChild(tt);
     svg.appendChild(svgEl('rect',{x:cx-rw/2,y:Y(rem[i]),width:rw,height:Math.max(0,P.t+IH-Y(rem[i])),rx:2.5,fill:css('--s8')}));
     const pct=total[i]?Math.round(rem[i]/total[i]*1000)/10:0;
-    const tx=svgEl('text',{x:cx,y:Y(rem[i])-6,'text-anchor':'middle','font-size':10.5,'font-weight':700,fill:css('--s8')}); tx.textContent=nf.format(rem[i])+' · '+pct+'%'; svg.appendChild(tx);
+    const rt=svgEl('text',{x:cx,y:Y(rem[i])-6,'text-anchor':'middle','font-size':10.5,'font-weight':700,fill:css('--s8')}); rt.textContent=nf.format(rem[i])+' · '+pct+'%'; svg.appendChild(rt);
   });
   const gl=svgEl('line',{y1:P.t,y2:P.t+IH,stroke:css('--axis'),'stroke-width':1,opacity:0}); svg.appendChild(gl);
-  svg.addEventListener('mousemove',e=>{ const c=svgC(svg,e); let i=Math.max(0,Math.min(n-1,Math.round((c.x-P.l)/step-.5))); const x=X(i);
+  svg.addEventListener('mousemove',e=>{ const c=svgC(svg,e); let k=Math.max(0,Math.min(idxs.length-1,Math.round((c.x-P.l)/step-.5))); const i=idxs[k], x=X(k);
     gl.setAttribute('x1',x); gl.setAttribute('x2',x); gl.setAttribute('opacity',1);
     const pct=total[i]?Math.round(rem[i]/total[i]*1000)/10:0;
-    tip.innerHTML=`<div style="opacity:.8;margin-bottom:2px">${labels[i]}</div>`+
+    tip.innerHTML=`<div style="opacity:.8;margin-bottom:2px">${M.meses[i]} · ${RM_ELBL[RM_E]}</div>`+
       `<div>Total: <b>${nf.format(total[i])}</b> ${unit}</div>`+
       `<div><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${css('--s8')};margin-right:5px"></i>Reemplazos: <b>${nf.format(rem[i])}</b> (${pct}%)</div>`+
       `<div style="opacity:.75">Sin reemplazos: ${nf.format(total[i]-rem[i])}</div>`;
-    const r=host.getBoundingClientRect(); tip.style.left=Math.min(r.width-150,Math.max(4,(x/W*r.width)))+'px'; tip.style.top='6px'; tip.style.opacity=1; });
+    const r=host.getBoundingClientRect(); tip.style.left=Math.min(r.width-160,Math.max(4,(x/W*r.width)))+'px'; tip.style.top='6px'; tip.style.opacity=1; });
   svg.addEventListener('mouseleave',()=>{ tip.style.opacity=0; gl.setAttribute('opacity',0); });
 }
 (function(){
-  var seg=document.getElementById('segRemMes');
-  if(seg) seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
-    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
-    RM_T=b.getAttribute('data-rm'); renderRemMes();
-  }));
+  function segBind(id,set){ var s=document.getElementById(id); if(!s) return;
+    s.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ s.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); set(b); renderRemMes(); })); }
+  segBind('segRemMes',b=>RM_T=b.getAttribute('data-rm'));
+  segBind('segRemEsc',b=>RM_E=b.getAttribute('data-re'));
   var cb=document.getElementById('btnRemCsv'); if(cb) cb.addEventListener('click',glRemCsv);
 })();
 
@@ -2377,6 +2397,11 @@ applyTheme();
 .cardshot.inbar{width:30px;height:28px;margin-left:6px;font-size:13px;flex:0 0 auto}
 .cardshot.corner{position:absolute;top:14px;right:14px;width:28px;height:28px;font-size:13px;opacity:.5;z-index:4}
 .card:hover>.cardshot.corner{opacity:1}
+#remMesChips{align-items:center}
+#remMesChips .rmlbl{font:700 11px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-right:2px}
+#remMesChips .gchip.mo{padding:4px 11px}
+#remMesChips .rmall{background:transparent;border:1px solid var(--blue);color:var(--blue);border-radius:999px;padding:4px 12px;font:600 12px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer}
+#remMesChips .rmall:hover{background:var(--blue);color:#fff}
 </style>
 <script>
 /*!
