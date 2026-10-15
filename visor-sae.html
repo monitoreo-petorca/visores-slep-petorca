@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Visor SAE Petorca 2026</title>
+<title>Visor SAE Petorca · Anótate 2026 y Postulación 2027</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
@@ -99,6 +99,17 @@
 <style>.hub-back{display:block;background:#0b3d6b;color:#fff;text-decoration:none;font:600 13px/1.3 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:8px 20px;letter-spacing:.2px}.hub-back:hover{background:#0a3155}</style>
 <a class="hub-back" href="index.html">← Volver a los visores</a>
 
+<style>
+.procsw{display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px;background:#eef3f8;border-bottom:1px solid #d5dee8;font:600 13px system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+.procsw button{border:1px solid #b8c6d6;background:#fff;color:#0b3d6b;padding:7px 14px;border-radius:999px;cursor:pointer;font:inherit}
+.procsw button.on{background:#0b3d6b;color:#fff;border-color:#0b3d6b}
+.procsw small{display:block;font-weight:400;font-size:11px;opacity:.85}
+</style>
+<div class="procsw">
+  <button id="procBtn26" class="on" onclick="setProc(26)">📝 Anótate en la lista <small>Lista de espera en curso · 2026</small></button>
+  <button id="procBtn27" onclick="setProc(27)">🎯 Postulación SAE <small>Solicitudes para ingreso 2027</small></button>
+</div>
+<div id="proc26">
 <div class="header">
   <div class="hlogo">SLEP</div>
   <div>
@@ -197,6 +208,99 @@
   <div class="view" id="view-tu">
     <div id="tutorial-content"></div>
   </div>
+
+</div>
+</div>
+<div id="proc27" style="display:none">
+<style>#proc27{
+  --bg:#f5f7fa;--card:#ffffff;--ink:#1d2733;--muted:#5d6b7a;--line:#dde3ea;
+  --brand:#1a4a7a;--brand-2:#4b8bc4;--accent:#e08a2e;--ok:#2e8b57;
+  --c1:#1a4a7a;--c2:#4b8bc4;--c3:#e08a2e;--c4:#2e8b57;--c5:#8e5ea2;--c6:#c9a227;--c7:#7a8794;--c8:#b5533c;
+}
+@media (prefers-color-scheme: dark){#proc27:not([data-theme="light"]){
+    --bg:#0f1720;--card:#17212c;--ink:#e6edf4;--muted:#9aa8b6;--line:#2a3745;
+    --brand:#7fb3e6;--brand-2:#5a9bd6;--accent:#f0a455;--ok:#5fc08a;
+    --c1:#7fb3e6;--c2:#5a9bd6;--c3:#f0a455;--c4:#5fc08a;--c5:#b58fc4;--c6:#dcc063;--c7:#9aa8b6;--c8:#e08a74;
+  }
+}#proc27[data-theme="dark"]{
+  --bg:#0f1720;--card:#17212c;--ink:#e6edf4;--muted:#9aa8b6;--line:#2a3745;
+  --brand:#7fb3e6;--brand-2:#5a9bd6;--accent:#f0a455;--ok:#5fc08a;
+  --c1:#7fb3e6;--c2:#5a9bd6;--c3:#f0a455;--c4:#5fc08a;--c5:#b58fc4;--c6:#dcc063;--c7:#9aa8b6;--c8:#e08a74;
+}#proc27 *{box-sizing:border-box}#proc27{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}#proc27 .p27-header{background:var(--brand);color:#fff;padding:14px 16px}#proc27 .p27-header h1{margin:0;font-size:18px;font-weight:600}#proc27 .p27-header p{margin:2px 0 0;opacity:.85;font-size:12.5px}#proc27 .p27-main{padding:14px 16px 40px;max-width:1280px;margin:0 auto}#proc27 .p27-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}#proc27 .p27-tab{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:999px;cursor:pointer;font:inherit}#proc27 .p27-tab[aria-selected="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}#proc27 .p27-filters{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}#proc27 .p27-filters label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}#proc27 .p27-filters select{width:100%;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}#proc27 .p27-chips{display:flex;flex-wrap:wrap;gap:5px}#proc27 .p27-chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:3px 9px;border-radius:999px;cursor:pointer;font-size:12.5px}#proc27 .p27-chip[aria-pressed="true"]{background:var(--brand-2);color:#fff;border-color:var(--brand-2)}#proc27 .p27-filters .p27-reset{align-self:end;justify-self:start;border:none;background:none;color:var(--brand);cursor:pointer;text-decoration:underline;font:inherit;padding:0}#proc27 .p27-kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin:12px 0}#proc27 .p27-kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}#proc27 .p27-kpi .p27-v{font-size:24px;font-weight:650;color:var(--brand)}#proc27 .p27-kpi .p27-l{font-size:12px;color:var(--muted)}#proc27 .p27-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}#proc27 .p27-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}#proc27 .p27-card h2{font-size:14px;margin:0 0 2px}#proc27 .p27-card .p27-sub{font-size:12px;color:var(--muted);margin:0 0 8px}#proc27 .p27-card.p27-wide{grid-column:1/-1}#proc27 .p27-chartbox{position:relative;height:300px}#proc27 .p27-chartbox.p27-tall{height:max(360px,calc(var(--rows,20) * 22px))}#proc27 table{width:100%;border-collapse:collapse;font-size:13px}#proc27 th, #proc27 td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}#proc27 th:nth-child(-n+2), #proc27 td:nth-child(-n+2){text-align:left}#proc27 th:nth-child(3), #proc27 td:nth-child(3){text-align:left}#proc27 th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}#proc27 td.name{white-space:normal;min-width:180px}#proc27 .p27-bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;min-width:60px}#proc27 .p27-bar>span{display:block;height:100%;background:var(--brand-2)}#proc27 .p27-tablewrap{max-height:520px;overflow:auto}#proc27 .p27-note{font-size:12px;color:var(--muted);margin-top:14px;border-left:3px solid var(--accent);padding:6px 10px;background:var(--card);border-radius:6px}#proc27 .p27-sel{margin-bottom:10px}#proc27 .p27-sel select{padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit;max-width:100%}#proc27 .p27-ficha{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}#proc27 .p27-ficha div{background:var(--bg);border-radius:8px;padding:8px}#proc27 .p27-ficha b{display:block;font-size:18px;color:var(--brand)}#proc27 .p27-ficha span{font-size:11.5px;color:var(--muted)}#proc27 .p27-hidden{display:none}
+@media (max-width:640px){#proc27 .p27-main{padding:10px 12px}#proc27 .p27-grid{grid-template-columns:1fr}#proc27 .p27-chartbox{height:260px}}
+</style>
+
+<div class="p27-header">
+  <h1>Visor SAE 2027 — Postulaciones por establecimiento</h1>
+  <p>SLEP Petorca · Estudios y Monitoreo · Fuente: postulaciones_totales SAE 2027 (corte 14-10-2026) cruzado con Directorio</p>
+</div>
+<div class="p27-main">
+
+<div class="p27-filters" id="p27-filters"></div>
+
+<nav class="p27-tabs" role="tablist">
+  <button class="p27-tab" role="tab" data-tab="resumen" aria-selected="true">Resumen</button>
+  <button class="p27-tab" role="tab" data-tab="ranking" aria-selected="false">Ranking</button>
+  <button class="p27-tab" role="tab" data-tab="territorio" aria-selected="false">Territorio</button>
+  <button class="p27-tab" role="tab" data-tab="estab" aria-selected="false">Dentro del establecimiento</button>
+</nav>
+
+<!-- RESUMEN -->
+<section id="p27-tab-resumen">
+  <div class="p27-kpis" id="p27-kpis"></div>
+  <div class="p27-grid">
+    <div class="p27-card"><h2>Postulaciones por comuna</h2><p class="p27-sub">Participación sobre el total filtrado</p><div class="p27-chartbox"><canvas id="p27-c-comuna"></canvas></div></div>
+    <div class="p27-card"><h2>Rural y urbano</h2><p class="p27-sub">Postulaciones y cantidad de establecimientos por área</p><div class="p27-chartbox"><canvas id="p27-c-area"></canvas></div></div>
+    <div class="p27-card"><h2>Por microcentro</h2><p class="p27-sub">Establecimientos sin microcentro se agrupan como «Sin microcentro»</p><div class="p27-chartbox"><canvas id="p27-c-micro"></canvas></div></div>
+    <div class="p27-card"><h2>Tipo de organización de cursos</h2><p class="p27-sub">Desde el Directorio</p><div class="p27-chartbox"><canvas id="p27-c-tcursos"></canvas></div></div>
+  </div>
+</section>
+
+<!-- RANKING -->
+<section id="p27-tab-ranking" class="p27-hidden">
+  <div class="p27-grid">
+    <div class="p27-card p27-wide"><h2>Pareto de postulaciones</h2><p class="p27-sub">Barras: postulaciones por establecimiento. Línea: porcentaje acumulado del total filtrado.</p><div class="p27-chartbox p27-tall" id="p27-pareto-box"><canvas id="p27-c-pareto"></canvas></div></div>
+    <div class="p27-card p27-wide">
+      <h2>Ranking detallado</h2>
+      <p class="p27-sub">Clic en un encabezado para ordenar. «% comuna» es su participación dentro de su comuna; «% acum.» suma en el orden del ranking.</p>
+      <div class="p27-tablewrap"><table><thead id="p27-rank-head"></thead><tbody id="p27-rank-body"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- TERRITORIO -->
+<section id="p27-tab-territorio" class="p27-hidden">
+  <div class="p27-grid">
+    <div class="p27-card"><h2>Composición de cada comuna por área</h2><p class="p27-sub">Postulaciones apiladas: rural y urbano</p><div class="p27-chartbox"><canvas id="p27-c-t-area"></canvas></div></div>
+    <div class="p27-card"><h2>Microcentros dentro de cada comuna</h2><p class="p27-sub">Postulaciones apiladas por microcentro</p><div class="p27-chartbox"><canvas id="p27-c-t-micro"></canvas></div></div>
+    <div class="p27-card p27-wide">
+      <h2>Resumen territorial</h2>
+      <p class="p27-sub">Cada comuna respecto a la red filtrada</p>
+      <div class="p27-tablewrap"><table><thead id="p27-terr-head"></thead><tbody id="p27-terr-body"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ESTABLECIMIENTO -->
+<section id="p27-tab-estab" class="p27-hidden">
+  <div class="p27-sel"><label for="sel-estab" class="p27-sub">Establecimiento: </label>
+    <select id="p27-sel-estab"></select></div>
+  <div class="p27-card" style="margin-bottom:12px">
+    <h2 id="p27-ficha-title"></h2>
+    <p class="p27-sub" id="p27-ficha-sub"></p>
+    <div class="p27-ficha" id="p27-ficha"></div>
+  </div>
+  <div class="p27-grid">
+    <div class="p27-card"><h2>Su peso en la comuna y en la red</h2><p class="p27-sub">Participación del establecimiento (barras) frente al total de su comuna y de la red filtrada</p><div class="p27-chartbox"><canvas id="p27-c-e-peso"></canvas></div></div>
+    <div class="p27-card"><h2>Frente al resto de su comuna</h2><p class="p27-sub">Su postulación versus el resto de la comuna</p><div class="p27-chartbox"><canvas id="p27-c-e-donut"></canvas></div></div>
+    <div class="p27-card p27-wide"><h2>Desviación frente a la mediana de la red filtrada</h2><p class="p27-sub">Cuánto está por sobre o bajo la mediana de postulaciones (%). El establecimiento seleccionado aparece resaltado.</p><div class="p27-chartbox p27-tall" id="p27-desv-box"><canvas id="p27-c-e-desv"></canvas></div></div>
+  </div>
+</section>
+
+<p class="p27-note">Nota metodológica: el Excel de postulaciones trae un total por establecimiento; no lo desagrega por nivel, curso ni modalidad. Por eso el filtro «Oferta parvularia» y «Oferta media» se aplica a los establecimientos (según Directorio), no a las postulaciones de cada nivel. La comparación «dentro del establecimiento» se hace contra su comuna y la red, no entre niveles. Las postulaciones no son matrícula ni cupos: un porcentaje alto indica demanda relativa, no capacidad.</p>
+
+</div>
+
 
 </div>
 <script>
@@ -928,6 +1032,273 @@ function cl(){b.classList.remove('on');document.body.style.overflow='';}
 f.addEventListener('click',op);c.addEventListener('click',cl);
 b.addEventListener('click',function(e){if(e.target===b)cl();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')cl();});})();
+</script>
+<script>
+(function(){
+
+const RAW = [{"rbd": "1121", "nombre": "LICEO PULMAHUE DE LA LIGUA", "comuna": "La Ligua", "post": 139, "area": "Urbano", "tipo": "Liceo", "microcentro": "No aplica", "media": "Sí", "parv": "No", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "1° a 4° Medio"}, {"rbd": "1122", "nombre": "ESCUELA REPUBLICA DE VENEZUELA", "comuna": "La Ligua", "post": 102, "area": "Urbano", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1123", "nombre": "ESCUELA GABRIELA MISTRAL", "comuna": "La Ligua", "post": 201, "area": "Urbano", "tipo": "Colegio", "microcentro": "No aplica", "media": "Sí", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 4° Medio"}, {"rbd": "1125", "nombre": "ESCUELA DIEGO PORTALES", "comuna": "La Ligua", "post": 25, "area": "Urbano", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1128", "nombre": "ESCUELA COMUNIDADES DE VALLE HERMOSO", "comuna": "La Ligua", "post": 56, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1129", "nombre": "ESCUELA ANGEL MENAY", "comuna": "La Ligua", "post": 2, "area": "Rural", "tipo": "Escuela", "microcentro": "Sembrando Futuro", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1130", "nombre": "ESC. BASICA LOS HORNOS DE HUAQUEN", "comuna": "La Ligua", "post": 4, "area": "Rural", "tipo": "Escuela", "microcentro": "Sembrando Futuro", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1131", "nombre": "ESC. BASICA CASAS VIEJAS DE LONGOTOMA", "comuna": "La Ligua", "post": 9, "area": "Rural", "tipo": "Escuela", "microcentro": "Sembrando Futuro", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1132", "nombre": "ESCUELA BASICA POZA VERDE", "comuna": "La Ligua", "post": 43, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "1° a 8° Básico"}, {"rbd": "1133", "nombre": "ESC.BASICA LAS CASAS DE HUAQUEN", "comuna": "La Ligua", "post": 11, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "No", "cobertura": "1° a 6° Básico"}, {"rbd": "1134", "nombre": "CARMEN SANCHEZ ARAYA", "comuna": "La Ligua", "post": 2, "area": "Rural", "tipo": "Escuela", "microcentro": "Sembrando Futuro", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1135", "nombre": "ESCUELA BASICA LOS MOLLES", "comuna": "La Ligua", "post": 6, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1136", "nombre": "ESCUELA BASICA PUYANCON", "comuna": "La Ligua", "post": 4, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "No", "cobertura": "1° a 8° Básico"}, {"rbd": "1137", "nombre": "ESCUELA BASICA HORTENCIA POWELL S.", "comuna": "La Ligua", "post": 8, "area": "Rural", "tipo": "Escuela", "microcentro": "Sembrando Futuro", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1139", "nombre": "ESCUELA MINISTRO GOMEZ MILLAS", "comuna": "La Ligua", "post": 12, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "No", "cobertura": "NT1 a 6° Básico"}, {"rbd": "1140", "nombre": "ESCUELA BASICA CARLOS ARIZTIA RUIZ", "comuna": "La Ligua", "post": 12, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "No", "cobertura": "1° a 8° Básico"}, {"rbd": "1142", "nombre": "ESCUELA LA CANELA", "comuna": "La Ligua", "post": 6, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "No", "cobertura": "1° a 8° Básico"}, {"rbd": "1143", "nombre": "ESCUELA BASICA QUEBRADILLA", "comuna": "La Ligua", "post": 13, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1144", "nombre": "ESCUELA BASICA PICHICUY", "comuna": "La Ligua", "post": 7, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1145", "nombre": "ESCUELA ENRIQUE DOLL ROJAS", "comuna": "La Ligua", "post": 15, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "No", "cobertura": "1° a 8° Básico"}, {"rbd": "1147", "nombre": "ESCUELA FERNANDO GARCIA OLDINI", "comuna": "Petorca", "post": 24, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1148", "nombre": "LICEO JOSE MANUEL BORGONO NUNEZ", "comuna": "Petorca", "post": 66, "area": "Urbano", "tipo": "Colegio", "microcentro": "No aplica", "media": "Sí", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 2° Nivel"}, {"rbd": "1149", "nombre": "LICEO CORDILLERA", "comuna": "Petorca", "post": 35, "area": "Rural", "tipo": "Colegio", "microcentro": "No aplica", "media": "Sí", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 4° Medio"}, {"rbd": "1152", "nombre": "ESCUELA EDUARDO FREI MONTALVA", "comuna": "Petorca", "post": 10, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "No", "cobertura": "NT1 a 6° Básico"}, {"rbd": "1156", "nombre": "ESCUELA BASICA G-24", "comuna": "Petorca", "post": 5, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "No", "cobertura": "1° a 8° Básico"}, {"rbd": "1157", "nombre": "ESCUELA BASICA LOS ALAMOS EL SOBRANTE", "comuna": "Petorca", "post": 4, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "No", "cobertura": "NT1 a 6° Básico"}, {"rbd": "1158", "nombre": "ESCUELA BASICA BENANCIO PEREZ", "comuna": "Petorca", "post": 1, "area": "Rural", "tipo": "Escuela", "microcentro": "Incakán", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1161", "nombre": "ESCUELA BASICA PEDEGUA", "comuna": "Petorca", "post": 22, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1167", "nombre": "LICEO Y ESCUELA MUNICIPAL", "comuna": "Cabildo", "post": 135, "area": "Urbano", "tipo": "Liceo", "microcentro": "No aplica", "media": "Sí", "parv": "No", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "1° Medio a 2° Nivel"}, {"rbd": "1168", "nombre": "ESCUELA HANS WENKE MENGERS", "comuna": "Cabildo", "post": 56, "area": "Urbano", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1170", "nombre": "ESCUELA BASICA VALLE DE ARTIFICIO", "comuna": "Cabildo", "post": 12, "area": "Urbano", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1171", "nombre": "ESCUELA BASICA LA FRONTERA DE ALICAHUE", "comuna": "Cabildo", "post": 1, "area": "Rural", "tipo": "Escuela", "microcentro": "Valles de Cabildo", "media": "No", "parv": "No", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "1° a 6° Básico"}, {"rbd": "1173", "nombre": "ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO", "comuna": "Cabildo", "post": 14, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1174", "nombre": "ESCUELA BASICA SAN LORENZO", "comuna": "Cabildo", "post": 24, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1176", "nombre": "ESCUELA PABLO NERUDA", "comuna": "Cabildo", "post": 13, "area": "Rural", "tipo": "Escuela", "microcentro": "Valles de Cabildo", "media": "No", "parv": "Sí", "tipo_cursos": "Cursos Combinados", "uni_bi_tri": "Sí", "cobertura": "NT1 a 6° Básico"}, {"rbd": "1178", "nombre": "ESCUELA BASICA LA VINA", "comuna": "Cabildo", "post": 18, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1180", "nombre": "ESCUELA BASICA G-45", "comuna": "Cabildo", "post": 36, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1191", "nombre": "ESCUELA PAPUDO", "comuna": "Papudo", "post": 49, "area": "Urbano", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "1192", "nombre": "ESCUELA RURAL PULLALLY", "comuna": "Papudo", "post": 49, "area": "Rural", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "11199", "nombre": "COLEGIO LUIS CRUZ MARTINEZ", "comuna": "La Ligua", "post": 248, "area": "Urbano", "tipo": "Colegio", "microcentro": "No aplica", "media": "Sí", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 4° Medio"}, {"rbd": "12336", "nombre": "LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA", "comuna": "Cabildo", "post": 335, "area": "Urbano", "tipo": "Liceo", "microcentro": "No aplica", "media": "Sí", "parv": "No", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "1° a 4° Medio"}, {"rbd": "14479", "nombre": "ESCUELA BASICA MUNICIPAL ARAUCARIA", "comuna": "Cabildo", "post": 62, "area": "Urbano", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "Sí", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "NT1 a 8° Básico"}, {"rbd": "40099", "nombre": "LICEO TECNICO PROFESIONAL PAPUDO", "comuna": "Papudo", "post": 56, "area": "Urbano", "tipo": "Liceo", "microcentro": "No aplica", "media": "Sí", "parv": "No", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "1° a 4° Medio"}, {"rbd": "40242", "nombre": "COLEGIO BICENTENARIO", "comuna": "Cabildo", "post": 26, "area": "Urbano", "tipo": "Escuela", "microcentro": "No aplica", "media": "No", "parv": "No", "tipo_cursos": "Curso por nivel", "uni_bi_tri": "No", "cobertura": "1° a 8° Básico"}];
+
+const C = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8'];
+const css = n => getComputedStyle(ROOT).getPropertyValue(n).trim();
+const palette = () => C.map(css);
+const nf = new Intl.NumberFormat('es-CL');
+const fmt = n => nf.format(Math.round(n));
+const pct = (x, d=1) => (x*100).toLocaleString('es-CL',{minimumFractionDigits:d,maximumFractionDigits:d})+'%';
+const sum = a => a.reduce((s,x)=>s+x,0);
+const median = a => { if(!a.length) return 0; const s=[...a].sort((x,y)=>x-y), m=Math.floor(s.length/2); return s.length%2 ? s[m] : (s[m-1]+s[m])/2; };
+const SIN = 'Sin dato';
+
+const DIM = {
+  comuna:  {label:'Comuna',   get:d=>d.comuna},
+  area:    {label:'Área',     get:d=>d.area},
+  micro:   {label:'Microcentro', get:d=>d.microcentro==='No aplica'?'Sin microcentro':d.microcentro},
+  tcursos: {label:'Organización de cursos', get:d=>d.tipo_cursos},
+  tipo:    {label:'Tipo de establecimiento', get:d=>d.tipo},
+};
+const uniq = k => [...new Set(RAW.map(DIM[k].get))].sort((a,b)=>a.localeCompare(b,'es'));
+
+const state = {
+  comuna: new Set(uniq('comuna')),
+  area: new Set(uniq('area')),
+  micro: new Set(uniq('micro')),
+  tcursos: new Set(uniq('tcursos')),
+  tipo: new Set(uniq('tipo')),
+  parv: 'Todos', media: 'Todos',
+  tab: 'resumen', sortKey: 'post', sortDir: -1, estab: null,
+};
+
+const charts = {};
+const ROOT = document.getElementById('proc27');
+function chart(id, cfg){
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById("p27-"+id), cfg);
+  return charts[id];
+}
+
+/* ---------- filtros ---------- */
+function buildFilters(){
+  const box = document.getElementById('p27-filters');
+  const chipGroup = (key,label) => {
+    const opts = uniq(key);
+    return `<div><label>${label}</label><div class="p27-chips" data-group="${key}">${
+      opts.map(o=>`<button class="p27-chip" aria-pressed="${state[key].has(o)}" data-val="${o}">${o}</button>`).join('')
+    }</div></div>`;
+  };
+  const sel = (key,label,vals) => `<div><label for="p27-f-${key}">${label}</label><select id="p27-f-${key}">${
+    vals.map(v=>`<option value="${v}" ${state[key]===v?'selected':''}>${v}</option>`).join('')}</select></div>`;
+  box.innerHTML =
+    chipGroup('comuna','Comuna') +
+    chipGroup('area','Área') +
+    chipGroup('micro','Microcentro') +
+    chipGroup('tcursos','Organización de cursos') +
+    chipGroup('tipo','Tipo de establecimiento') +
+    sel('parv','Oferta parvularia (Directorio)',['Todos','Sí','No']) +
+    sel('media','Oferta media (Directorio)',['Todos','Sí','No']) +
+    `<div><button class="p27-reset" id="p27-reset">Restablecer filtros</button></div>`;
+
+  box.querySelectorAll('.p27-chips').forEach(g=>{
+    g.addEventListener('click', e=>{
+      const b = e.target.closest('.p27-chip'); if(!b) return;
+      const key = g.dataset.group, v = b.dataset.val;
+      state[key].has(v) ? state[key].delete(v) : state[key].add(v);
+      b.setAttribute('aria-pressed', state[key].has(v));
+      render();
+    });
+  });
+  ['parv','media'].forEach(k=>{
+    document.getElementById('p27-f-'+k).addEventListener('change', e=>{ state[k]=e.target.value; render(); });
+  });
+  document.getElementById('p27-reset').addEventListener('click', ()=>{
+    ['comuna','area','micro','tcursos','tipo'].forEach(k=>state[k]=new Set(uniq(k)));
+    state.parv='Todos'; state.media='Todos'; buildFilters(); render();
+  });
+}
+
+function filtered(){
+  return RAW.filter(d =>
+    state.comuna.has(d.comuna) && state.area.has(d.area) && state.micro.has(DIM.micro.get(d)) &&
+    state.tcursos.has(d.tipo_cursos) && state.tipo.has(d.tipo) &&
+    (state.parv==='Todos' || d.parv===state.parv) &&
+    (state.media==='Todos' || d.media===state.media)
+  );
+}
+
+/* ---------- agregados ---------- */
+function agg(rows, key){
+  const m = {};
+  rows.forEach(d=>{ const k=DIM[key].get(d); m[k]=m[k]||{post:0,n:0}; m[k].post+=d.post; m[k].n++; });
+  return Object.entries(m).sort((a,b)=>b[1].post-a[1].post);
+}
+
+function renderResumen(rows){
+  const tot = sum(rows.map(d=>d.post));
+  const totRed = sum(RAW.map(d=>d.post));
+  const posts = rows.map(d=>d.post);
+  const top5 = [...posts].sort((a,b)=>b-a).slice(0,5);
+  document.getElementById('p27-kpis').innerHTML = [
+    [fmt(tot),'Postulaciones (filtro)'],
+    [pct(tot/totRed),'Participación en la red'],
+    [rows.length,'Establecimientos'],
+    [fmt(median(posts)),'Mediana por establecimiento'],
+    [pct(sum(top5)/(tot||1)),'Participación de los 5 mayores'],
+  ].map(([v,l])=>`<div class="p27-kpi"><div class="p27-v">${v}</div><div class="p27-l">${l}</div></div>`).join('');
+
+  const pal = palette();
+  const cp = agg(rows,'comuna');
+  chart('c-comuna',{type:'doughnut',data:{labels:cp.map(x=>x[0]),datasets:[{data:cp.map(x=>x[1].post),backgroundColor:pal}]},
+    options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>{const v=c.raw;return ` ${c.label}: ${fmt(v)} (${pct(v/tot)})`}}}}}});
+
+  const ap = agg(rows,'area');
+  chart('c-area',{type:'bar',data:{labels:ap.map(x=>x[0]),datasets:[
+      {label:'Postulaciones',data:ap.map(x=>x[1].post),backgroundColor:pal[0]},
+      {label:'Establecimientos',data:ap.map(x=>x[1].n),backgroundColor:pal[2]}]},
+    options:{scales:{y:{beginAtZero:true}},plugins:{tooltip:{callbacks:{afterBody:(items)=>{const x=ap[items[0].dataIndex][1];return `Participación: ${pct(x.post/tot)}`}}}}}});
+
+  const mp = agg(rows,'micro');
+  chart('c-micro',{type:'bar',data:{labels:mp.map(x=>x[0]),datasets:[{label:'Postulaciones',data:mp.map(x=>x[1].post),backgroundColor:pal[1]}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:c=>`Participación: ${pct(c.raw/tot)}`}}}}});
+
+  const tp = agg(rows,'tcursos');
+  chart('c-tcursos',{type:'bar',data:{labels:tp.map(x=>x[0]),datasets:[{label:'Postulaciones',data:tp.map(x=>x[1].post),backgroundColor:pal[3]}]},
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:c=>`Participación: ${pct(c.raw/tot)}`}}}}});
+}
+
+function renderRanking(rows){
+  const tot = sum(rows.map(d=>d.post));
+  const comTot = {}; rows.forEach(d=>comTot[d.comuna]=(comTot[d.comuna]||0)+d.post);
+  const sorted = [...rows].sort((a,b)=>b.post-a.post);
+  let acc = 0;
+  const data = sorted.map((d,i)=>{ acc+=d.post; return {...d, rank:i+1, pTot:d.post/tot, pCom:d.post/comTot[d.comuna], acc:acc/tot}; });
+
+  chart('c-pareto',{data:{labels:data.map(d=>d.nombre.length>34?d.nombre.slice(0,32)+'…':d.nombre),datasets:[
+      {type:'bar',label:'Postulaciones',data:data.map(d=>d.post),backgroundColor:palette()[0],yAxisID:'y'},
+      {type:'line',label:'% acumulado',data:data.map(d=>d.acc*100),borderColor:palette()[2],backgroundColor:palette()[2],yAxisID:'y2',tension:.25,pointRadius:2}]},
+    options:{indexAxis:'x',scales:{y:{beginAtZero:true,title:{display:true,text:'Postulaciones'}},y2:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}},x:{ticks:{autoSkip:false,maxRotation:70,minRotation:45}}},
+      plugins:{tooltip:{callbacks:{title:i=>data[i[0].dataIndex].nombre,afterBody:i=>{const d=data[i[0].dataIndex];return `Participación red: ${pct(d.pTot)}\nParticipación comuna: ${pct(d.pCom)}`}}}}}});
+  document.getElementById('p27-pareto-box').style.height = '420px';
+
+  const cols = [
+    ['rank','#',d=>d.rank],['nombre','Establecimiento',d=>d.nombre],['comuna','Comuna',d=>d.comuna],
+    ['post','Postulaciones',d=>d.post],['pTot','% red',d=>d.pTot],['pCom','% comuna',d=>d.pCom],['acc','% acum.',d=>d.acc],
+    ['area','Área',d=>d.area],['micro','Microcentro',d=>DIM.micro.get(d)],['tcursos','Organización cursos',d=>d.tipo_cursos],
+  ];
+  const k = state.sortKey, dir = state.sortDir;
+  const sortFn = cols.find(c=>c[0]===k)?.[2] || (d=>d.post);
+  data.sort((a,b)=>{ const x=sortFn(a), y=sortFn(b); return (x>y?1:x<y?-1:0)*dir; });
+
+  document.getElementById('p27-rank-head').innerHTML = '<tr>'+cols.map(c=>`<th data-k="${c[0]}">${c[1]}${k===c[0]?(dir>0?' ▲':' ▼'):''}</th>`).join('')+'<th>Barra</th></tr>';
+  document.getElementById('p27-rank-body').innerHTML = data.map(d=>`<tr>
+    <td>${d.rank}</td><td class="p27-name">${d.nombre}</td><td>${d.comuna}</td>
+    <td>${fmt(d.post)}</td><td>${pct(d.pTot)}</td><td>${pct(d.pCom)}</td><td>${pct(d.acc)}</td>
+    <td>${d.area}</td><td>${DIM.micro.get(d)}</td><td>${d.tipo_cursos}</td>
+    <td><div class="p27-bar"><span style="width:${(d.post/data[0].post*100).toFixed(1)}%"></span></div></td></tr>`).join('');
+}
+
+function renderTerritorio(rows){
+  const pal = palette();
+  const comunas = uniq('comuna').filter(c=>rows.some(d=>d.comuna===c));
+  const areas = uniq('area').filter(a=>rows.some(d=>d.area===a));
+  const micros = uniq('micro').filter(m=>rows.some(d=>DIM.micro.get(d)===m));
+  const tot = sum(rows.map(d=>d.post));
+
+  chart('c-t-area',{type:'bar',data:{labels:comunas,datasets:areas.map((a,i)=>({label:a,data:comunas.map(c=>sum(rows.filter(d=>d.comuna===c&&d.area===a).map(d=>d.post))),backgroundColor:pal[i]}))},
+    options:{scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}},plugins:{tooltip:{callbacks:{footer:i=>{const c=comunas[i[0].dataIndex];const t=sum(rows.filter(d=>d.comuna===c).map(d=>d.post));return `Total comuna: ${fmt(t)} (${pct(t/tot)} de la red)`}}}}}});
+
+  chart('c-t-micro',{type:'bar',data:{labels:comunas,datasets:micros.map((m,i)=>({label:m,data:comunas.map(c=>sum(rows.filter(d=>d.comuna===c&&DIM.micro.get(d)===m).map(d=>d.post))),backgroundColor:pal[i%pal.length]}))},
+    options:{scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});
+
+  const head = ['Comuna','Establecimientos','Postulaciones','% de la red','Promedio por establecimiento','Mediana','% rural','% urbano'];
+  document.getElementById('p27-terr-head').innerHTML = '<tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+  document.getElementById('p27-terr-body').innerHTML = comunas.map(c=>{
+    const r = rows.filter(d=>d.comuna===c), p = r.map(d=>d.post), t = sum(p);
+    const rur = sum(r.filter(d=>d.area==='Rural').map(d=>d.post));
+    return `<tr><td>${c}</td><td>${r.length}</td><td>${fmt(t)}</td><td>${pct(t/tot)}</td>
+      <td>${fmt(t/r.length)}</td><td>${fmt(median(p))}</td><td>${pct(rur/(t||1))}</td><td>${pct(1-rur/(t||1))}</td></tr>`;
+  }).join('') + `<tr><td><b>Total filtrado</b></td><td><b>${rows.length}</b></td><td><b>${fmt(tot)}</b></td><td><b>100%</b></td><td><b>${fmt(tot/(rows.length||1))}</b></td><td><b>${fmt(median(rows.map(d=>d.post)))}</b></td><td></td><td></td></tr>`;
+}
+
+function renderEstab(rows){
+  const sel = document.getElementById('p27-sel-estab');
+  const sorted = [...rows].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  if(!state.estab || !rows.some(d=>d.rbd===state.estab)) state.estab = (rows.sort((a,b)=>b.post-a.post)[0]||{}).rbd;
+  sel.innerHTML = sorted.map(d=>`<option value="${d.rbd}" ${d.rbd===state.estab?'selected':''}>${d.nombre} (${d.rbd})</option>`).join('');
+  sel.onchange = e=>{ state.estab = e.target.value; renderEstab(filtered()); };
+
+  const d = rows.find(x=>x.rbd===state.estab);
+  if(!d){ document.getElementById('p27-ficha').innerHTML='<p class="p27-sub">Sin establecimientos con los filtros actuales.</p>'; return; }
+  const totRed = sum(rows.map(x=>x.post));
+  const com = rows.filter(x=>x.comuna===d.comuna);
+  const totCom = sum(com.map(x=>x.post));
+  const pcom = com.map(x=>x.post).sort((a,b)=>b-a);
+  const pesos = rows.map(x=>x.post).sort((a,b)=>b-a);
+  const rankRed = pesos.indexOf(d.post)+1;
+  const med = median(rows.map(x=>x.post));
+  const medCom = median(com.map(x=>x.post));
+  const restoCom = totCom - d.post;
+  document.getElementById('p27-ficha-title').textContent = d.nombre;
+  document.getElementById('p27-ficha-sub').textContent = `${d.comuna} · ${d.area} · ${d.tipo} · ${d.tipo_cursos} · Microcentro: ${DIM.micro.get(d)} · Cobertura: ${d.cobertura}`;
+  document.getElementById('p27-ficha').innerHTML = [
+    [fmt(d.post),'Postulaciones'],
+    [`#${rankRed} de ${rows.length}`,'Lugar en la red filtrada'],
+    [pct(d.post/totRed),'% de la red'],
+    [pct(d.post/totCom),'% de su comuna'],
+    [`${(d.post/(med||1)).toLocaleString('es-CL',{maximumFractionDigits:1})} veces`,'La mediana de la red'],
+    [`${(d.post/(medCom||1)).toLocaleString('es-CL',{maximumFractionDigits:1})} veces`,'La mediana de su comuna'],
+    [`${pcom.indexOf(d.post)+1} de ${com.length}`,'Lugar dentro de su comuna'],
+  ].map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join('');
+
+  const pal = palette();
+  chart('c-e-peso',{type:'bar',data:{labels:['% de su comuna','% de la red'],datasets:[{label:d.nombre,data:[d.post/totCom*100,d.post/totRed*100],backgroundColor:[pal[0],pal[1]]}]},
+    options:{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>v+'%'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}}}});
+
+  chart('c-e-donut',{type:'doughnut',data:{labels:[d.nombre,'Resto de su comuna'],datasets:[{data:[d.post,restoCom],backgroundColor:[pal[2],pal[7]]}]},
+    options:{plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${fmt(c.raw)} (${pct(c.raw/totCom)})`}}}}});
+
+  const sortedRed = [...rows].sort((a,b)=>b.post-a.post);
+  const dev = sortedRed.map(x=>({n:x.nombre,v:(x.post/(med||1)-1)*100,me:x.rbd===d.rbd}));
+  chart('c-e-desv',{type:'bar',data:{labels:dev.map(x=>x.n.length>36?x.n.slice(0,34)+'…':x.n),datasets:[{label:'Desviación vs mediana (%)',data:dev.map(x=>x.v),
+      backgroundColor:dev.map(x=>x.me?pal[2]:(x.v>=0?pal[0]:pal[7]))}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>sortedRed[i[0].dataIndex].nombre,label:c=>` ${c.raw.toFixed(0)}% vs mediana`}}},
+      scales:{x:{ticks:{callback:v=>v+'%'}},y:{ticks:{autoSkip:false,font:{size:10}}}}}});
+  document.getElementById('p27-desv-box').style.height = Math.max(360, dev.length*20)+'px';
+}
+
+/* ---------- control ---------- */
+function setTab(t){
+  state.tab = t;
+  ROOT.querySelectorAll('.p27-tab').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===t));
+  ['resumen','ranking','territorio','estab'].forEach(x=>document.getElementById('p27-tab-'+x).classList.toggle('p27-hidden', x!==t));
+  render();
+}
+
+function render(){
+  const rows = filtered();
+  const keyed = {resumen:renderResumen, ranking:renderRanking, territorio:renderTerritorio, estab:renderEstab};
+  keyed[state.tab](rows.map(d=>({...d})));
+}
+
+ROOT.querySelectorAll('.p27-tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+document.getElementById('p27-rank-head').addEventListener('click', e=>{
+  const th = e.target.closest('th[data-k]'); if(!th) return;
+  const k = th.dataset.k;
+  if(state.sortKey===k) state.sortDir*=-1; else { state.sortKey=k; state.sortDir = (k==='nombre'||k==='comuna'||k==='area'||k==='micro'||k==='tcursos')?1:-1; }
+  render();
+});
+
+buildFilters();
+
+window.p27Show = function(){ render(); };
+})();
+</script>
+<script>
+function setProc(p){
+  document.getElementById('proc26').style.display = p===26 ? '' : 'none';
+  document.getElementById('proc27').style.display = p===27 ? '' : 'none';
+  document.getElementById('procBtn26').classList.toggle('on', p===26);
+  document.getElementById('procBtn27').classList.toggle('on', p===27);
+  if(p===27 && window.p27Show) window.p27Show();
+  window.scrollTo(0,0);
+}
 </script>
 </body>
 </html>
