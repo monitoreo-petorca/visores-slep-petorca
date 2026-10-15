@@ -1048,6 +1048,43 @@ const sum = a => a.reduce((s,x)=>s+x,0);
 const median = a => { if(!a.length) return 0; const s=[...a].sort((x,y)=>x-y), m=Math.floor(s.length/2); return s.length%2 ? s[m] : (s[m-1]+s[m])/2; };
 const SIN = 'Sin dato';
 
+const valueLabelsPlugin = {
+  id:'valueLabels',
+  afterDatasetsDraw(chart, _a, opts){
+    if(!opts || !opts.fmt) return;
+    const ctx = chart.ctx, type = chart.config.type, horiz = chart.options.indexAxis==='y';
+    const ink = css('--ink');
+    ctx.save();
+    ctx.font = '600 11px system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+    chart.data.datasets.forEach((ds, di)=>{
+      if(!chart.isDatasetVisible(di)) return;
+      const total = ds.data.reduce((a,b)=>a+(b||0),0) || 1;
+      chart.getDatasetMeta(di).data.forEach((el, i)=>{
+        const v = ds.data[i];
+        if(v==null || v===0) return;
+        if(opts.min && Math.abs(v) < opts.min) return;
+        if(type==='doughnut' && v/total < 0.04) return;
+        const txt = opts.fmt(v, ds);
+        if(type==='doughnut' || opts.stacked){
+          const p = el.tooltipPosition();
+          ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+          ctx.fillText(txt, p.x, p.y);
+        } else if(horiz){
+          ctx.textAlign = v>=0 ? 'left' : 'right';
+          ctx.fillStyle = ink;
+          ctx.fillText(txt, el.x + (v>=0 ? 6 : -6), el.y);
+        } else {
+          ctx.textAlign = 'center'; ctx.fillStyle = ink;
+          ctx.fillText(txt, el.x, el.y - 9);
+        }
+      });
+    });
+    ctx.restore();
+  }
+};
+Chart.register(valueLabelsPlugin);
+
 const DIM = {
   comuna:  {label:'Comuna',   get:d=>d.comuna},
   area:    {label:'Área',     get:d=>d.area},
@@ -1065,6 +1102,7 @@ const state = {
   tipo: new Set(uniq('tipo')),
   parv: 'Todos', media: 'Todos',
   tab: 'resumen', sortKey: 'post', sortDir: -1, estab: null,
+  est: new Set(RAW.map(d=>d.rbd)),
 };
 
 const charts = {};
@@ -1092,10 +1130,31 @@ function buildFilters(){
     chipGroup('micro','Microcentro') +
     chipGroup('tcursos','Organización de cursos') +
     chipGroup('tipo','Tipo de establecimiento') +
-    sel('parv','Oferta parvularia (Directorio)',['Todos','Sí','No']) +
-    sel('media','Oferta media (Directorio)',['Todos','Sí','No']) +
+    sel('parv','Ofrece Niveles Parvularios',['Todos','Sí','No']) +
+    sel('media','Ofrece Niveles E. Media',['Todos','Sí','No']) +
+    `<div><label>Establecimientos</label><details style="position:relative">
+       <summary style="cursor:pointer;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);list-style:none">${state.est.size} de ${RAW.length} seleccionados</summary>
+       <div style="position:absolute;z-index:30;top:100%;left:0;width:380px;max-width:85vw;max-height:380px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);margin-top:4px">
+         <div style="display:flex;gap:6px;margin-bottom:6px"><button class="p27-chip" data-estall="1">Todos</button><button class="p27-chip" data-estall="0">Ninguno</button></div>
+         ${RAW.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,'es')).map(d=>`<label style="display:flex;gap:6px;align-items:flex-start;padding:3px 2px;font-size:12.5px;color:var(--ink);margin:0"><input type="checkbox" data-rbd="${d.rbd}" ${state.est.has(d.rbd)?'checked':''}> <span>${d.nombre}</span></label>`).join('')}
+       </div></details></div>` +
     `<div><button class="p27-reset" id="p27-reset">Restablecer filtros</button></div>`;
 
+  box.querySelectorAll('input[data-rbd]').forEach(inp=>{
+    inp.addEventListener('change', e=>{
+      const r = e.target.dataset.rbd;
+      e.target.checked ? state.est.add(r) : state.est.delete(r);
+      syncEstSummary(); render();
+    });
+  });
+  box.querySelectorAll('[data-estall]').forEach(b=>{
+    b.addEventListener('click', e=>{
+      e.preventDefault();
+      if(b.dataset.estall==='1') RAW.forEach(d=>state.est.add(d.rbd)); else state.est.clear();
+      box.querySelectorAll('input[data-rbd]').forEach(i=>{ i.checked = state.est.has(i.dataset.rbd); });
+      syncEstSummary(); render();
+    });
+  });
   box.querySelectorAll('.p27-chips').forEach(g=>{
     g.addEventListener('click', e=>{
       const b = e.target.closest('.p27-chip'); if(!b) return;
@@ -1110,14 +1169,19 @@ function buildFilters(){
   });
   document.getElementById('p27-reset').addEventListener('click', ()=>{
     ['comuna','area','micro','tcursos','tipo'].forEach(k=>state[k]=new Set(uniq(k)));
-    state.parv='Todos'; state.media='Todos'; buildFilters(); render();
+    state.parv='Todos'; state.media='Todos'; state.est=new Set(RAW.map(d=>d.rbd)); buildFilters(); render();
   });
+}
+
+function syncEstSummary(){
+  const s = document.getElementById('p27-filters').querySelector('summary');
+  if(s) s.textContent = `${state.est.size} de ${RAW.length} seleccionados`;
 }
 
 function filtered(){
   return RAW.filter(d =>
     state.comuna.has(d.comuna) && state.area.has(d.area) && state.micro.has(DIM.micro.get(d)) &&
-    state.tcursos.has(d.tipo_cursos) && state.tipo.has(d.tipo) &&
+    state.tcursos.has(d.tipo_cursos) && state.tipo.has(d.tipo) && state.est.has(d.rbd) &&
     (state.parv==='Todos' || d.parv===state.parv) &&
     (state.media==='Todos' || d.media===state.media)
   );
@@ -1146,21 +1210,21 @@ function renderResumen(rows){
   const pal = palette();
   const cp = agg(rows,'comuna');
   chart('c-comuna',{type:'doughnut',data:{labels:cp.map(x=>x[0]),datasets:[{data:cp.map(x=>x[1].post),backgroundColor:pal}]},
-    options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>{const v=c.raw;return ` ${c.label}: ${fmt(v)} (${pct(v/tot)})`}}}}}});
+    options:{plugins:{legend:{position:'right'},valueLabels:{fmt:(v,ds)=>pct(v/(sum(ds.data)||1))},tooltip:{callbacks:{label:c=>{const v=c.raw;return ` ${c.label}: ${fmt(v)} (${pct(v/tot)})`}}}}}});
 
   const ap = agg(rows,'area');
   chart('c-area',{type:'bar',data:{labels:ap.map(x=>x[0]),datasets:[
       {label:'Postulaciones',data:ap.map(x=>x[1].post),backgroundColor:pal[0]},
       {label:'Establecimientos',data:ap.map(x=>x[1].n),backgroundColor:pal[2]}]},
-    options:{scales:{y:{beginAtZero:true}},plugins:{tooltip:{callbacks:{afterBody:(items)=>{const x=ap[items[0].dataIndex][1];return `Participación: ${pct(x.post/tot)}`}}}}}});
+    options:{scales:{y:{beginAtZero:true}},plugins:{valueLabels:{fmt:v=>fmt(v)},tooltip:{callbacks:{afterBody:(items)=>{const x=ap[items[0].dataIndex][1];return `Participación: ${pct(x.post/tot)}`}}}}}});
 
   const mp = agg(rows,'micro');
   chart('c-micro',{type:'bar',data:{labels:mp.map(x=>x[0]),datasets:[{label:'Postulaciones',data:mp.map(x=>x[1].post),backgroundColor:pal[1]}]},
-    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:c=>`Participación: ${pct(c.raw/tot)}`}}}}});
+    options:{indexAxis:'y',plugins:{legend:{display:false},valueLabels:{fmt:v=>fmt(v)},tooltip:{callbacks:{afterLabel:c=>`Participación: ${pct(c.raw/tot)}`}}}}});
 
   const tp = agg(rows,'tcursos');
   chart('c-tcursos',{type:'bar',data:{labels:tp.map(x=>x[0]),datasets:[{label:'Postulaciones',data:tp.map(x=>x[1].post),backgroundColor:pal[3]}]},
-    options:{plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:c=>`Participación: ${pct(c.raw/tot)}`}}}}});
+    options:{plugins:{legend:{display:false},valueLabels:{fmt:v=>fmt(v)},tooltip:{callbacks:{afterLabel:c=>`Participación: ${pct(c.raw/tot)}`}}}}});
 }
 
 function renderRanking(rows){
@@ -1210,7 +1274,7 @@ function renderRanking(rows){
     <td>${d.rank}</td><td class="p27-name">${d.nombre}</td><td>${d.comuna}</td>
     <td>${fmt(d.post)}</td><td>${pct(d.pTot)}</td><td>${pct(d.pCom)}</td><td>${pct(d.acc)}</td>
     <td>${d.area}</td><td>${DIM.micro.get(d)}</td><td>${d.tipo_cursos}</td>
-    <td><div class="p27-bar"><span style="width:${(d.post/data[0].post*100).toFixed(1)}%"></span></div></td></tr>`).join('');
+    <td><div class="p27-bar"><span style="width:${(d.post/(data[0]?.post||1)*100).toFixed(1)}%"></span></div></td></tr>`).join('');
 }
 
 function renderTerritorio(rows){
@@ -1221,10 +1285,10 @@ function renderTerritorio(rows){
   const tot = sum(rows.map(d=>d.post));
 
   chart('c-t-area',{type:'bar',data:{labels:comunas,datasets:areas.map((a,i)=>({label:a,data:comunas.map(c=>sum(rows.filter(d=>d.comuna===c&&d.area===a).map(d=>d.post))),backgroundColor:pal[i]}))},
-    options:{scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}},plugins:{tooltip:{callbacks:{footer:i=>{const c=comunas[i[0].dataIndex];const t=sum(rows.filter(d=>d.comuna===c).map(d=>d.post));return `Total comuna: ${fmt(t)} (${pct(t/tot)} de la red)`}}}}}});
+    options:{scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}},plugins:{valueLabels:{fmt:v=>fmt(v),stacked:true,min:25},tooltip:{callbacks:{footer:i=>{const c=comunas[i[0].dataIndex];const t=sum(rows.filter(d=>d.comuna===c).map(d=>d.post));return `Total comuna: ${fmt(t)} (${pct(t/tot)} de la red)`}}}}}});
 
   chart('c-t-micro',{type:'bar',data:{labels:comunas,datasets:micros.map((m,i)=>({label:m,data:comunas.map(c=>sum(rows.filter(d=>d.comuna===c&&DIM.micro.get(d)===m).map(d=>d.post))),backgroundColor:pal[i%pal.length]}))},
-    options:{scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});
+    options:{scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}},plugins:{valueLabels:{fmt:v=>fmt(v),stacked:true,min:25}}}});
 
   const head = ['Comuna','Establecimientos','Postulaciones','% de la red','Promedio por establecimiento','Mediana','% rural','% urbano'];
   document.getElementById('p27-terr-head').innerHTML = '<tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr>';
@@ -1268,16 +1332,16 @@ function renderEstab(rows){
 
   const pal = palette();
   chart('c-e-peso',{type:'bar',data:{labels:['% de su comuna','% de la red'],datasets:[{label:d.nombre,data:[d.post/totCom*100,d.post/totRed*100],backgroundColor:[pal[0],pal[1]]}]},
-    options:{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>v+'%'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}}}});
+    options:{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>v+'%'}}},plugins:{legend:{display:false},valueLabels:{fmt:v=>v.toFixed(1)+'%'},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}}}});
 
   chart('c-e-donut',{type:'doughnut',data:{labels:[d.nombre,'Resto de su comuna'],datasets:[{data:[d.post,restoCom],backgroundColor:[pal[2],pal[7]]}]},
-    options:{plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${fmt(c.raw)} (${pct(c.raw/totCom)})`}}}}});
+    options:{plugins:{legend:{position:'bottom'},valueLabels:{fmt:(v,ds)=>pct(v/(sum(ds.data)||1))},tooltip:{callbacks:{label:c=>` ${fmt(c.raw)} (${pct(c.raw/totCom)})`}}}}});
 
   const sortedRed = [...rows].sort((a,b)=>b.post-a.post);
   const dev = sortedRed.map(x=>({n:x.nombre,v:(x.post/(med||1)-1)*100,me:x.rbd===d.rbd}));
   chart('c-e-desv',{type:'bar',data:{labels:dev.map(x=>x.n.length>36?x.n.slice(0,34)+'…':x.n),datasets:[{label:'Desviación vs mediana (%)',data:dev.map(x=>x.v),
       backgroundColor:dev.map(x=>x.me?pal[2]:(x.v>=0?pal[0]:pal[7]))}]},
-    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>sortedRed[i[0].dataIndex].nombre,label:c=>` ${c.raw.toFixed(0)}% vs mediana`}}},
+    options:{indexAxis:'y',plugins:{legend:{display:false},valueLabels:{fmt:v=>v.toFixed(0)+'%'},tooltip:{callbacks:{title:i=>sortedRed[i[0].dataIndex].nombre,label:c=>` ${c.raw.toFixed(0)}% vs mediana`}}},
       scales:{x:{ticks:{callback:v=>v+'%'}},y:{ticks:{autoSkip:false,font:{size:10}}}}}});
   document.getElementById('p27-desv-box').style.height = Math.max(360, dev.length*20)+'px';
 }
