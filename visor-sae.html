@@ -295,8 +295,8 @@ html[data-theme="dark"] .hlogo{background:#e6edf4}
 <!-- TERRITORIO -->
 <section id="p27-tab-territorio" class="p27-hidden">
   <div class="p27-grid">
-    <div class="p27-card"><h2>Composición de cada comuna por área</h2><p class="p27-sub">Postulaciones apiladas: rural y urbano</p><div class="p27-chartbox"><canvas id="p27-c-t-area"></canvas></div></div>
-    <div class="p27-card"><h2>Microcentros dentro de cada comuna</h2><p class="p27-sub">Postulaciones apiladas por microcentro</p><div class="p27-chartbox"><canvas id="p27-c-t-micro"></canvas></div></div>
+    <div class="p27-card p27-wide"><h2>Composición de cada comuna por área</h2><p class="p27-sub">Postulaciones apiladas: rural y urbano</p><div class="p27-chartbox"><canvas id="p27-c-t-area"></canvas></div></div>
+    <div class="p27-card p27-wide"><h2>Microcentros dentro de cada comuna</h2><p class="p27-sub">Postulaciones apiladas por microcentro</p><div class="p27-chartbox"><canvas id="p27-c-t-micro"></canvas></div></div>
     <div class="p27-card p27-wide">
       <h2>Resumen territorial</h2>
       <p class="p27-sub">Cada comuna respecto a la red filtrada</p>
@@ -1096,6 +1096,13 @@ const TIPS = {
   est:'Marca uno o varios establecimientos. Todas las pestañas y el mapa se recalculan con tu selección.',
 };
 
+function labelOn(bg){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(bg||''));
+  if(!m) return '#fff';
+  const n = parseInt(m[1],16), r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  const L = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return L > 0.45 ? '#1d2733' : '#ffffff';
+}
 const valueLabelsPlugin = {
   id:'valueLabels',
   afterDatasetsDraw(chart, _a, opts){
@@ -1116,7 +1123,8 @@ const valueLabelsPlugin = {
         const txt = opts.fmt(v, ds);
         if(type==='doughnut' || opts.stacked){
           const p = el.tooltipPosition();
-          ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+          const bgc = Array.isArray(ds.backgroundColor) ? ds.backgroundColor[i] : ds.backgroundColor;
+          ctx.textAlign = 'center'; ctx.fillStyle = labelOn(bgc);
           ctx.fillText(txt, p.x, p.y);
         } else if(horiz){
           ctx.textAlign = v>=0 ? 'left' : 'right';
@@ -1157,6 +1165,7 @@ const charts = {};
 const ROOT = document.getElementById('proc27');
 function chart(id, cfg){
   if(charts[id]) charts[id].destroy();
+  cfg.options = Object.assign({maintainAspectRatio:false}, cfg.options||{});
   charts[id] = new Chart(document.getElementById("p27-"+id), cfg);
   return charts[id];
 }
@@ -1396,26 +1405,31 @@ function renderEstab(rows){
 
 /* ---------- control ---------- */
 let MAP=null, mapLayers=null, tileLayer=null, heatMode=true;
-const TILE = dark => dark
-  ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-  : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 function isDark(){
   const t = document.documentElement.getAttribute('data-theme');
   return t==='dark' || (t!=='light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 }
 function tileFor(){
-  return L.tileLayer(TILE(isDark()), {attribution:'&copy; OpenStreetMap &copy; CARTO', subdomains:'abcd', maxZoom:19});
+  return L.tileLayer(TILE_URL, {attribution:'&copy; OpenStreetMap contributors', maxZoom:19});
+}
+function applyMapTheme(){
+  if(!MAP) return;
+  const pane = MAP.getPane('tilePane');
+  pane.style.filter = isDark() ? 'invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9)' : '';
 }
 function initMap(){
   if(MAP) return;
   MAP = L.map(document.getElementById('p27-map27')).setView([-32.36,-71.25], 10);
   tileLayer = tileFor().addTo(MAP);
   mapLayers = L.layerGroup().addTo(MAP);
+  applyMapTheme();
 }
 function refreshTiles(){
   if(!MAP) return;
   MAP.removeLayer(tileLayer);
   tileLayer = tileFor().addTo(MAP);
+  applyMapTheme();
 }
 function renderMapa(rows){
   initMap();
