@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Visor SAE Petorca · Anótate 2026 y Postulación 2027</title>
+<title>Visor SAE Petorca 2026</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
@@ -259,7 +259,7 @@
 <!-- RANKING -->
 <section id="p27-tab-ranking" class="p27-hidden">
   <div class="p27-grid">
-    <div class="p27-card p27-wide"><h2>Pareto de postulaciones</h2><p class="p27-sub">Barras: postulaciones por establecimiento. Línea: porcentaje acumulado del total filtrado.</p><div class="p27-chartbox p27-tall" id="p27-pareto-box"><canvas id="p27-c-pareto"></canvas></div></div>
+    <div class="p27-card p27-wide"><h2>Mapa de calor por establecimiento</h2><p class="p27-sub">Cada columna usa su propia escala: más intenso = mayor valor dentro de la columna. Ordenado por postulaciones.</p><div class="p27-tablewrap" id="p27-heat-wrap"></div></div>
     <div class="p27-card p27-wide">
       <h2>Ranking detallado</h2>
       <p class="p27-sub">Clic en un encabezado para ordenar. «% comuna» es su participación dentro de su comuna; «% acum.» suma en el orden del ranking.</p>
@@ -1170,12 +1170,31 @@ function renderRanking(rows){
   let acc = 0;
   const data = sorted.map((d,i)=>{ acc+=d.post; return {...d, rank:i+1, pTot:d.post/tot, pCom:d.post/comTot[d.comuna], acc:acc/tot}; });
 
-  chart('c-pareto',{data:{labels:data.map(d=>d.nombre.length>34?d.nombre.slice(0,32)+'…':d.nombre),datasets:[
-      {type:'bar',label:'Postulaciones',data:data.map(d=>d.post),backgroundColor:palette()[0],yAxisID:'y'},
-      {type:'line',label:'% acumulado',data:data.map(d=>d.acc*100),borderColor:palette()[2],backgroundColor:palette()[2],yAxisID:'y2',tension:.25,pointRadius:2}]},
-    options:{indexAxis:'x',scales:{y:{beginAtZero:true,title:{display:true,text:'Postulaciones'}},y2:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}},x:{ticks:{autoSkip:false,maxRotation:70,minRotation:45}}},
-      plugins:{tooltip:{callbacks:{title:i=>data[i[0].dataIndex].nombre,afterBody:i=>{const d=data[i[0].dataIndex];return `Participación red: ${pct(d.pTot)}\nParticipación comuna: ${pct(d.pCom)}`}}}}}});
-  document.getElementById('p27-pareto-box').style.height = '420px';
+  const medRed = median(rows.map(d=>d.post));
+  const medCom = {};
+  Object.keys(comTot).forEach(c=>{ medCom[c] = median(rows.filter(d=>d.comuna===c).map(d=>d.post)); });
+  const metrics = [
+    {l:'Postulaciones',      f:d=>d.post,                              t:v=>fmt(v)},
+    {l:'% de la red',        f:d=>d.pTot,                              t:v=>pct(v)},
+    {l:'% de su comuna',     f:d=>d.pCom,                              t:v=>pct(v)},
+    {l:'× mediana red',      f:d=>d.post/(medRed||1),                  t:v=>v.toLocaleString('es-CL',{maximumFractionDigits:1})+'×'},
+    {l:'× mediana comuna',   f:d=>d.post/(medCom[d.comuna]||1),        t:v=>v.toLocaleString('es-CL',{maximumFractionDigits:1})+'×'},
+  ];
+  const heatRows = [...data].sort((a,b)=>b.post-a.post);
+  const ranges = metrics.map(m=>{ const vals=heatRows.map(m.f); return {min:Math.min(...vals), max:Math.max(...vals)}; });
+  const cell = (v, i) => {
+    const r = ranges[i], t = (v - r.min) / ((r.max - r.min) || 1);
+    const bg = `color-mix(in srgb, var(--brand) ${Math.round(6 + 84*t)}%, var(--card))`;
+    const fg = t > 0.55 ? '#fff' : 'var(--ink)';
+    return {bg, fg};
+  };
+  const head = '<tr><th>#</th><th>Establecimiento</th><th>Comuna</th>' + metrics.map(m=>`<th style="text-align:center">${m.l}</th>`).join('') + '</tr>';
+  const body = heatRows.map((d,idx)=>{
+    const tds = metrics.map((m,i)=>{ const v=m.f(d); const c=cell(v,i); return `<td style="text-align:center;background:${c.bg};color:${c.fg};font-weight:600" title="${m.l}: ${m.t(v)}">${m.t(v)}</td>`; }).join('');
+    return `<tr><td>${idx+1}</td><td class="p27-name">${d.nombre}</td><td>${d.comuna}</td>${tds}</tr>`;
+  }).join('');
+  document.getElementById('p27-heat-wrap').innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  document.getElementById('p27-heat-wrap').style.maxHeight = '620px';
 
   const cols = [
     ['rank','#',d=>d.rank],['nombre','Establecimiento',d=>d.nombre],['comuna','Comuna',d=>d.comuna],
