@@ -1216,7 +1216,7 @@ function buildFilters(){
   const sel = (key,label,vals) => `<div class="fg"><label for="p27-f-${key}" title="${TIPS[key]}">${label}</label><select id="p27-f-${key}">${
     vals.map(v=>`<option value="${v}" ${state[key]===v?'selected':''}>${v}</option>`).join('')}</select></div>`;
   box.innerHTML =
-    `<div class="fg" style="grid-column:1/-1;max-width:420px"><label for="q-input" title="Busca por nombre, RBD o comuna">Buscar establecimiento</label><input id="q-input" data-q type="search" placeholder="Nombre, RBD o comuna" value="${state.q.replace(/"/g,'&quot;')}" style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit"></div>` +
+    `<div class="fg" style="grid-column:1/-1;max-width:420px"><label for="q-input" title="Busca por nombre, RBD o comuna">Buscar establecimiento</label><input id="q-input" data-q type="search" placeholder="Nombre, RBD o comuna" value="${state.q.replace(/"/g,'&quot;')}" style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit"><div data-qhint class="p27-sub" style="margin-top:4px;min-height:1.2em;font-weight:600;color:var(--brand)"></div></div>` +
     chipGroup('comuna','Comuna') +
     chipGroup('area','Área') +
     chipGroup('micro','Microcentro') +
@@ -1546,7 +1546,22 @@ function setTab(t){
   render();
 }
 
+function updateHint(){
+  const el = ROOT.querySelector('[data-qhint]'); if(!el) return;
+  const q = nq(state.q.trim());
+  if(!q){ el.textContent=''; return; }
+  const m = RAW.filter(d=>matchQ(q,d));
+  if(m.length===0){ el.textContent='Ningún establecimiento coincide con la búsqueda.'; return; }
+  if(m.length===1){
+    el.textContent = 'Mostrando: ' + m[0].etiqueta + ' (' + m[0].comuna + ')';
+    state.estab = m[0].rbd;
+    return;
+  }
+  el.textContent = m.length + ' establecimientos coinciden con la búsqueda.';
+}
+
 function render(){
+  updateHint();
   const rows = filtered();
   if(state.tab==='sin'){ renderSin(); return; }
   const keyed = {resumen:renderResumen, ranking:renderRanking, territorio:renderTerritorio, mapa:renderMapa, estab:renderEstab};
