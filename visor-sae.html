@@ -1223,7 +1223,7 @@ function buildFilters(){
     chipGroup('tcursos','Organización de cursos') +
     chipGroup('tipo','Tipo de establecimiento') +
     `<div class="fg"><label title="${TIPS.nivel}">Nivel (curso)</label><details style="position:relative">
-       <summary style="cursor:pointer;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);list-style:none">${state.nivel.size} de ${NIV.length} niveles</summary>
+       <summary data-nivel-sum style="cursor:pointer;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);list-style:none">${state.nivel.size} de ${NIV.length} niveles</summary>
        <div style="position:absolute;z-index:30;top:100%;left:0;width:340px;max-width:85vw;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);margin-top:4px">
          <div class="p27-chips" data-group="nivel" style="gap:4px">${
            NIV.map(n=>`<button class="p27-chip" style="font-size:12px;padding:3px 9px" aria-pressed="${state.nivel.has(n.k)}" data-val="${n.k}">${n.l}</button>`).join('')
@@ -1232,7 +1232,7 @@ function buildFilters(){
     sel('parv','Ofrece Niveles Parvularios',['Todos','Sí','No']) +
     sel('media','Ofrece Niveles E. Media',['Todos','Sí','No']) +
     `<div class="fg"><label title="${TIPS.est}">Establecimientos</label><details style="position:relative">
-       <summary style="cursor:pointer;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);list-style:none">${state.est.size} de ${RAW.length} seleccionados</summary>
+       <summary data-est-sum style="cursor:pointer;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);list-style:none">${state.est.size} de ${RAW.length} seleccionados</summary>
        <div style="position:absolute;z-index:30;top:100%;left:0;width:380px;max-width:85vw;max-height:380px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);margin-top:4px">
          <div style="display:flex;gap:6px;margin-bottom:6px"><button class="p27-chip" data-estall="1">Todos</button><button class="p27-chip" data-estall="0">Ninguno</button></div>
          ${RAW.slice().sort((a,b)=>a.nombre.localeCompare(b.etiqueta,'es')).map(d=>`<label style="display:flex;gap:6px;align-items:flex-start;padding:3px 2px;font-size:12.5px;color:var(--ink);margin:0"><input type="checkbox" data-rbd="${d.rbd}" ${state.est.has(d.rbd)?'checked':''}> <span>${d.etiqueta}</span></label>`).join('')}
@@ -1260,7 +1260,7 @@ function buildFilters(){
       const key = g.dataset.group, v = b.dataset.val;
       state[key].has(v) ? state[key].delete(v) : state[key].add(v);
       b.setAttribute('aria-pressed', state[key].has(v));
-      if(key==='nivel'){ const sm = g.closest('details').querySelector('summary'); if(sm) sm.textContent = `${state.nivel.size} de ${NIV.length} niveles`; }
+      if(key==='nivel'){ const sm = g.closest('details').querySelector('[data-nivel-sum]'); if(sm) sm.textContent = `${state.nivel.size} de ${NIV.length} niveles`; }
       render();
     });
   });
@@ -1287,7 +1287,7 @@ function syncEstChecks(){
 }
 
 function syncEstSummary(){
-  const s = document.getElementById('p27-filters').querySelector('summary');
+  const s = document.querySelector('[data-est-sum]');
   if(s) s.textContent = `${state.est.size} de ${RAW.length} seleccionados`;
 }
 
