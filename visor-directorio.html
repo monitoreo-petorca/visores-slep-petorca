@@ -1399,9 +1399,10 @@ function fillPme(rbd){
 }
 /* ===== fin PME-INTEGRACION v1 ===== */
 
-/* ===== Integración: Dotación (resumen mensual, lectura en vivo del visor de dotación) ===== */
+/* ===== Integración: Dotación v2 (resumen, ratios y gráficos; lectura en vivo) ===== */
 var DOTA=null, _dotaPromise=null;
 const DOTA_URL='visor_dotacion_publico.html';
+const DOTA_C={doc:'#1f5fa8',asi:'#0f9d7a',cod:'#8a5cb8',rat:'#d9683a'};
 function loadDotacion(){
   if(DOTA!==null) return Promise.resolve(DOTA);
   if(_dotaPromise) return _dotaPromise;
@@ -1414,16 +1415,22 @@ function loadDotacion(){
     d.rows.forEach(function(r){
       const rb=estRbd[r[1]]; if(rb===undefined) return;
       const x=byRbd[rb]||(byRbd[rb]={m:{},g:{}});
-      const m=x.m[r[0]]||(x.m[r[0]]={n:0,doc:0,asi:0,cod:0,hor:0,hdoc:0,rem:0,_s:{}});
-      m.n++; m.hor+=(+r[5]||0); m._s[r[9]]=1;
-      if(r[2]===0){ m.doc++; m.hdoc+=(+r[5]||0); } else if(r[2]===1){ m.asi++; } else { m.cod++; }
+      const m=x.m[r[0]]||(x.m[r[0]]={n:0,doc:0,asi:0,cod:0,hor:0,hdoc:0,rem:0,_s:{},_d:{},_a:{},_c:{}});
+      const h=(+r[5]||0), rut=r[9];
+      m.n++; m.hor+=h; m._s[rut]=1;
+      if(r[2]===0){ m.doc++; m.hdoc+=h; m._d[rut]=1; }
+      else if(r[2]===1){ m.asi++; m._a[rut]=1; }
+      else { m.cod++; m._c[rut]=1; }
       if(r[4]===1) m.rem++;
       if(r[0]===last){ x.g[r[12]]=(x.g[r[12]]||0)+1; }
     });
     Object.keys(byRbd).forEach(function(k){
       const x=byRbd[k];
       Object.keys(x.m).forEach(function(mi){
-        const m=x.m[mi]; m.p=Object.keys(m._s).length; m.hor=Math.round(m.hor); m.hdoc=Math.round(m.hdoc); delete m._s;
+        const m=x.m[mi];
+        m.p=Object.keys(m._s).length; m.pd=Object.keys(m._d).length; m.pa=Object.keys(m._a).length; m.pc=Object.keys(m._c).length;
+        m.hor=Math.round(m.hor); m.hdoc=Math.round(m.hdoc);
+        delete m._s; delete m._d; delete m._a; delete m._c;
       });
     });
     DOTA={last:last, meses:d.meta.meses, fgrp:d.meta.fgrp, byRbd:byRbd};
@@ -1431,29 +1438,154 @@ function loadDotacion(){
   }).catch(function(){ DOTA=false; return false; });
   return _dotaPromise;
 }
+/* matrícula por mes (Declaración de Asistencia SIGE) desde el visor de Niveles y cursos */
+function loadMatriculaRbd(){
+  return loadNiveles().then(function(p){
+    if(!p) return {};
+    const cc=p._cc, key={};
+    p.meses.forEach(function(m){ key[m.p]=String(m.l||'').slice(0,3).toLowerCase()+'·'+String(m.anio||'').slice(-2); });
+    const out={};
+    p.c.forEach(function(r){
+      const k=key[r[cc.p]]; if(!k) return;
+      const rb=String(r[cc.rbd]);
+      const o=out[rb]||(out[rb]={});
+      o[k]=(o[k]||0)+(+r[cc.mat]||0);
+    });
+    return out;
+  });
+}
+function dotRat(a,b){ return (a!=null && b>0)? a/b : null; }
+function dotFmt(v,d){ return (v==null||!isFinite(v))?'—':Number(v).toLocaleString('es-CL',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function dotLegend(items){
+  return '<div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--mut);margin:4px 0 2px">'
+    + items.map(function(it){return '<span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+it.color+';margin-right:5px;vertical-align:-1px"></i>'+esc(it.name)+'</span>';}).join('')
+    + '</div>';
+}
+function dotSub(t){ return '<div style="font-size:12.5px;font-weight:700;color:var(--azul);margin:16px 0 4px">'+t+'</div>'; }
+function dotLine(labels, series, W, H, dec){
+  const P={l:44,r:24,t:12,b:24};
+  const vals=[]; series.forEach(function(s){ s.vals.forEach(function(v){ if(v!=null&&isFinite(v)) vals.push(v); }); });
+  if(!vals.length) return '<p class="empty">Sin datos suficientes para este gráfico.</p>';
+  const mx=Math.max.apply(null,vals)*1.15||1;
+  const n=labels.length;
+  const X=function(i){ return n<=1 ? P.l+(W-P.l-P.r)/2 : P.l+i*(W-P.l-P.r)/(n-1); };
+  const Y=function(v){ return P.t+(H-P.t-P.b)*(1-v/mx); };
+  let g='';
+  [0,0.5,1].forEach(function(f){ const v=mx*f, y=Y(v);
+    g+='<line x1="'+P.l+'" x2="'+(W-P.r)+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>'
+      +'<text x="'+(P.l-6)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--mut)">'+dotFmt(v,dec==null?1:dec)+'</text>'; });
+  labels.forEach(function(lb,i){ g+='<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="var(--mut)">'+esc(lb)+'</text>'; });
+  series.forEach(function(s){
+    const pts=[];
+    s.vals.forEach(function(v,i){ if(v!=null&&isFinite(v)) pts.push(X(i).toFixed(1)+','+Y(v).toFixed(1)); });
+    if(pts.length>1) g+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linejoin="round"/>';
+    s.vals.forEach(function(v,i){ if(v==null||!isFinite(v)) return;
+      g+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(v).toFixed(1)+'" r="3.4" fill="'+s.color+'"><title>'+esc(s.name)+' · '+esc(labels[i])+': '+dotFmt(v,1)+'</title></circle>'; });
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:'+W+'px;height:auto;display:block" role="img">'+g+'</svg>';
+}
+function dotStack(labels, parts, W, H){
+  const P={l:44,r:14,t:16,b:24};
+  const tot=labels.map(function(_,i){ return parts.reduce(function(a,p){ return a+(p.vals[i]||0); },0); });
+  const mx=Math.max.apply(null,tot)*1.12||1;
+  const n=labels.length, cw=(W-P.l-P.r)/n, bw=Math.min(36,cw*0.62);
+  const Y=function(v){ return P.t+(H-P.t-P.b)*(1-v/mx); };
+  let g='';
+  [0,0.5,1].forEach(function(f){ const v=mx*f, y=Y(v);
+    g+='<line x1="'+P.l+'" x2="'+(W-P.r)+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="var(--line)"/>'
+      +'<text x="'+(P.l-6)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--mut)">'+dotFmt(v,0)+'</text>'; });
+  labels.forEach(function(lb,i){
+    const cx=P.l+cw*i+cw/2; let base=H-P.b;
+    parts.forEach(function(p){
+      const v=p.vals[i]||0; if(!v) return;
+      const h=(H-P.t-P.b)*(v/mx), y=base-h;
+      g+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(y+1).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,h-2).toFixed(1)+'" rx="2" fill="'+p.color+'"><title>'+esc(p.name)+' · '+esc(lb)+': '+dotFmt(v,0)+'</title></rect>';
+      base=y;
+    });
+    g+='<text x="'+cx.toFixed(1)+'" y="'+(Y(tot[i])-4).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor">'+dotFmt(tot[i],0)+'</text>'
+      +'<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="var(--mut)">'+esc(lb)+'</text>';
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:'+W+'px;height:auto;display:block" role="img">'+g+'</svg>';
+}
+function dotHBars(items){
+  const mx=Math.max.apply(null,items.map(function(i){return i.c;}))||1;
+  const LW=240, BW=260, RH=22, H=items.length*RH+4, WT=LW+BW+44;
+  let g='';
+  items.forEach(function(it,i){
+    const y=i*RH+2, w=BW*it.c/mx;
+    g+='<text x="'+(LW-8)+'" y="'+(y+14)+'" text-anchor="end" font-size="11" fill="currentColor">'+esc(it.n)+'</text>'
+      +'<rect x="'+LW+'" y="'+(y+3)+'" width="'+w.toFixed(1)+'" height="14" rx="3" fill="'+DOTA_C.doc+'"><title>'+esc(it.n)+': '+it.c+'</title></rect>'
+      +'<text x="'+(LW+w+6).toFixed(1)+'" y="'+(y+14)+'" font-size="11" fill="currentColor">'+it.c+'</text>';
+  });
+  return '<svg viewBox="0 0 '+WT+' '+H+'" width="100%" style="max-width:'+WT+'px;height:auto;display:block" role="img">'+g+'</svg>';
+}
 function fillDotacion(rbd){
   const box=document.getElementById('p-dotacion'); if(!box) return;
-  loadDotacion().then(function(D){
+  Promise.all([loadDotacion(), loadMatriculaRbd()]).then(function(res){
+    const D=res[0], MAT=res[1]||{};
     const b=document.getElementById('p-dotacion'); if(!b) return;
     if(!D){ b.innerHTML='<div class="sect"><h3>👥 Dotación</h3><p class="empty">No se pudo cargar el resumen de dotación. <a href="'+DOTA_URL+'" target="_blank" rel="noopener">Abrir el visor de dotación ↗</a></p></div>'; return; }
     const mesL=function(i){return D.meses[i]||('mes '+i);};
     const x=D.byRbd[String(rbd)];
     if(!x||!x.m[D.last]){ b.innerHTML='<div class="sect"><h3>👥 Dotación</h3><p class="empty">Este establecimiento no registra nombramientos en el último mes del visor de dotación.</p></div>'; return; }
-    const L=x.m[D.last];
-    const serie=Object.keys(x.m).map(Number).sort(function(a,c){return a-c;});
-    const trend=serie.map(function(i){return mesL(i)+' <b>'+x.m[i].n+'</b>';}).join(' · ');
-    const grupos=Object.keys(x.g).map(function(k){return {n:D.fgrp[k], c:x.g[k]};}).sort(function(a,c){return c.c-a.c;});
-    const filas=grupos.map(function(g){return '<tr><td>'+esc(g.n)+'</td><td style="text-align:right">'+g.c+'</td></tr>';}).join('');
-    b.innerHTML='<div class="sect"><h3>👥 Dotación <span class="nivmes">'+esc(mesL(D.last))+'</span></h3>'
+    const ee=(typeof EE!=='undefined')? EE.find(function(q){return String(q.rbd)===String(rbd);}) : null;
+    const rb=MAT[String(rbd)]||{};
+    const S=Object.keys(x.m).map(Number).sort(function(a,c){return a-c;}).map(function(i){
+      const m=x.m[i], mat=(rb[D.meses[i]]!=null)? rb[D.meses[i]] : null;
+      return {i:i,l:mesL(i),n:m.n,p:m.p,pd:m.pd,pa:m.pa,pc:m.pc,doc:m.doc,asi:m.asi,cod:m.cod,hor:m.hor,hdoc:m.hdoc,rem:m.rem,mat:mat};
+    });
+    const L=S[S.length-1], F=S[0];
+    let matL=L.mat, matSrc='Declaración SIGE, '+L.l;
+    if(matL==null && ee && ee.mat_jun26!==''&&ee.mat_jun26!=null&&isFinite(+ee.mat_jun26)){ matL=+ee.mat_jun26; matSrc='directorio (GESPARVU, jun·26)'; }
+    const r1=dotRat(matL,L.pd), r2=dotRat(matL,L.pa), r3=dotRat(L.pd,L.pa);
+    const labels=S.map(function(s){return s.l;});
+    const dif=function(a,c){ const d=a-c; return (d>0?'+':'')+d.toLocaleString('es-CL'); };
+
+    let h='<div class="sect"><h3>👥 Dotación <span class="nivmes">'+esc(L.l)+'</span></h3>'
       +'<div class="tiles">'
       + tile('Personas', L.p.toLocaleString('es-CL'), 'del mes')
       + tile('Nombramientos', L.n, 'docentes '+L.doc+' · asistentes '+L.asi+(L.cod?' · CT '+L.cod:''))
       + tile('Horas', L.hor.toLocaleString('es-CL'), 'docentes '+L.hdoc.toLocaleString('es-CL')+' h')
       + tile('Reemplazos', L.rem, 'nombramientos')
       +'</div>'
-      +'<div style="font-size:12px;color:var(--mut);margin:4px 0 10px">Nombramientos por mes: '+trend+'</div>'
-      +'<div class="nivtable-wrap"><table class="nivtable"><thead><tr><th>Grupo de función (SIGE)</th><th style="text-align:right">Nombramientos</th></tr></thead><tbody>'+filas+'</tbody></table></div>'
-      +'<p class="nivsrc">Fuente: Visor de dotación, '+esc(mesL(D.last))+' · función según fichas de personal SIGE (o cargo del maestro en jardines VTF). <a href="'+DOTA_URL+'" target="_blank" rel="noopener">Abrir visor de dotación ↗</a></p></div>';
+      +'<div class="tiles">'
+      + tile('Estudiantes por docente', r1==null?'—':dotFmt(r1,1), 'matrícula ÷ docentes')
+      + tile('Estudiantes por asistente', r2==null?'—':dotFmt(r2,1), 'matrícula ÷ asistentes')
+      + tile('Docentes por asistente', r3==null?'—':dotFmt(r3,2), 'personas, ratio docente ÷ asistente')
+      + tile('Matrícula', matL==null?'—':dotFmt(matL,0), matSrc)
+      +'</div>'
+      +'<p style="font-size:12px;color:var(--mut);margin:0 0 4px">Desde '+esc(F.l)+': nombramientos '+dif(L.n,F.n)+' · personas '+dif(L.p,F.p)+(F.mat!=null&&L.mat!=null?' · matrícula '+dif(L.mat,F.mat):'')+'.</p>';
+
+    h+='<div style="border:1px solid var(--line);border-left:3px solid var(--azul);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--mut);margin:0 0 12px;line-height:1.5">'
+      +'<b style="color:var(--azul)">¿Cómo leer estos indicadores?</b>'
+      +'<ul style="margin:6px 0 0;padding-left:18px">'
+      +'<li><b>Personas</b> cuenta cada funcionario una vez; <b>nombramientos</b> cuenta cada contrato. Una persona con dos contratos suma 1 en personas y 2 en nombramientos.</li>'
+      +'<li><b>Estudiantes por docente</b> = matrícula del mes ÷ personas con función docente. Ejemplo: 600 estudiantes y 50 docentes dan una razón de 12,0 estudiantes por docente.</li>'
+      +'<li><b>Estudiantes por asistente</b> usa el mismo cálculo con las personas de asistencia de la educación. <b>Docentes por asistente</b> compara ambos grupos entre sí.</li>'
+      +'<li><b>Matrícula</b>: en escuelas y liceos viene de la Declaración de Asistencia SIGE de cada mes. En jardines (sin declaración SIGE) se usa la matrícula GESPARVU de jun·26 del directorio, así que no es comparable mes a mes.</li>'
+      +'<li>Si un mes no tiene matrícula declarada, sus ratios no aparecen en los gráficos. Una razón más alta significa más estudiantes por adulto; son indicadores de referencia, no normativos.</li>'
+      +'<li><b>Función</b>: según fichas de personal SIGE; en jardines VTF, según el cargo del maestro.</li>'
+      +'</ul></div>';
+    h+=dotSub('Personas por tipo de función, mes a mes');
+    h+=dotLegend([{name:'Docentes',color:DOTA_C.doc},{name:'Asistentes de la educación',color:DOTA_C.asi},{name:'Código del Trabajo',color:DOTA_C.cod}]);
+    h+=dotStack(labels,[{name:'Docentes',color:DOTA_C.doc,vals:S.map(function(s){return s.pd;})},{name:'Asistentes',color:DOTA_C.asi,vals:S.map(function(s){return s.pa;})},{name:'Código del Trabajo',color:DOTA_C.cod,vals:S.map(function(s){return s.pc;})}],640,200);
+
+    h+=dotSub('Estudiantes por docente y por asistente');
+    h+=dotLegend([{name:'Estudiantes por docente',color:DOTA_C.doc},{name:'Estudiantes por asistente',color:DOTA_C.asi}]);
+    h+=dotLine(labels,[{name:'Estudiantes por docente',color:DOTA_C.doc,vals:S.map(function(s){return dotRat(s.mat,s.pd);})},{name:'Estudiantes por asistente',color:DOTA_C.asi,vals:S.map(function(s){return dotRat(s.mat,s.pa);})}],640,200,1);
+
+    h+=dotSub('Docentes por asistente');
+    h+=dotLine(labels,[{name:'Docentes por asistente',color:DOTA_C.rat,vals:S.map(function(s){return dotRat(s.pd,s.pa);})}],640,160,1);
+
+    h+=dotSub('Matrícula (Declaración de Asistencia SIGE)');
+    h+=dotLine(labels,[{name:'Matrícula',color:DOTA_C.doc,vals:S.map(function(s){return s.mat;})}],640,160,0);
+
+    const grupos=Object.keys(x.g).map(function(k){return {n:D.fgrp[k], c:x.g[k]};}).sort(function(a,c){return c.c-a.c;});
+    h+=dotSub('Nombramientos por grupo de función, '+esc(L.l));
+    h+=dotHBars(grupos);
+
+    h+='<p class="nivsrc">Fuente: Visor de dotación (función según fichas de personal SIGE; jardines VTF según cargo del maestro) y Declaración de Asistencia SIGE para la matrícula. Estudiantes por docente = matrícula ÷ personas con función docente. Jardines sin declaración SIGE usan la matrícula de GESPARVU del directorio. <a href="'+DOTA_URL+'" target="_blank" rel="noopener">Abrir visor de dotación ↗</a></p></div>';
+    b.innerHTML=h;
   });
 }
 /* ===== fin Dotación ===== */
